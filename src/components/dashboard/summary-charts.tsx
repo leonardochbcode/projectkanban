@@ -31,9 +31,9 @@ export function SummaryCharts() {
   }, [] as { name: string; value: number }[]);
 
   const COLORS = {
-    High: 'hsl(var(--destructive))',
-    Medium: 'hsl(var(--primary))',
-    Low: 'hsl(var(--accent))',
+    Alta: 'hsl(var(--destructive))',
+    Média: 'hsl(var(--primary))',
+    Baixa: 'hsl(var(--accent))',
   };
 
   if (!isLoaded) {
@@ -49,7 +49,7 @@ export function SummaryCharts() {
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Projects by Status</CardTitle>
+          <CardTitle className="font-headline">Projetos por Status</CardTitle>
         </CardHeader>
         <CardContent className="pl-2">
           <ResponsiveContainer width="100%" height={300}>
@@ -69,7 +69,7 @@ export function SummaryCharts() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Tasks by Priority</CardTitle>
+          <CardTitle className="font-headline">Tarefas por Prioridade</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

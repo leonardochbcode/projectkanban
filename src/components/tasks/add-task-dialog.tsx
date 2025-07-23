@@ -30,14 +30,14 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState<Task['status']>('To Do');
-  const [priority, setPriority] = useState<Task['priority']>('Medium');
+  const [status, setStatus] = useState<Task['status']>('A Fazer');
+  const [priority, setPriority] = useState<Task['priority']>('Média');
   const [assigneeId, setAssigneeId] = useState<string | undefined>();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !dueDate) {
-      alert('Please fill in title and due date.');
+      alert('Por favor, preencha o título e a data de vencimento.');
       return;
     }
     addTask({
@@ -53,8 +53,8 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
     setTitle('');
     setDescription('');
     setDueDate('');
-    setStatus('To Do');
-    setPriority('Medium');
+    setStatus('A Fazer');
+    setPriority('Média');
     setAssigneeId(undefined);
     setOpen(false);
   };
@@ -65,15 +65,15 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle className="font-headline">Create New Task</DialogTitle>
+            <DialogTitle className="font-headline">Criar Nova Tarefa</DialogTitle>
             <DialogDescription>
-              Add a new task to your project.
+              Adicione uma nova tarefa ao seu projeto.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="title" className="text-right">
-                Title
+                Título
               </Label>
               <Input
                 id="title"
@@ -85,7 +85,7 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
-                Description
+                Descrição
               </Label>
               <Textarea
                 id="description"
@@ -96,7 +96,7 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="due-date" className="text-right">
-                Due Date
+                Data de Prazo
               </Label>
               <Input
                 id="due-date"
@@ -116,32 +116,32 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="To Do">To Do</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="A Fazer">A Fazer</SelectItem>
+                  <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                  <SelectItem value="Concluída">Concluída</SelectItem>
                 </SelectContent>
               </Select>
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="priority" className="text-right">
-                Priority
+                Prioridade
               </Label>
               <Select value={priority} onValueChange={(v: Task['priority']) => setPriority(v)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Baixa">Baixa</SelectItem>
+                  <SelectItem value="Média">Média</SelectItem>
+                  <SelectItem value="Alta">Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="assignee" className="text-right">Assignee</Label>
+                <Label htmlFor="assignee" className="text-right">Responsável</Label>
                 <Select value={assigneeId} onValueChange={setAssigneeId}>
                     <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Unassigned" />
+                        <SelectValue placeholder="Não atribuído" />
                     </SelectTrigger>
                     <SelectContent>
                         {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -150,7 +150,7 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Create Task</Button>
+            <Button type="submit">Criar Tarefa</Button>
           </DialogFooter>
         </form>
       </DialogContent>

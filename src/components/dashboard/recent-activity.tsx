@@ -14,7 +14,7 @@ export function RecentActivity() {
   return (
     <Card className="col-span-12 lg:col-span-3">
       <CardHeader>
-        <CardTitle className="font-headline">Recent Activity</CardTitle>
+        <CardTitle className="font-headline">Atividade Recente</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -29,10 +29,10 @@ export function RecentActivity() {
                     </Avatar>
                     <div className="grid gap-1">
                         <p className="text-sm font-medium leading-none">
-                            <span className="font-semibold">{participant?.name || 'Unassigned'}</span> updated a task
+                            <span className="font-semibold">{participant?.name || 'Não atribuído'}</span> atualizou uma tarefa
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            "{task.title}" in <span className="font-medium">{project?.name}</span>
+                            "{task.title}" em <span className="font-medium">{project?.name}</span>
                         </p>
                     </div>
                 </div>

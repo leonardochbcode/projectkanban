@@ -29,7 +29,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project }: ProjectCardProps) {
   const { getProjectTasks, participants } = useStore();
   const tasks = getProjectTasks(project.id);
-  const completedTasks = tasks.filter((task) => task.status === 'Completed').length;
+  const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
 
   const projectParticipants = project.participantIds
@@ -37,10 +37,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
     .filter(Boolean);
 
   const statusColors: { [key: string]: string } = {
-    'In Progress': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
-    Planning: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
-    Completed: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
-    Paused: 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30',
+    'Em Andamento': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    Planejamento: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+    Concluído: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
+    Pausado: 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30',
   };
 
   return (
@@ -58,13 +58,13 @@ export function ProjectCard({ project }: ProjectCardProps) {
         <CardContent className="flex-grow">
           <div className="space-y-1">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Progress</span>
+              <span>Progresso</span>
               <span>{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} />
             <div className="flex justify-between text-xs text-muted-foreground pt-1">
-              <span>{completedTasks} / {tasks.length} tasks</span>
-              <span>Due: {new Date(project.endDate).toLocaleDateString()}</span>
+              <span>{completedTasks} / {tasks.length} tarefas</span>
+              <span>Prazo: {new Date(project.endDate).toLocaleDateString()}</span>
             </div>
           </div>
         </CardContent>

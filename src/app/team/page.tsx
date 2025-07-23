@@ -11,19 +11,19 @@ export default function TeamPage() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Team Members</h1>
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Membros da Equipe</h1>
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Participants</CardTitle>
-          <CardDescription>A list of all team members involved in projects.</CardDescription>
+          <CardTitle>Participantes</CardTitle>
+          <CardDescription>Uma lista de todos os membros da equipe envolvidos nos projetos.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Função</TableHead>
                 <TableHead>Email</TableHead>
               </TableRow>
             </TableHeader>

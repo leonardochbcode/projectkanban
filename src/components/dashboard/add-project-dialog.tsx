@@ -30,15 +30,15 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [status, setStatus] = useState<'Planning' | 'In Progress' | 'Paused' | 'Completed'>(
-    'Planning'
+  const [status, setStatus] = useState<'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído'>(
+    'Planejamento'
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !startDate || !endDate) {
       // Basic validation
-      alert('Please fill in all required fields.');
+      alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
     addProject({ name, description, startDate, endDate, status });
@@ -47,7 +47,7 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
     setDescription('');
     setStartDate('');
     setEndDate('');
-    setStatus('Planning');
+    setStatus('Planejamento');
     setOpen(false);
   };
 
@@ -57,15 +57,15 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle className="font-headline">Create New Project</DialogTitle>
+            <DialogTitle className="font-headline">Criar Novo Projeto</DialogTitle>
             <DialogDescription>
-              Fill in the details below to create a new project.
+              Preencha os detalhes abaixo para criar um novo projeto.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Name
+                Nome
               </Label>
               <Input
                 id="name"
@@ -77,7 +77,7 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
-                Description
+                Descrição
               </Label>
               <Textarea
                 id="description"
@@ -88,7 +88,7 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="start-date" className="text-right">
-                Start Date
+                Data de Início
               </Label>
               <Input
                 id="start-date"
@@ -101,7 +101,7 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="end-date" className="text-right">
-                End Date
+                Data de Término
               </Label>
               <Input
                 id="end-date"
@@ -119,23 +119,23 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
               <Select
                 value={status}
                 onValueChange={(
-                  value: 'Planning' | 'In Progress' | 'Paused' | 'Completed'
+                  value: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído'
                 ) => setStatus(value)}
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Planning">Planning</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Paused">Paused</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Planejamento">Planejamento</SelectItem>
+                  <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                  <SelectItem value="Pausado">Pausado</SelectItem>
+                  <SelectItem value="Concluído">Concluído</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Create Project</Button>
+            <Button type="submit">Criar Projeto</Button>
           </DialogFooter>
         </form>
       </DialogContent>

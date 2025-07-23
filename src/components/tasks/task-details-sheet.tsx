@@ -57,36 +57,36 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="To Do">To Do</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="A Fazer">A Fazer</SelectItem>
+                  <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                  <SelectItem value="Concluída">Concluída</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-muted-foreground w-32">
                 <Flag className="h-4 w-4" />
-                <span>Priority</span>
+                <span>Prioridade</span>
               </div>
               <Select value={task.priority} onValueChange={handlePriorityChange}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Baixa">Baixa</SelectItem>
+                  <SelectItem value="Média">Média</SelectItem>
+                  <SelectItem value="Alta">Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-muted-foreground w-32">
                     <User className="h-4 w-4" />
-                    <span>Assignee</span>
+                    <span>Responsável</span>
                 </div>
                  <Select value={assignee?.id} onValueChange={handleAssigneeChange}>
                     <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Unassigned" />
+                        <SelectValue placeholder="Não atribuído" />
                     </SelectTrigger>
                     <SelectContent>
                         {participants.map(p => (
@@ -98,7 +98,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-muted-foreground w-32">
                 <CalendarIcon className="h-4 w-4" />
-                <span>Due Date</span>
+                <span>Data de Prazo</span>
               </div>
               <p>{new Date(task.dueDate).toLocaleDateString()}</p>
             </div>
@@ -111,7 +111,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
           <Separator />
           
           <div>
-            <h3 className="font-semibold mb-2 font-headline">Comments</h3>
+            <h3 className="font-semibold mb-2 font-headline">Comentários</h3>
             <div className="space-y-4">
               {task.comments.map((comment) => {
                 const author = participants.find(p => p.id === comment.authorId);
@@ -132,7 +132,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                 )
               })}
                {task.comments.length === 0 && (
-                <p className="text-sm text-muted-foreground">No comments yet.</p>
+                <p className="text-sm text-muted-foreground">Nenhum comentário ainda.</p>
               )}
             </div>
           </div>

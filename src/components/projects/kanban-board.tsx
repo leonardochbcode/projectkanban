@@ -8,7 +8,7 @@ interface KanbanBoardProps {
   projectId: string;
 }
 
-const statuses: Task['status'][] = ['To Do', 'In Progress', 'Completed'];
+const statuses: Task['status'][] = ['A Fazer', 'Em Andamento', 'Concluída'];
 
 export function KanbanBoard({ tasks }: KanbanBoardProps) {
   return (

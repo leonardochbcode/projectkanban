@@ -23,9 +23,9 @@ export function TaskCard({ task }: TaskCardProps) {
   const assignee = task.assigneeId ? getParticipant(task.assigneeId) : null;
 
   const priorityColors: { [key: string]: string } = {
-    High: 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
-    Medium: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
-    Low: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
+    Alta: 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
+    Média: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+    Baixa: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
   };
 
   return (
@@ -42,7 +42,7 @@ export function TaskCard({ task }: TaskCardProps) {
         <CardContent className="p-4 pt-0">
           <div className="flex justify-between items-center">
             <div className="text-xs text-muted-foreground">
-                Due: {new Date(task.dueDate).toLocaleDateString()}
+                Prazo: {new Date(task.dueDate).toLocaleDateString()}
             </div>
             {assignee && (
               <TooltipProvider>

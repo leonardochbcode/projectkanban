@@ -20,10 +20,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/projects', label: 'Projects', icon: FolderKanban },
-    { href: '/team', label: 'Team', icon: Users },
-    { href: '/reports', label: 'Reports', icon: LineChart },
+    { href: '/', label: 'Painel', icon: LayoutDashboard },
+    { href: '/projects', label: 'Projetos', icon: FolderKanban },
+    { href: '/team', label: 'Equipe', icon: Users },
+    { href: '/reports', label: 'Relatórios', icon: LineChart },
   ];
 
   const NavLinks = () => (
@@ -63,7 +63,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
              <div className="grid gap-2">
                 <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
                     <Settings className="h-4 w-4" />
-                    Settings
+                    Configurações
                 </Link>
              </div>
           </div>
@@ -75,7 +75,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0 md:hidden">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+                <span className="sr-only">Alternar menu de navegação</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col">

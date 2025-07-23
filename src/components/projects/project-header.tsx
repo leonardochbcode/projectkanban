@@ -10,7 +10,7 @@ import { PlusCircle } from 'lucide-react';
 export function ProjectHeader({ project }: { project: Project }) {
   const { getProjectTasks } = useStore();
   const tasks = getProjectTasks(project.id);
-  const completedTasks = tasks.filter((task) => task.status === 'Completed').length;
+  const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
 
   return (
@@ -23,18 +23,18 @@ export function ProjectHeader({ project }: { project: Project }) {
             <AddTaskDialog projectId={project.id}>
                 <Button>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Task
+                    Adicionar Tarefa
                 </Button>
             </AddTaskDialog>
         </div>
       <div className="space-y-1">
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>Progress</span>
+          <span>Progresso</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} />
         <div className="flex justify-between text-xs text-muted-foreground pt-1">
-          <span>{completedTasks} of {tasks.length} tasks completed</span>
+          <span>{completedTasks} de {tasks.length} tarefas concluídas</span>
         </div>
       </div>
     </div>

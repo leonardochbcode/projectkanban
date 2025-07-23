@@ -52,7 +52,7 @@ export function AiTaskAnalyzer({ task }: { task: Task }) {
         throw new Error('Invalid analysis result');
       }
     } catch (err) {
-      setError('Failed to analyze comments. Please try again.');
+      setError('Falha ao analisar comentários. Por favor, tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -60,27 +60,27 @@ export function AiTaskAnalyzer({ task }: { task: Task }) {
 
   return (
     <div>
-      <h3 className="font-semibold mb-2 font-headline">AI Task Analyzer</h3>
+      <h3 className="font-semibold mb-2 font-headline">Analisador de Tarefas com IA</h3>
       <Card>
         <CardHeader>
             <div className="flex items-center gap-2">
                 <Wand2 className="h-5 w-5 text-primary"/>
-                <CardTitle className="text-base font-headline">Team Discussion Analysis</CardTitle>
+                <CardTitle className="text-base font-headline">Análise de Discussão da Equipe</CardTitle>
             </div>
             <CardDescription>
-                Add a comment and let AI analyze the discussion to extract action items and suggest reassignments.
+                Adicione um comentário e deixe a IA analisar a discussão para extrair itens de ação e sugerir reatribuições.
             </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <Textarea
-              placeholder="Type your comment or update here..."
+              placeholder="Digite seu comentário ou atualização aqui..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               disabled={isLoading}
             />
             <Button type="submit" disabled={isLoading || !comment.trim()}>
-              {isLoading ? 'Analyzing...' : 'Add Comment & Analyze'}
+              {isLoading ? 'Analisando...' : 'Adicionar Comentário e Analisar'}
             </Button>
           </form>
 
@@ -90,12 +90,12 @@ export function AiTaskAnalyzer({ task }: { task: Task }) {
             <div className="mt-6 space-y-4">
                <Alert>
                     <Zap className="h-4 w-4" />
-                    <AlertTitle className="font-headline">Priority Action Items</AlertTitle>
+                    <AlertTitle className="font-headline">Itens de Ação Prioritários</AlertTitle>
                     <AlertDescription className="whitespace-pre-wrap">{analysis.priorityActionItems}</AlertDescription>
                 </Alert>
                 <Alert>
                     <UserSwitch className="h-4 w-4" />
-                    <AlertTitle className="font-headline">Suggested Reassignments</AlertTitle>
+                    <AlertTitle className="font-headline">Reatribuições Sugeridas</AlertTitle>
                     <AlertDescription className="whitespace-pre-wrap">{analysis.suggestedReassignments}</AlertDescription>
                 </Alert>
             </div>
