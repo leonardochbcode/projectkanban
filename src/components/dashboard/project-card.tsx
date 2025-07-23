@@ -1,0 +1,95 @@
+'use client';
+
+import Link from 'next/link';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useStore } from '@/hooks/use-store';
+import type { Project } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+interface ProjectCardProps {
+  project: Project;
+}
+
+export function ProjectCard({ project }: ProjectCardProps) {
+  const { getProjectTasks, participants } = useStore();
+  const tasks = getProjectTasks(project.id);
+  const completedTasks = tasks.filter((task) => task.status === 'Completed').length;
+  const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
+
+  const projectParticipants = project.participantIds
+    .map((id) => participants.find((p) => p.id === id))
+    .filter(Boolean);
+
+  const statusColors: { [key: string]: string } = {
+    'In Progress': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
+    Planning: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+    Completed: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
+    Paused: 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30',
+  };
+
+  return (
+    <Link href={`/projects/${project.id}`}>
+      <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <CardTitle className="font-headline text-lg">{project.name}</CardTitle>
+            <Badge variant="outline" className={cn(statusColors[project.status])}>
+              {project.status}
+            </Badge>
+          </div>
+          <CardDescription className="line-clamp-2">{project.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-grow">
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Progress</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
+            <Progress value={progress} />
+            <div className="flex justify-between text-xs text-muted-foreground pt-1">
+              <span>{completedTasks} / {tasks.length} tasks</span>
+              <span>Due: {new Date(project.endDate).toLocaleDateString()}</span>
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <div className="flex -space-x-2 overflow-hidden">
+            <TooltipProvider>
+              {projectParticipants.map((p) =>
+                p ? (
+                  <Tooltip key={p.id}>
+                    <TooltipTrigger asChild>
+                      <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
+                        <AvatarImage src={p.avatar} />
+                        <AvatarFallback>{p.name[0]}</AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{p.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : null
+              )}
+            </TooltipProvider>
+          </div>
+        </CardFooter>
+      </Card>
+    </Link>
+  );
+}

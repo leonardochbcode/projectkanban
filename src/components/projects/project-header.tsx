@@ -1,0 +1,42 @@
+'use client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { useStore } from '@/hooks/use-store';
+import type { Project } from '@/lib/types';
+import { AddTaskDialog } from '../tasks/add-task-dialog';
+import { Button } from '../ui/button';
+import { PlusCircle } from 'lucide-react';
+
+export function ProjectHeader({ project }: { project: Project }) {
+  const { getProjectTasks } = useStore();
+  const tasks = getProjectTasks(project.id);
+  const completedTasks = tasks.filter((task) => task.status === 'Completed').length;
+  const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
+
+  return (
+    <div className="p-4 sm:p-6 border-b">
+        <div className="flex items-center justify-between space-y-2 mb-4">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight font-headline">{project.name}</h1>
+                <p className="text-muted-foreground">{project.description}</p>
+            </div>
+            <AddTaskDialog projectId={project.id}>
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Task
+                </Button>
+            </AddTaskDialog>
+        </div>
+      <div className="space-y-1">
+        <div className="flex justify-between text-sm text-muted-foreground">
+          <span>Progress</span>
+          <span>{Math.round(progress)}%</span>
+        </div>
+        <Progress value={progress} />
+        <div className="flex justify-between text-xs text-muted-foreground pt-1">
+          <span>{completedTasks} of {tasks.length} tasks completed</span>
+        </div>
+      </div>
+    </div>
+  );
+}
