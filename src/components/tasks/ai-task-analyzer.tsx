@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAnalysis } from '@/app/actions';
 import { type Task, type TaskComment } from '@/lib/types';
-import { Wand2, Zap, UserSwitch } from 'lucide-react';
+import { Wand2, Zap, UserCog } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useStore } from '@/hooks/use-store';
 
@@ -94,7 +94,7 @@ export function AiTaskAnalyzer({ task }: { task: Task }) {
                     <AlertDescription className="whitespace-pre-wrap">{analysis.priorityActionItems}</AlertDescription>
                 </Alert>
                 <Alert>
-                    <UserSwitch className="h-4 w-4" />
+                    <UserCog className="h-4 w-4" />
                     <AlertTitle className="font-headline">Reatribuições Sugeridas</AlertTitle>
                     <AlertDescription className="whitespace-pre-wrap">{analysis.suggestedReassignments}</AlertDescription>
                 </Alert>
