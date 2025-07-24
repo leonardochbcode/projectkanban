@@ -21,13 +21,9 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) {
-        router.push('/');
-      } else {
-        // This case might not be reached if login throws, but it's good practice.
-        throw new Error('Falha no login');
-      }
+      await login(email, password);
+      // The auth state listener in useStore will handle the redirect
+      router.push('/');
     } catch (error) {
       console.error(error);
       let description = 'Ocorreu um erro desconhecido. Tente novamente.';
@@ -35,7 +31,7 @@ export default function LoginPage() {
         if (error.code === 'auth/configuration-not-found') {
           description = 'O método de login por Email/Senha não está ativado no Firebase. Por favor, ative-o no console do Firebase.';
         } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-          description = 'Credenciais inválidas. Verifique seu email e senha.';
+          description = 'Credenciais inválidas. Verifique seu email e senha e tente novamente.';
         }
       }
       toast({

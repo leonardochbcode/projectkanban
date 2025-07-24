@@ -102,29 +102,31 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
         console.log('Seeding initial data...');
         
-        // First, create the initial auth users
-        for (const p of initialParticipants) {
-            if(p.email && p.password) {
-                try {
-                    // This will fail if the user already exists, which is fine.
-                    const userCredential = await createUserWithEmailAndPassword(auth, p.email, p.password);
-                    const { uid } = userCredential.user;
-                    const { password, ...participantData } = p;
-                    await setDoc(doc(db, 'participants', uid), { ...participantData, id: uid });
-                    console.log(`Created auth user and participant doc for ${p.email}`);
-                } catch(e) {
-                     const authError = e as AuthError;
-                    if(authError.code === 'auth/email-already-in-use') {
-                        console.log(`Auth user ${p.email} already exists. Skipping creation.`);
-                    } else {
-                        console.error(`Failed to create auth user ${p.email}:`, authError);
-                    }
-                }
+        // This process creates the initial admin user in Firebase Auth.
+        // It should only run once.
+        try {
+            const adminUser = initialParticipants.find(p => p.email === 'alice@example.com');
+            if (adminUser && adminUser.password) {
+                 await createUserWithEmailAndPassword(auth, adminUser.email, adminUser.password);
+                 console.log(`Successfully created auth user for ${adminUser.email}`);
+            }
+        } catch(e) {
+            const authError = e as AuthError;
+            if(authError.code === 'auth/email-already-in-use') {
+                console.log(`Auth user for alice@example.com already exists. Skipping auth creation.`);
+            } else {
+                // Don't block seeding for other errors, but log them.
+                console.error(`Could not create initial admin user in Auth.`, authError);
             }
         }
         
         // Then, seed the rest of the data
         await runTransaction(db, async (transaction) => {
+          initialParticipants.forEach((p) => {
+            const { password, ...participantData } = p;
+            const docRef = doc(db, 'participants', p.id);
+            transaction.set(docRef, participantData);
+          });
           initialRoles.forEach((role) => {
             const docRef = doc(db, 'roles', role.id);
             transaction.set(docRef, role);
@@ -173,8 +175,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-
-      const currentUserDocRef = doc(db, 'participants', user.uid);
       
       const [
         projectsSnap,
@@ -182,25 +182,26 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         participantsSnap,
         rolesSnap,
         clientsSnap,
-        currentUserSnap,
       ] = await Promise.all([
         getDocs(projectsCol),
         getDocs(tasksCol),
         getDocs(participantsCol),
         getDocs(rolesCol),
         getDocs(clientsCol),
-        getDoc(currentUserDocRef),
       ]);
+      
+      const participants = participantsSnap.docs.map((d) => d.data() as Participant)
+      const currentUserData = participants.find(p => p.id === user.uid)
 
       dispatch({
         isLoaded: true,
         projects: projectsSnap.docs.map((d) => d.data() as Project),
         tasks: tasksSnap.docs.map((d) => d.data() as Task),
-        participants: participantsSnap.docs.map((d) => d.data() as Participant),
+        participants: participants,
         roles: rolesSnap.docs.map((d) => d.data() as Role),
         clients: clientsSnap.docs.map((d) => d.data() as Client),
-        currentUser: currentUserSnap.exists()
-          ? ({ ...currentUserSnap.data(), uid: user.uid } as Participant & { uid: string })
+        currentUser: currentUserData
+          ? ({ ...currentUserData, uid: user.uid } as Participant & { uid: string })
           : null,
         firebaseUser: user,
       });
@@ -232,22 +233,14 @@ export const useStore = () => {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      const userSnap = await getDoc(doc(db, 'participants', cred.user.uid));
-      if (userSnap.exists()) {
-        dispatch({
-            currentUser: { ...userSnap.data(), uid: cred.user.uid } as Participant & { uid: string },
-            firebaseUser: cred.user
-        });
-        return true;
-      }
-       return true; // Should not happen if auth passes, but good practice
+      await signInWithEmailAndPassword(auth, email, password);
+      // The onAuthStateChanged listener will handle fetching data and setting the user.
+      return true;
     } catch (error) {
-      // The error is now thrown, and the login page will handle displaying it.
       console.error("Login failed:", error);
-      throw error;
+      throw error; // Re-throw the error to be caught by the login page component
     }
-  }, [dispatch]);
+  }, []);
 
   const logout = useCallback(async () => {
     await signOut(auth);
@@ -333,16 +326,16 @@ export const useStore = () => {
     const { uid } = userCredential.user;
 
     // 2. Create participant document in Firestore, using the auth UID as the document ID
-    const newParticipantData: Omit<Participant, 'id'|'password'> = {
+    const newParticipantData: Participant = {
+      id: uid,
       name: participant.name,
       email: participant.email,
       roleId: participant.roleId,
       avatar: `/avatars/0${(store.participants.length % 5) + 1}.png`,
     };
-    await setDoc(doc(db, 'participants', uid), { ...newParticipantData, id: uid });
+    await setDoc(doc(db, 'participants', uid), newParticipantData);
     
-    const newParticipant = { ...newParticipantData, id: uid };
-    dispatch({ participants: [...store.participants, newParticipant]});
+    dispatch({ participants: [...store.participants, newParticipantData]});
   }, [store.participants, dispatch]);
 
   const updateParticipant = useCallback(async (updatedParticipant: Participant) => {

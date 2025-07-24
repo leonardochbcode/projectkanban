@@ -24,6 +24,7 @@ import {
 import type { Participant } from '@/lib/types';
 import { Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { FirebaseError } from 'firebase/app';
 
 interface ManageParticipantDialogProps {
   children?: ReactNode;
@@ -93,10 +94,17 @@ export function ManageParticipantDialog({
       onOpenChange(false);
     } catch (error) {
       console.error(error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Ocorreu um erro desconhecido.';
+      let errorMessage = 'Ocorreu um erro desconhecido.';
+      if (error instanceof FirebaseError) {
+        if(error.code === 'auth/email-already-in-use') {
+          errorMessage = 'Este email já está em uso por outro membro.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'A senha é muito fraca. Ela deve ter pelo menos 6 caracteres.';
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Falha ao salvar',
