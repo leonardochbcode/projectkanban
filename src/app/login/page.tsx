@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
-  const { login } = useStore();
+  const { login, isSeeding } = useStore();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('alice@example.com');
@@ -47,6 +47,8 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+  
+  const isFormDisabled = isLoading || isSeeding;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -54,7 +56,10 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
           <CardDescription>
-            Entre com seu email e senha para acessar o painel.
+            {isSeeding 
+              ? 'Configurando a base de dados inicial...' 
+              : 'Entre com seu email e senha para acessar o painel.'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,7 +73,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                disabled={isFormDisabled}
               />
             </div>
             <div className="space-y-2">
@@ -79,11 +84,11 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                disabled={isFormDisabled}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Entrando...' : 'Entrar'}
+            <Button type="submit" className="w-full" disabled={isFormDisabled}>
+              {isLoading ? 'Entrando...' : (isSeeding ? 'Aguarde...' : 'Entrar')}
             </Button>
           </form>
         </CardContent>

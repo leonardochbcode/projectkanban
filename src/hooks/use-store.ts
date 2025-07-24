@@ -29,8 +29,6 @@ import {
   updateDoc,
   deleteDoc,
   writeBatch,
-  query,
-  where,
   runTransaction,
 } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
@@ -56,6 +54,7 @@ const clientsCol = collection(db, 'clients');
 
 interface Store {
   isLoaded: boolean;
+  isSeeding: boolean;
   projects: Project[];
   tasks: Task[];
   participants: Participant[];
@@ -69,83 +68,11 @@ const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>
   null
 );
 
-const seedInitialData = async () => {
-  console.log('Checking if seeding is needed...');
-  const seedingMarkerRef = doc(db, 'internal', 'seedingComplete');
-
-  const seedingMarkerDoc = await getDoc(seedingMarkerRef);
-  if (seedingMarkerDoc.exists()) {
-    console.log('Data already seeded. Skipping.');
-    return;
-  }
-
-  console.log('Seeding initial data...');
-
-  // 1. Create Auth users first
-  for (const p of initialParticipants) {
-    try {
-      await createUserWithEmailAndPassword(auth, p.email, p.password!);
-      console.log(`Auth user ${p.email} created.`);
-    } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        console.log(`Auth user ${p.email} already exists.`);
-      } else {
-        console.error(`Error creating auth user for ${p.email}:`, error);
-        // If we can't create a user, we should probably stop.
-        throw error;
-      }
-    }
-  }
-
-  // 2. Now, create all Firestore documents in a single transaction
-  try {
-    await runTransaction(db, async (transaction) => {
-      // Seed Roles
-      initialRoles.forEach((role) => {
-        const docRef = doc(db, 'roles', role.id);
-        transaction.set(docRef, role);
-      });
-
-      // Seed Clients
-      initialClients.forEach((client) => {
-        const docRef = doc(db, 'clients', client.id);
-        transaction.set(docRef, client);
-      });
-
-      // Seed Projects
-      initialProjects.forEach((project) => {
-        const docRef = doc(db, 'projects', project.id);
-        transaction.set(docRef, project);
-      });
-
-      // Seed Tasks
-      initialTasks.forEach((task) => {
-        const docRef = doc(db, 'tasks', task.id);
-        transaction.set(docRef, task);
-      });
-      
-      // Seed Participants (without password)
-      initialParticipants.forEach((p) => {
-        const { password, ...participantData } = p;
-        // Use the pre-defined ID for linking
-        const docRef = doc(db, 'participants', p.id!); 
-        transaction.set(docRef, { ...participantData });
-      });
-
-
-      // Mark seeding as complete
-      transaction.set(seedingMarkerRef, { completed: true, seededAt: new Date() });
-    });
-
-    console.log('Initial data seeding process completed.');
-  } catch (e) {
-    console.error('Error during seeding transaction: ', e);
-  }
-};
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [store, setStore] = useState<Store>({
     isLoaded: false,
+    isSeeding: true, // Start in seeding state
     projects: [],
     tasks: [],
     participants: [],
@@ -159,13 +86,90 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     setStore((prevState) => ({ ...prevState, ...newState }));
   };
   
-  // Seed data once on initial load
   useEffect(() => {
+    const seedInitialData = async () => {
+      console.log('Checking if seeding is needed...');
+      dispatch({ isSeeding: true });
+      const seedingMarkerRef = doc(db, 'internal', 'seedingComplete');
+    
+      try {
+        const seedingMarkerDoc = await getDoc(seedingMarkerRef);
+        if (seedingMarkerDoc.exists()) {
+          console.log('Data already seeded. Skipping.');
+          return;
+        }
+    
+        console.log('Seeding initial data...');
+    
+        // 1. Create Auth users first
+        for (const p of initialParticipants) {
+          try {
+            // Use a temporary auth instance for user creation to avoid conflicts
+            const tempAuth = getAuth(app);
+            await createUserWithEmailAndPassword(tempAuth, p.email, p.password!);
+            console.log(`Auth user ${p.email} created.`);
+          } catch (error: any) {
+            if (error.code === 'auth/email-already-in-use') {
+              console.log(`Auth user ${p.email} already exists.`);
+            } else {
+              console.error(`Error creating auth user for ${p.email}:`, error);
+              throw error; // Propagate error to stop the process
+            }
+          }
+        }
+    
+        // 2. Now, create all Firestore documents in a single transaction
+        await runTransaction(db, async (transaction) => {
+          // Seed Roles
+          initialRoles.forEach((role) => {
+            const docRef = doc(db, 'roles', role.id);
+            transaction.set(docRef, role);
+          });
+    
+          // Seed Clients
+          initialClients.forEach((client) => {
+            const docRef = doc(db, 'clients', client.id);
+            transaction.set(docRef, client);
+          });
+    
+          // Seed Projects
+          initialProjects.forEach((project) => {
+            const docRef = doc(db, 'projects', project.id);
+            transaction.set(docRef, project);
+          });
+    
+          // Seed Tasks
+          initialTasks.forEach((task) => {
+            const docRef = doc(db, 'tasks', task.id);
+            transaction.set(docRef, task);
+          });
+          
+          // Seed Participants (without password)
+          initialParticipants.forEach((p) => {
+            const { password, ...participantData } = p;
+            const docRef = doc(db, 'participants', p.id!); 
+            transaction.set(docRef, { ...participantData });
+          });
+    
+          // Mark seeding as complete
+          transaction.set(seedingMarkerRef, { completed: true, seededAt: new Date() });
+        });
+    
+        console.log('Initial data seeding process completed.');
+      } catch (e) {
+        console.error('Error during seeding transaction: ', e);
+      } finally {
+        dispatch({ isSeeding: false });
+      }
+    };
+
     seedInitialData();
   }, []);
 
   useEffect(() => {
     const fetchAllData = async (user: FirebaseUser | null) => {
+      if (store.isSeeding) return; // Don't fetch data while seeding
+
       if (!user) {
         dispatch({
           isLoaded: true,
@@ -180,6 +184,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      // Fetch the participant document using the user's UID directly
+      const currentUserDocRef = doc(db, 'participants', user.uid);
+      
       const [
         projectsSnap,
         tasksSnap,
@@ -193,7 +200,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         getDocs(participantsCol),
         getDocs(rolesCol),
         getDocs(clientsCol),
-        getDoc(doc(db, 'participants', user.uid)),
+        getDoc(currentUserDocRef),
       ]);
 
       dispatch({
@@ -215,7 +222,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [store.isSeeding]); // Rerun this effect when seeding is complete
 
   const value = useMemo(() => ({ ...store, dispatch }), [store]);
 
@@ -236,8 +243,27 @@ export const useStore = () => {
 
   const login = useCallback(async (email: string, password: string) => {
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    // Find the corresponding participant document by email to get the ID
+    const userQuery = query(participantsCol, where("email", "==", email));
+    const userSnap = await getDocs(userQuery);
+    if (!userSnap.empty) {
+        const participantDoc = userSnap.docs[0];
+        const participantId = participantDoc.id;
+        
+        // This is a workaround. In a real scenario, the participant ID should match the auth UID.
+        // For this prototype, we'll fetch the full user data again after login.
+        const currentUserSnap = await getDoc(doc(db, 'participants', participantId));
+        const firebaseUser = auth.currentUser;
+        
+        if (currentUserSnap.exists() && firebaseUser) {
+             dispatch({
+                currentUser: { ...currentUserSnap.data(), uid: firebaseUser.uid } as Participant & { uid: string },
+                firebaseUser: firebaseUser
+            })
+        }
+    }
     return !!cred.user;
-  }, []);
+  }, [dispatch]);
 
   const logout = useCallback(async () => {
     await signOut(auth);
@@ -322,14 +348,14 @@ export const useStore = () => {
     const userCredential = await createUserWithEmailAndPassword(auth, participant.email, participant.password);
     const { uid } = userCredential.user;
 
-    // 2. Create participant document in Firestore
+    // 2. Create participant document in Firestore, using the auth UID as the document ID
     const newParticipantData: Omit<Participant, 'id'|'password'> = {
       name: participant.name,
       email: participant.email,
       roleId: participant.roleId,
       avatar: `/avatars/0${(store.participants.length % 5) + 1}.png`,
     };
-    await setDoc(doc(db, 'participants', uid), { ...newParticipantData, id: uid, uid });
+    await setDoc(doc(db, 'participants', uid), { ...newParticipantData, id: uid });
     
     const newParticipant = { ...newParticipantData, id: uid };
     dispatch({ participants: [...store.participants, newParticipant]});
@@ -337,8 +363,6 @@ export const useStore = () => {
 
   const updateParticipant = useCallback(async (updatedParticipant: Participant) => {
     const participantRef = doc(db, 'participants', updatedParticipant.id);
-    // You typically don't update the email this way, would require re-auth.
-    // For this app, we'll just update the non-sensitive fields.
     const { email, ...updateData } = updatedParticipant;
     await updateDoc(participantRef, updateData);
     dispatch({
@@ -347,8 +371,6 @@ export const useStore = () => {
   }, [store.participants, dispatch]);
 
   const deleteParticipant = useCallback(async (participantId: string) => {
-    // Note: Deleting from Firestore. Deleting from Firebase Auth is a separate, more complex operation
-    // usually handled by a backend function for security reasons. We'll skip that part here.
     await deleteDoc(doc(db, 'participants', participantId));
     dispatch({
       participants: store.participants.filter(p => p.id !== participantId)
@@ -362,7 +384,7 @@ export const useStore = () => {
   const addRole = useCallback(async (role: Omit<Role, 'id'>) => {
     const docRef = await addDoc(rolesCol, role);
     const newRole = { ...role, id: docRef.id };
-    await updateDoc(docRef, {id: docRef.id}); // write the id back
+    await updateDoc(docRef, {id: docRef.id});
     dispatch({ roles: [...store.roles, newRole]});
   }, [store.roles, dispatch]);
 
