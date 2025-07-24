@@ -26,7 +26,7 @@ export function UserNav() {
   }, []);
 
   const handleLogout = async () => {
-    await logout();
+    logout();
     router.push('/login');
   };
 

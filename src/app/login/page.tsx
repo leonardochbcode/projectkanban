@@ -7,49 +7,31 @@ import { Label } from '@/components/ui/label';
 import { useStore } from '@/hooks/use-store';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
-  const { login, hardcodedLogin, isSeeding } = useStore();
+  const { login } = useStore();
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin@admin.com');
-  const [password, setPassword] = useState('#@hfjaskdfskdjh$#2124455');
+  const [email, setEmail] = useState('alice@example.com');
+  const [password, setPassword] = useState('password123');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    try {
-      if ((email === 'Admin' || email === 'admin@admin.com') && password === '#@hfjaskdfskdjh$#2124455') {
-        await hardcodedLogin();
-        router.push('/');
-      } else {
-        await login(email, password);
-        // The auth state listener in useStore will handle the redirect
-        router.push('/');
-      }
-    } catch (error) {
-      console.error(error);
-      let description = 'Ocorreu um erro desconhecido. Tente novamente.';
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/configuration-not-found') {
-          description = 'O método de login por Email/Senha não está ativado no Firebase. Por favor, ative-o no console do Firebase.';
-        } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-          description = 'Credenciais inválidas. Verifique seu email e senha e tente novamente.';
-        }
-      }
+    const success = login(email, password);
+
+    if (success) {
+      router.push('/');
+    } else {
       toast({
         variant: 'destructive',
         title: 'Falha no login',
-        description: description,
+        description: 'Credenciais inválidas. Verifique seu email e senha.',
       });
-    } finally {
       setIsLoading(false);
     }
   };
-  
-  const isFormDisabled = isLoading || isSeeding;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -57,10 +39,7 @@ export default function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
           <CardDescription>
-            {isSeeding 
-              ? 'Configurando a base de dados inicial...' 
-              : 'Entre com seu email e senha para acessar o painel.'
-            }
+            Entre com seu email e senha para acessar o painel.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -74,7 +53,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isFormDisabled}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -85,11 +64,11 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isFormDisabled}
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isFormDisabled}>
-              {isLoading ? 'Entrando...' : (isSeeding ? 'Aguarde...' : 'Entrar')}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
         </CardContent>
