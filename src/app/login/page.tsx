@@ -13,7 +13,7 @@ export default function LoginPage() {
   const { login, hardcodedLogin, isSeeding } = useStore();
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('Admin');
+  const [email, setEmail] = useState('admin@admin.com');
   const [password, setPassword] = useState('#@hfjaskdfskdjh$#2124455');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      if (email === 'Admin' && password === '#@hfjaskdfskdjh$#2124455') {
+      if ((email === 'Admin' || email === 'admin@admin.com') && password === '#@hfjaskdfskdjh$#2124455') {
         await hardcodedLogin();
         router.push('/');
       } else {
