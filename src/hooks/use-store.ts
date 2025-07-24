@@ -31,8 +31,6 @@ import {
   deleteDoc,
   writeBatch,
   runTransaction,
-  query,
-  where,
 } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import type { Project, Task, Participant, Role, Client } from '@/lib/types';
@@ -71,7 +69,6 @@ const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>
   null
 );
 
-
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [store, setStore] = useState<Store>({
     isLoaded: false,
@@ -105,9 +102,29 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
         console.log('Seeding initial data...');
         
+        // First, create the initial auth users
+        for (const p of initialParticipants) {
+            if(p.email && p.password) {
+                try {
+                    // This will fail if the user already exists, which is fine.
+                    const userCredential = await createUserWithEmailAndPassword(auth, p.email, p.password);
+                    const { uid } = userCredential.user;
+                    const { password, ...participantData } = p;
+                    await setDoc(doc(db, 'participants', uid), { ...participantData, id: uid });
+                    console.log(`Created auth user and participant doc for ${p.email}`);
+                } catch(e) {
+                     const authError = e as AuthError;
+                    if(authError.code === 'auth/email-already-in-use') {
+                        console.log(`Auth user ${p.email} already exists. Skipping creation.`);
+                    } else {
+                        console.error(`Failed to create auth user ${p.email}:`, authError);
+                    }
+                }
+            }
+        }
+        
+        // Then, seed the rest of the data
         await runTransaction(db, async (transaction) => {
-          // This part only seeds the data, not the auth users.
-          // Auth users will be created on first login attempt.
           initialRoles.forEach((role) => {
             const docRef = doc(db, 'roles', role.id);
             transaction.set(docRef, role);
@@ -224,38 +241,12 @@ export const useStore = () => {
         });
         return true;
       }
-      return true;
+       return true; // Should not happen if auth passes, but good practice
     } catch (error) {
-      const authError = error as AuthError;
-      // If user is not found, it's likely the first run. Let's create the admin user.
-      if (authError.code === 'auth/user-not-found' && email === 'alice@example.com') {
-        console.log("Admin user not found, attempting to create...");
-        try {
-          const adminUser = initialParticipants.find(p => p.email === email);
-          if (adminUser && adminUser.password) {
-             const userCredential = await createUserWithEmailAndPassword(auth, email, adminUser.password);
-             const { uid } = userCredential.user;
-             const { password, ...participantData } = adminUser;
-             await setDoc(doc(db, 'participants', uid), { ...participantData, id: uid });
-             console.log("Admin user created. Trying to log in again...");
-             // Retry login after creation
-             const cred = await signInWithEmailAndPassword(auth, email, adminUser.password);
-             dispatch({
-                currentUser: { ...participantData, id: uid, uid: cred.user.uid } as Participant & { uid: string },
-                firebaseUser: cred.user
-             })
-             return true;
-          }
-        } catch(creationError) {
-          console.error("Failed to create admin user:", creationError);
-          // Re-throw original error if creation fails
-          throw authError;
-        }
-      }
-      // Re-throw other errors
+      // The error is now thrown, and the login page will handle displaying it.
+      console.error("Login failed:", error);
       throw error;
     }
-    return false;
   }, [dispatch]);
 
   const logout = useCallback(async () => {
