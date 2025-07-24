@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useStore } from '@/hooks/use-store';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
   const { login } = useStore();
@@ -19,17 +20,30 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const success = await login(email, password);
-    setIsLoading(false);
-
-    if (success) {
-      router.push('/');
-    } else {
+    try {
+      const success = await login(email, password);
+      if (success) {
+        router.push('/');
+      } else {
+        throw new Error('Falha no login');
+      }
+    } catch (error) {
+      console.error(error);
+      let description = 'Email ou senha incorretos. Por favor, tente novamente.';
+      if (error instanceof FirebaseError) {
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          description = 'Credenciais inválidas. Verifique seu email e senha.';
+        } else if (error.code === 'auth/configuration-not-found') {
+          description = 'O método de login por email/senha não está ativado no Firebase.';
+        }
+      }
       toast({
         variant: 'destructive',
         title: 'Falha no login',
-        description: 'Email ou senha incorretos. Por favor, tente novamente.',
+        description: description,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
