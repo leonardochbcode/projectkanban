@@ -77,7 +77,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     tasks: [],
     participants: [],
     roles: [],
-    clients: [],
+clients: [],
     currentUser: null,
     firebaseUser: null,
   });
@@ -102,25 +102,22 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
         console.log('Seeding initial data...');
         
-        // This process creates the initial admin user in Firebase Auth.
-        // It should only run once.
-        try {
-            const adminUser = initialParticipants.find(p => p.email === 'alice@example.com');
-            if (adminUser && adminUser.password) {
+        const adminUser = initialParticipants.find(p => p.email === 'alice@example.com');
+        if (adminUser && adminUser.password) {
+             try {
                  await createUserWithEmailAndPassword(auth, adminUser.email, adminUser.password);
                  console.log(`Successfully created auth user for ${adminUser.email}`);
-            }
-        } catch(e) {
-            const authError = e as AuthError;
-            if(authError.code === 'auth/email-already-in-use') {
-                console.log(`Auth user for alice@example.com already exists. Skipping auth creation.`);
-            } else {
-                // Don't block seeding for other errors, but log them.
-                console.error(`Could not create initial admin user in Auth.`, authError);
+            } catch(e) {
+                const authError = e as AuthError;
+                if(authError.code === 'auth/email-already-in-use') {
+                    console.log(`Auth user for ${adminUser.email} already exists. Skipping auth creation.`);
+                } else {
+                    console.error(`Could not create initial admin user in Auth.`, authError);
+                    // Don't re-throw, allow seeding to continue
+                }
             }
         }
         
-        // Then, seed the rest of the data
         await runTransaction(db, async (transaction) => {
           initialParticipants.forEach((p) => {
             const { password, ...participantData } = p;
@@ -143,7 +140,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             const docRef = doc(db, 'tasks', task.id);
             transaction.set(docRef, task);
           });
-          // Mark seeding as complete
           transaction.set(seedingMarkerRef, { completed: true, seededAt: new Date() });
         });
 
@@ -160,7 +156,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchAllData = async (user: FirebaseUser | null) => {
-      if (store.isSeeding) return; // Don't fetch data while seeding
+      if (store.isSeeding) return;
 
       if (!user) {
         dispatch({
@@ -241,10 +237,60 @@ export const useStore = () => {
       throw error; // Re-throw the error to be caught by the login page component
     }
   }, []);
+  
+  const hardcodedLogin = useCallback(async () => {
+      const [
+        projectsSnap,
+        tasksSnap,
+        participantsSnap,
+        rolesSnap,
+        clientsSnap,
+      ] = await Promise.all([
+        getDocs(projectsCol),
+        getDocs(tasksCol),
+        getDocs(participantsCol),
+        getDocs(rolesCol),
+        getDocs(clientsCol),
+      ]);
+
+      const participants = participantsSnap.docs.map(d => d.data() as Participant);
+      const adminParticipant = participants.find(p => p.email === 'alice@example.com') || participants[0];
+
+      if (!adminParticipant) {
+        throw new Error("Nenhum participante de fallback encontrado para o login codificado.");
+      }
+      
+      // Simulate login state
+       dispatch({
+        isLoaded: true,
+        projects: projectsSnap.docs.map((d) => d.data() as Project),
+        tasks: tasksSnap.docs.map((d) => d.data() as Task),
+        participants: participants,
+        roles: rolesSnap.docs.map((d) => d.data() as Role),
+        clients: clientsSnap.docs.map((d) => d.data() as Client),
+        // Fake a user object for the hardcoded admin
+        currentUser: { ...adminParticipant, uid: adminParticipant.id },
+        firebaseUser: null // No real Firebase user for this session
+      });
+  }, [dispatch]);
 
   const logout = useCallback(async () => {
-    await signOut(auth);
-  }, []);
+    // If there is a real firebase user, sign them out.
+    if (auth.currentUser) {
+        await signOut(auth);
+    }
+    // For both hardcoded and real users, this will clear the state.
+    dispatch({
+        isLoaded: true,
+        projects: [],
+        tasks: [],
+        participants: [],
+        roles: [],
+        clients: [],
+        currentUser: null,
+        firebaseUser: null,
+    });
+  }, [dispatch]);
 
   const getProjectTasks = useCallback(
     (projectId: string) => {
@@ -418,6 +464,7 @@ export const useStore = () => {
   return {
     ...store,
     login,
+    hardcodedLogin,
     logout,
     getProjectTasks,
     addProject,

@@ -10,20 +10,25 @@ import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
-  const { login, isSeeding } = useStore();
+  const { login, hardcodedLogin, isSeeding } = useStore();
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('alice@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('Admin');
+  const [password, setPassword] = useState('#@hfjaskdfskdjh$#2124455');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email, password);
-      // The auth state listener in useStore will handle the redirect
-      router.push('/');
+      if (email === 'Admin' && password === '#@hfjaskdfskdjh$#2124455') {
+        await hardcodedLogin();
+        router.push('/');
+      } else {
+        await login(email, password);
+        // The auth state listener in useStore will handle the redirect
+        router.push('/');
+      }
     } catch (error) {
       console.error(error);
       let description = 'Ocorreu um erro desconhecido. Tente novamente.';
