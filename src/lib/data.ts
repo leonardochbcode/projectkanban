@@ -7,7 +7,7 @@ export const initialRoles: Role[] = [
   { id: 'role-4', name: 'Analista', permissions: ['view_dashboard', 'view_reports'] },
 ];
 
-export const initialParticipants: (Omit<Participant, 'id'> & { id?: string, password?: string })[] = [
+export const initialParticipants: (Omit<Participant, 'id'> & { id: string, password?: string })[] = [
   { id: 'user-1', name: 'Alice Johnson', email: 'alice@example.com', roleId: 'role-1', avatar: '/avatars/01.png', password: 'password123' },
   { id: 'user-2', name: 'Bob Williams', email: 'bob@example.com', roleId: 'role-2', avatar: '/avatars/02.png', password: 'password123' },
   { id: 'user-3', name: 'Charlie Brown', email: 'charlie@example.com', roleId: 'role-3', avatar: '/avatars/03.png', password: 'password123' },

@@ -70,77 +70,78 @@ const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>
 );
 
 const seedInitialData = async () => {
-    console.log("Checking if seeding is needed...");
-    const seedingMarkerRef = doc(db, 'internal', 'seedingComplete');
-    
+  console.log('Checking if seeding is needed...');
+  const seedingMarkerRef = doc(db, 'internal', 'seedingComplete');
+
+  const seedingMarkerDoc = await getDoc(seedingMarkerRef);
+  if (seedingMarkerDoc.exists()) {
+    console.log('Data already seeded. Skipping.');
+    return;
+  }
+
+  console.log('Seeding initial data...');
+
+  // 1. Create Auth users first
+  for (const p of initialParticipants) {
     try {
-        await runTransaction(db, async (transaction) => {
-            const seedingMarkerDoc = await transaction.get(seedingMarkerRef);
-            if (seedingMarkerDoc.exists()) {
-                console.log("Data already seeded. Skipping.");
-                return;
-            }
-
-            console.log("Seeding initial data...");
-
-            // Seed Roles
-            initialRoles.forEach(role => {
-                const docRef = doc(db, 'roles', role.id);
-                transaction.set(docRef, role);
-            });
-            
-            // Seed Clients
-            initialClients.forEach(client => {
-                const docRef = doc(db, 'clients', client.id);
-                transaction.set(docRef, client);
-            });
-
-            // Seed Projects
-            initialProjects.forEach(project => {
-                const docRef = doc(db, 'projects', project.id);
-                transaction.set(docRef, project);
-            });
-
-            // Seed Tasks
-            initialTasks.forEach(task => {
-                const docRef = doc(db, 'tasks', task.id);
-                transaction.set(docRef, task);
-            });
-
-            // Mark seeding as complete
-            transaction.set(seedingMarkerRef, { completed: true, seededAt: new Date() });
-        });
-
-        // Create Auth users separately as it cannot be done in a transaction
-        // We'll check if they exist first
-        for (const p of initialParticipants) {
-          try {
-            // This is not a perfect check for existence without a backend, 
-            // but createUserWithEmailAndPassword will fail if the user exists, which is what we want.
-            const userCredential = await createUserWithEmailAndPassword(auth, p.email, p.password!);
-            const { uid } = userCredential.user;
-            const participantDocRef = doc(db, 'participants', uid);
-            const { password, ...participantData } = p; // Don't store password in Firestore
-            await setDoc(participantDocRef, { ...participantData, id: uid, uid });
-          } catch (error: any) {
-             if (error.code !== 'auth/email-already-in-use') {
-                 console.error(`Error creating auth user for ${p.email}:`, error);
-             } else {
-                 console.log(`Auth user ${p.email} already exists.`);
-                 // If user exists in Auth, ensure they exist in Firestore participants collection too.
-                 // This covers cases where Firestore seeding might have failed after Auth creation.
-                 // This part of the logic is complex and would ideally be handled by a backend function.
-                 // For this prototype, we'll assume if auth/email-already-in-use, the Firestore doc is also there.
-             }
-          }
-        }
-        
-        console.log("Initial data seeding process completed.");
-    } catch (e) {
-        console.error("Error during seeding transaction: ", e);
+      await createUserWithEmailAndPassword(auth, p.email, p.password!);
+      console.log(`Auth user ${p.email} created.`);
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        console.log(`Auth user ${p.email} already exists.`);
+      } else {
+        console.error(`Error creating auth user for ${p.email}:`, error);
+        // If we can't create a user, we should probably stop.
+        throw error;
+      }
     }
-};
+  }
 
+  // 2. Now, create all Firestore documents in a single transaction
+  try {
+    await runTransaction(db, async (transaction) => {
+      // Seed Roles
+      initialRoles.forEach((role) => {
+        const docRef = doc(db, 'roles', role.id);
+        transaction.set(docRef, role);
+      });
+
+      // Seed Clients
+      initialClients.forEach((client) => {
+        const docRef = doc(db, 'clients', client.id);
+        transaction.set(docRef, client);
+      });
+
+      // Seed Projects
+      initialProjects.forEach((project) => {
+        const docRef = doc(db, 'projects', project.id);
+        transaction.set(docRef, project);
+      });
+
+      // Seed Tasks
+      initialTasks.forEach((task) => {
+        const docRef = doc(db, 'tasks', task.id);
+        transaction.set(docRef, task);
+      });
+      
+      // Seed Participants (without password)
+      initialParticipants.forEach((p) => {
+        const { password, ...participantData } = p;
+        // Use the pre-defined ID for linking
+        const docRef = doc(db, 'participants', p.id!); 
+        transaction.set(docRef, { ...participantData });
+      });
+
+
+      // Mark seeding as complete
+      transaction.set(seedingMarkerRef, { completed: true, seededAt: new Date() });
+    });
+
+    console.log('Initial data seeding process completed.');
+  } catch (e) {
+    console.error('Error during seeding transaction: ', e);
+  }
+};
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [store, setStore] = useState<Store>({
