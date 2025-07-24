@@ -1,8 +1,13 @@
+export interface Role {
+  id: string;
+  name: string;
+}
+
 export interface Participant {
   id: string;
   name: string;
   email: string;
-  role: 'Gerente' | 'Analista' | 'Desenvolvedor' | 'Designer';
+  roleId: string;
   avatar: string;
 }
 

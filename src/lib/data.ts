@@ -1,10 +1,17 @@
-import type { Project, Task, Participant } from './types';
+import type { Project, Task, Participant, Role } from './types';
+
+export const initialRoles: Role[] = [
+  { id: 'role-1', name: 'Gerente' },
+  { id: 'role-2', name: 'Desenvolvedor' },
+  { id: 'role-3', name: 'Designer' },
+  { id: 'role-4', name: 'Analista' },
+];
 
 export const initialParticipants: Participant[] = [
-  { id: 'user-1', name: 'Alice Johnson', email: 'alice@example.com', role: 'Gerente', avatar: '/avatars/01.png' },
-  { id: 'user-2', name: 'Bob Williams', email: 'bob@example.com', role: 'Desenvolvedor', avatar: '/avatars/02.png' },
-  { id: 'user-3', name: 'Charlie Brown', email: 'charlie@example.com', role: 'Designer', avatar: '/avatars/03.png' },
-  { id: 'user-4', name: 'Diana Prince', email: 'diana@example.com', role: 'Analista', avatar: '/avatars/04.png' },
+  { id: 'user-1', name: 'Alice Johnson', email: 'alice@example.com', roleId: 'role-1', avatar: '/avatars/01.png' },
+  { id: 'user-2', name: 'Bob Williams', email: 'bob@example.com', roleId: 'role-2', avatar: '/avatars/02.png' },
+  { id: 'user-3', name: 'Charlie Brown', email: 'charlie@example.com', roleId: 'role-3', avatar: '/avatars/03.png' },
+  { id: 'user-4', name: 'Diana Prince', email: 'diana@example.com', roleId: 'role-4', avatar: '/avatars/04.png' },
 ];
 
 export const initialProjects: Project[] = [

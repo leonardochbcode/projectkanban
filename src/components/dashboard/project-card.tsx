@@ -34,7 +34,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
   const projectParticipants = project.participantIds
     .map((id) => participants.find((p) => p.id === id))
-    .filter(Boolean);
+    .filter(Boolean) as (typeof participants[0])[];
 
   const statusColors: { [key: string]: string } = {
     'Em Andamento': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',

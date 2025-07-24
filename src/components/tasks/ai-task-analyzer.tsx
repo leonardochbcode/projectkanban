@@ -20,6 +20,10 @@ export function AiTaskAnalyzer({ task }: { task: Task }) {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { participants, updateTask } = useStore();
+  
+  if(!participants.length) {
+    return null;
+  }
   const currentUser = participants[0]; // Assume first participant is the current user
 
   const handleSubmit = async (e: React.FormEvent) => {

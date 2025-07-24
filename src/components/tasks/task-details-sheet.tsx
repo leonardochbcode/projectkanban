@@ -16,10 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import type { Task } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
-import { CalendarIcon, User, Tag, Flag, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon, User, Flag, ChevronsUpDown } from 'lucide-react';
 import { AiTaskAnalyzer } from './ai-task-analyzer';
 import { Separator } from '../ui/separator';
 

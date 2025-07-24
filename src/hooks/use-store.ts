@@ -1,23 +1,29 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Project, Task, Participant } from '@/lib/types';
-import { initialProjects, initialTasks, initialParticipants } from '@/lib/data';
+import type { Project, Task, Participant, Role } from '@/lib/types';
+import { initialProjects, initialTasks, initialParticipants, initialRoles } from '@/lib/data';
 
 type Store = {
   projects: Project[];
   tasks: Task[];
   participants: Participant[];
+  roles: Role[];
 };
 
 const getInitialState = (): Store => {
   if (typeof window === 'undefined') {
-    return { projects: [], tasks: [], participants: [] };
+    return { projects: [], tasks: [], participants: [], roles: [] };
   }
   try {
     const item = window.localStorage.getItem('visiotask-store');
     if (item) {
-      return JSON.parse(item);
+      const storedData = JSON.parse(item);
+      // Ensure roles are present, if not, use initialRoles
+      if (!storedData.roles) {
+        storedData.roles = initialRoles;
+      }
+      return storedData;
     }
   } catch (error) {
     console.warn('Error reading from localStorage', error);
@@ -26,6 +32,7 @@ const getInitialState = (): Store => {
     projects: initialProjects,
     tasks: initialTasks,
     participants: initialParticipants,
+    roles: initialRoles,
   };
 };
 
@@ -59,7 +66,7 @@ const updateStore = (newState: Partial<Store>) => {
 
 
 export const useStore = () => {
-  const { projects, tasks, participants } = useStoreState();
+  const { projects, tasks, participants, roles } = useStoreState();
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -126,12 +133,59 @@ export const useStore = () => {
   const getParticipant = useCallback((participantId: string) => {
     return participants.find(p => p.id === participantId);
   }, [participants]);
+  
+  const addParticipant = useCallback((participant: Omit<Participant, 'id' | 'avatar'>) => {
+    const newParticipant: Participant = {
+      ...participant,
+      id: `user-${Date.now()}`,
+      avatar: `/avatars/0${(participants.length % 5) + 1}.png`
+    };
+    updateStore({ participants: [...participants, newParticipant]});
+  }, [participants]);
+
+  const updateParticipant = useCallback((updatedParticipant: Participant) => {
+    updateStore({
+      participants: participants.map(p => p.id === updatedParticipant.id ? updatedParticipant : p)
+    });
+  }, [participants]);
+  
+  const deleteParticipant = useCallback((participantId: string) => {
+    updateStore({
+      participants: participants.filter(p => p.id !== participantId)
+    });
+  }, [participants]);
+  
+  const getRole = useCallback((roleId: string) => {
+    return roles.find(r => r.id === roleId);
+  }, [roles]);
+
+  const addRole = useCallback((role: Omit<Role, 'id'>) => {
+    const newRole: Role = {
+      ...role,
+      id: `role-${Date.now()}`
+    };
+    updateStore({ roles: [...roles, newRole] });
+  }, [roles]);
+  
+  const updateRole = useCallback((updatedRole: Role) => {
+    updateStore({
+      roles: roles.map(r => r.id === updatedRole.id ? updatedRole : r)
+    });
+  }, [roles]);
+
+  const deleteRole = useCallback((roleId: string) => {
+    updateStore({
+      roles: roles.filter(r => r.id !== roleId)
+    });
+  }, [roles]);
+
 
   return {
     isLoaded,
     projects,
     tasks,
     participants,
+    roles,
     getProjectTasks,
     addProject,
     updateProject,
@@ -140,5 +194,12 @@ export const useStore = () => {
     updateTask,
     deleteTask,
     getParticipant,
+    addParticipant,
+    updateParticipant,
+    deleteParticipant,
+    getRole,
+    addRole,
+    updateRole,
+    deleteRole,
   };
 };
