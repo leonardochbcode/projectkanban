@@ -8,7 +8,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'VisioTask',
+  title: 'CHBProject',
   description: 'Sistema de gerenciamento de projetos moderno e responsivo.',
 };
 

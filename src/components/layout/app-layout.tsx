@@ -56,7 +56,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-primary">
                 <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
               </svg>
-              <span className="">VisioTask</span>
+              <span className="">CHBProject</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -82,7 +82,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-primary">
                             <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
                         </svg>
-                        <span className="">VisioTask</span>
+                        <span className="">CHBProject</span>
                     </Link>
                 </div>
               <NavLinks />

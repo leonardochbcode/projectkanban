@@ -17,7 +17,7 @@ const getInitialState = (): Store => {
     return { projects: [], tasks: [], participants: [], roles: [], clients: [] };
   }
   try {
-    const item = window.localStorage.getItem('visiotask-store');
+    const item = window.localStorage.getItem('chbproject-store');
     if (item) {
       const storedData = JSON.parse(item);
       if (!storedData.roles) {
@@ -61,7 +61,7 @@ const useStoreState = () => {
 const updateStore = (newState: Partial<Store>) => {
   storeState = { ...storeState, ...newState };
   try {
-    window.localStorage.setItem('visiotask-store', JSON.stringify(storeState));
+    window.localStorage.setItem('chbproject-store', JSON.stringify(storeState));
   } catch (error) {
     console.warn('Error writing to localStorage', error);
   }
