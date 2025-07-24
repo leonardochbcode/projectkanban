@@ -24,6 +24,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/projects', label: 'Projetos', icon: FolderKanban },
     { href: '/team', label: 'Equipe', icon: Users },
     { href: '/reports', label: 'Relatórios', icon: LineChart },
+    { href: '/settings', label: 'Configurações', icon: Settings },
   ];
 
   const NavLinks = () => (
@@ -60,12 +61,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLinks />
           </div>
           <div className="mt-auto p-4">
-             <div className="grid gap-2">
-                <Link href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
-                    <Settings className="h-4 w-4" />
-                    Configurações
-                </Link>
-             </div>
+             {/* O link de configurações foi movido para a navegação principal */}
           </div>
         </div>
       </div>
