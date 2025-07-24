@@ -19,8 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Task } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 import { CalendarIcon, User, Flag, ChevronsUpDown } from 'lucide-react';
-import { AiTaskAnalyzer } from './ai-task-analyzer';
 import { Separator } from '../ui/separator';
+import { TaskCommentForm } from './task-comment-form';
 
 export function TaskDetailsSheet({ task, children }: { task: Task; children: ReactNode }) {
   const { participants, updateTask } = useStore();
@@ -102,15 +102,11 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
               <p>{new Date(task.dueDate).toLocaleDateString()}</p>
             </div>
           </div>
-          
-          <Separator />
-          
-          <AiTaskAnalyzer task={task} />
-          
+                    
           <Separator />
           
           <div>
-            <h3 className="font-semibold mb-2 font-headline">Comentários</h3>
+            <h3 className="font-semibold mb-4 font-headline">Comentários</h3>
             <div className="space-y-4">
               {task.comments.map((comment) => {
                 const author = participants.find(p => p.id === comment.authorId);
@@ -134,6 +130,8 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                 <p className="text-sm text-muted-foreground">Nenhum comentário ainda.</p>
               )}
             </div>
+            <Separator className="my-4" />
+            <TaskCommentForm task={task} />
           </div>
         </div>
       </SheetContent>
