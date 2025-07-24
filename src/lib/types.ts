@@ -10,6 +10,9 @@ export interface Client {
   phone?: string;
   company?: string;
   avatar?: string;
+  cnpj?: string;
+  address?: string;
+  suportewebCode?: string;
 }
 
 export interface Participant {

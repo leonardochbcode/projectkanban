@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStore } from '@/hooks/use-store';
 import type { Client } from '@/lib/types';
+import { Textarea } from '../ui/textarea';
 
 interface ManageClientDialogProps {
   children?: ReactNode;
@@ -29,6 +30,10 @@ export function ManageClientDialog({ children, client, open, onOpenChange }: Man
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
+  const [cnpj, setCnpj] = useState('');
+  const [address, setAddress] = useState('');
+  const [suportewebCode, setSuportewebCode] = useState('');
+
 
   useEffect(() => {
     if (client) {
@@ -36,11 +41,17 @@ export function ManageClientDialog({ children, client, open, onOpenChange }: Man
       setEmail(client.email);
       setPhone(client.phone || '');
       setCompany(client.company || '');
+      setCnpj(client.cnpj || '');
+      setAddress(client.address || '');
+      setSuportewebCode(client.suportewebCode || '');
     } else {
       setName('');
       setEmail('');
       setPhone('');
       setCompany('');
+      setCnpj('');
+      setAddress('');
+      setSuportewebCode('');
     }
   }, [client, open]);
 
@@ -51,16 +62,23 @@ export function ManageClientDialog({ children, client, open, onOpenChange }: Man
       return;
     }
 
-    if (client) {
-      updateClient({
-        ...client,
+    const clientData = {
         name,
         email,
         phone,
         company,
+        cnpj,
+        address,
+        suportewebCode,
+    };
+
+    if (client) {
+      updateClient({
+        ...client,
+        ...clientData,
       });
     } else {
-      addClient({ name, email, phone, company });
+      addClient(clientData);
     }
     
     onOpenChange(false);
@@ -71,7 +89,7 @@ export function ManageClientDialog({ children, client, open, onOpenChange }: Man
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {Trigger}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-headline">
@@ -128,6 +146,39 @@ export function ManageClientDialog({ children, client, open, onOpenChange }: Man
                 id="company"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="cnpj" className="text-right">
+                CNPJ
+              </Label>
+              <Input
+                id="cnpj"
+                value={cnpj}
+                onChange={(e) => setCnpj(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="address" className="text-right">
+                Endereço
+              </Label>
+              <Textarea
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="suportewebCode" className="text-right">
+                Cód. Suporte
+              </Label>
+              <Input
+                id="suportewebCode"
+                value={suportewebCode}
+                onChange={(e) => setSuportewebCode(e.target.value)}
                 className="col-span-3"
               />
             </div>

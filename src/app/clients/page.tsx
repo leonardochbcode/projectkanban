@@ -25,6 +25,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ManageClientDialog } from '@/components/clients/manage-client-dialog';
+import { Badge } from '@/components/ui/badge';
 
 export default function ClientsPage() {
   const { clients, deleteClient } = useStore();
@@ -76,6 +77,8 @@ export default function ClientsPage() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Empresa</TableHead>
+                <TableHead>CNPJ</TableHead>
+                <TableHead>Cód. Suporte</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -94,6 +97,14 @@ export default function ClientsPage() {
                     </div>
                   </TableCell>
                   <TableCell>{client.company || 'N/A'}</TableCell>
+                  <TableCell>{client.cnpj || 'N/A'}</TableCell>
+                  <TableCell>
+                    {client.suportewebCode ? (
+                        <Badge variant="outline">{client.suportewebCode}</Badge>
+                    ) : (
+                        'N/A'
+                    )}
+                  </TableCell>
                   <TableCell>{client.email}</TableCell>
                   <TableCell>{client.phone || 'N/A'}</TableCell>
                   <TableCell className="text-right">

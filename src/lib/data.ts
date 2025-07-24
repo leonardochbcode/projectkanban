@@ -15,9 +15,9 @@ export const initialParticipants: Participant[] = [
 ];
 
 export const initialClients: Client[] = [
-    { id: 'client-1', name: 'Acme Corporation', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png' },
-    { id: 'client-2', name: 'Stark Industries', email: 'tony@starkindustries.com', company: 'Stark Industries', avatar: '/avatars/c02.png' },
-    { id: 'client-3', name: 'Wayne Enterprises', email: 'bruce@wayne.com', company: 'Wayne Enterprises', avatar: '/avatars/c03.png' },
+    { id: 'client-1', name: 'Acme Corporation', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-00', address: '123 Main St, Anytown, USA', suportewebCode: 'ACME001' },
+    { id: 'client-2', name: 'Stark Industries', email: 'tony@starkindustries.com', company: 'Stark Industries', avatar: '/avatars/c02.png', cnpj: '11.111.111/0001-11', address: '10880 Malibu Point, 90265', suportewebCode: 'STARK002' },
+    { id: 'client-3', name: 'Wayne Enterprises', email: 'bruce@wayne.com', company: 'Wayne Enterprises', avatar: '/avatars/c03.png', cnpj: '22.222.222/0001-22', address: '1007 Mountain Drive, Gotham', suportewebCode: 'WAYNE003' },
 ];
 
 
