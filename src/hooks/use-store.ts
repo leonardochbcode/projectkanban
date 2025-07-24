@@ -1,280 +1,398 @@
 'use client';
 
-import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useMemo } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  createContext,
+  useContext,
+  ReactNode,
+  useMemo,
+} from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Permission } from '@/lib/types';
-import { initialProjects, initialTasks, initialParticipants, initialRoles, initialClients } from '@/lib/data';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  createUserWithEmailAndPassword,
+  type User as FirebaseUser,
+} from 'firebase/auth';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+  query,
+  where,
+} from 'firebase/firestore';
+import { app } from '@/lib/firebase';
+import type { Project, Task, Participant, Role, Client } from '@/lib/types';
+import {
+  initialProjects,
+  initialTasks,
+  initialParticipants,
+  initialRoles,
+  initialClients,
+} from '@/lib/data';
 
-type Store = {
+// Initialize Firebase services
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Collection references
+const projectsCol = collection(db, 'projects');
+const tasksCol = collection(db, 'tasks');
+const participantsCol = collection(db, 'participants');
+const rolesCol = collection(db, 'roles');
+const clientsCol = collection(db, 'clients');
+
+interface Store {
+  isLoaded: boolean;
   projects: Project[];
   tasks: Task[];
   participants: Participant[];
   roles: Role[];
   clients: Client[];
-  currentUserId: string | null;
-};
+  currentUser: (Participant & { uid: string }) | null;
+  firebaseUser: FirebaseUser | null;
+}
 
-const STORE_KEY = 'chbproject-store';
+const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(
+  null
+);
 
-const getInitialState = (): Store => {
-  if (typeof window === 'undefined') {
-    return { projects: [], tasks: [], participants: [], roles: [], clients: [], currentUserId: null };
-  }
-  try {
-    const item = window.localStorage.getItem(STORE_KEY);
-    if (item) {
-      const storedData = JSON.parse(item);
-      // Basic schema validation and migration
-      if (!storedData.roles) storedData.roles = initialRoles;
-      if (!storedData.clients) storedData.clients = initialClients;
-      if (!storedData.participants) storedData.participants = initialParticipants;
-      if (storedData.participants.some((p: Participant) => !p.password)) {
-          storedData.participants = initialParticipants; // Reset if old data structure
-      }
-      if (storedData.roles.some((r: Role) => !r.permissions)) {
-          storedData.roles = initialRoles; // Reset if old data structure
-      }
-      if (typeof storedData.currentUserId === 'undefined') storedData.currentUserId = null;
-      
-      return storedData;
+const seedInitialData = async () => {
+    console.log("Checking if seeding is needed...");
+    const rolesSnapshot = await getDocs(rolesCol);
+    if (!rolesSnapshot.empty) {
+        console.log("Data already seeded. Skipping.");
+        return; // Data already seeded
     }
-  } catch (error) {
-    console.warn('Error reading from localStorage', error);
-  }
-  return {
-    projects: initialProjects,
-    tasks: initialTasks,
-    participants: initialParticipants,
-    roles: initialRoles,
-    clients: initialClients,
-    currentUserId: null,
-  };
+
+    console.log("Seeding initial data...");
+    const batch = writeBatch(db);
+
+    // Seed Roles
+    initialRoles.forEach(role => {
+        const docRef = doc(db, 'roles', role.id);
+        batch.set(docRef, role);
+    });
+    
+    // Seed Clients
+    initialClients.forEach(client => {
+        const docRef = doc(db, 'clients', client.id);
+        batch.set(docRef, client);
+    });
+
+    // Seed Participants and create Auth users
+    for (const p of initialParticipants) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, p.email, p.password!);
+        const { uid } = userCredential.user;
+        const participantDocRef = doc(db, 'participants', uid);
+        const { password, ...participantData } = p; // Don't store password in Firestore
+        batch.set(participantDocRef, { ...participantData, id: uid, uid });
+      } catch (error: any) {
+         if (error.code !== 'auth/email-already-in-use') {
+             console.error(`Error creating auth user for ${p.email}:`, error);
+         } else {
+             console.log(`User ${p.email} already exists in Auth.`);
+         }
+      }
+    }
+    
+    // Seed Projects
+    initialProjects.forEach(project => {
+        const docRef = doc(db, 'projects', project.id);
+        batch.set(docRef, project);
+    });
+
+    // Seed Tasks
+    initialTasks.forEach(task => {
+        const docRef = doc(db, 'tasks', task.id);
+        batch.set(docRef, task);
+    });
+
+    await batch.commit();
+    console.log("Initial data seeded successfully.");
 };
 
-// Singleton state
-let storeState: Store = getInitialState();
-const listeners = new Set<() => void>();
-
-const updateStore = (newState: Partial<Store>, overwrite = false) => {
-  storeState = overwrite ? (newState as Store) : { ...storeState, ...newState };
-  try {
-    window.localStorage.setItem(STORE_KEY, JSON.stringify(storeState));
-  } catch (error) {
-    console.warn('Error writing to localStorage', error);
-  }
-  listeners.forEach(l => l());
-};
-
-
-const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(null);
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
-    const [state, setState] = useState(storeState);
+  const [store, setStore] = useState<Store>({
+    isLoaded: false,
+    projects: [],
+    tasks: [],
+    participants: [],
+    roles: [],
+    clients: [],
+    currentUser: null,
+    firebaseUser: null,
+  });
 
-    useEffect(() => {
-        const listener = () => setState(storeState);
-        listeners.add(listener);
-        // Sync with a potentially updated store on mount (e.g. from another tab)
-        listener(); 
-        
-        const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === STORE_KEY) {
-                storeState = getInitialState();
-                listener();
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-
-        return () => {
-            listeners.delete(listener);
-            window.removeEventListener('storage', handleStorageChange);
-        }
-    }, []);
-
-    const dispatch = (newState: Partial<Store>) => {
-        updateStore(newState);
-    }
-
-    return React.createElement(StoreContext.Provider, { value: {...state, dispatch} }, children);
-}
-
-const useStoreRaw = () => {
-    const context = useContext(StoreContext);
-    if (!context) {
-        throw new Error('useStore must be used within a StoreProvider');
-    }
-    return context;
-}
-
-export const useStore = () => {
-  const { projects, tasks, participants, roles, clients, currentUserId, dispatch } = useStoreRaw();
-  const [isLoaded, setIsLoaded] = useState(false);
+  const dispatch = (newState: Partial<Store>) => {
+    setStore((prevState) => ({ ...prevState, ...newState }));
+  };
 
   useEffect(() => {
-    // Hydration check
-    setIsLoaded(true);
+    const fetchAllData = async (user: FirebaseUser | null) => {
+      if (!user) {
+        dispatch({
+          isLoaded: true,
+          projects: [],
+          tasks: [],
+          participants: [],
+          roles: [],
+          clients: [],
+          currentUser: null,
+          firebaseUser: null,
+        });
+        return;
+      }
+
+      await seedInitialData();
+
+      const [
+        projectsSnap,
+        tasksSnap,
+        participantsSnap,
+        rolesSnap,
+        clientsSnap,
+        currentUserSnap,
+      ] = await Promise.all([
+        getDocs(projectsCol),
+        getDocs(tasksCol),
+        getDocs(participantsCol),
+        getDocs(rolesCol),
+        getDocs(clientsCol),
+        getDoc(doc(db, 'participants', user.uid)),
+      ]);
+
+      dispatch({
+        isLoaded: true,
+        projects: projectsSnap.docs.map((d) => d.data() as Project),
+        tasks: tasksSnap.docs.map((d) => d.data() as Task),
+        participants: participantsSnap.docs.map((d) => d.data() as Participant),
+        roles: rolesSnap.docs.map((d) => d.data() as Role),
+        clients: clientsSnap.docs.map((d) => d.data() as Client),
+        currentUser: currentUserSnap.exists()
+          ? ({ ...currentUserSnap.data(), uid: user.uid } as Participant & { uid: string })
+          : null,
+        firebaseUser: user,
+      });
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      fetchAllData(user);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const currentUser = useMemo(() => {
-    if (!currentUserId) return null;
-    return participants.find(p => p.id === currentUserId) || null;
-  }, [currentUserId, participants]);
+  return React.createElement(StoreContext.Provider, { value: { ...store, dispatch } }, children);
+};
 
+const useStoreRaw = () => {
+  const context = useContext(StoreContext);
+  if (!context) {
+    throw new Error('useStore must be used within a StoreProvider');
+  }
+  return context;
+};
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const user = participants.find(p => p.email.toLowerCase() === email.toLowerCase());
-    // NOTE: In a real app, this would be a fetch call to a backend,
-    // and password checking would be done with hashing.
-    if (user && user.password === password) {
-      dispatch({ currentUserId: user.id });
-      return true;
-    }
-    return false;
-  }, [participants, dispatch]);
+export const useStore = () => {
+  const store = useStoreRaw();
+  const { dispatch } = store;
 
-  const logout = useCallback(() => {
-    dispatch({ currentUserId: null });
-  }, [dispatch]);
+  const login = useCallback(async (email: string, password: string) => {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    return !!cred.user;
+  }, []);
 
-  const getProjectTasks = useCallback((projectId: string) => {
-    return tasks.filter(task => task.projectId === projectId);
-  }, [tasks]);
+  const logout = useCallback(async () => {
+    await signOut(auth);
+  }, []);
 
-  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds'>) => {
-    const newProject: Project = {
-      ...project,
-      id: `proj-${Date.now()}`,
-      participantIds: [],
+  const getProjectTasks = useCallback(
+    (projectId: string) => {
+      return store.tasks.filter((task) => task.projectId === projectId);
+    },
+    [store.tasks]
+  );
+  
+  const addProject = useCallback(async (project: Omit<Project, 'id' | 'participantIds'>) => {
+    const newProjectData: Omit<Project, 'id'> = {
+        ...project,
+        participantIds: [],
     };
-    dispatch({ projects: [...projects, newProject] });
+    const docRef = await addDoc(projectsCol, newProjectData);
+    const newProject = { ...newProjectData, id: docRef.id };
+    dispatch({ projects: [...store.projects, newProject]});
     return newProject;
-  }, [projects, dispatch]);
+  }, [store.projects, dispatch]);
 
-  const updateProject = useCallback((updatedProject: Project) => {
+  const updateProject = useCallback(async (updatedProject: Project) => {
+    const projectRef = doc(db, 'projects', updatedProject.id);
+    await updateDoc(projectRef, updatedProject);
     dispatch({
-      projects: projects.map(p => (p.id === updatedProject.id ? updatedProject : p)),
+      projects: store.projects.map(p => p.id === updatedProject.id ? updatedProject : p)
     });
-  }, [projects, dispatch]);
-  
-  const deleteProject = useCallback((projectId: string) => {
+  }, [store.projects, dispatch]);
+
+  const deleteProject = useCallback(async (projectId: string) => {
+    await deleteDoc(doc(db, 'projects', projectId));
+    // Also delete associated tasks
+    const tasksToDelete = store.tasks.filter(t => t.projectId === projectId);
+    const batch = writeBatch(db);
+    tasksToDelete.forEach(t => batch.delete(doc(db, 'tasks', t.id)));
+    await batch.commit();
+
     dispatch({
-      projects: projects.filter(p => p.id !== projectId),
-      tasks: tasks.filter(t => t.projectId !== projectId)
+      projects: store.projects.filter(p => p.id !== projectId),
+      tasks: store.tasks.filter(t => t.projectId !== projectId)
     });
-  }, [projects, tasks, dispatch]);
+  }, [store.projects, store.tasks, dispatch]);
 
-
-  const addTask = useCallback((task: Omit<Task, 'id' | 'comments'>) => {
-    const newTask: Task = {
-      ...task,
-      id: `task-${Date.now()}`,
-      comments: [],
+  const addTask = useCallback(async (task: Omit<Task, 'id' | 'comments'>) => {
+    const newTaskData: Omit<Task, 'id'> = {
+        ...task,
+        comments: [],
     };
-    dispatch({ tasks: [...tasks, newTask] });
+    const docRef = await addDoc(tasksCol, newTaskData);
+    const newTask = { ...newTaskData, id: docRef.id };
+    dispatch({ tasks: [...store.tasks, newTask]});
     return newTask;
-  }, [tasks, dispatch]);
+  }, [store.tasks, dispatch]);
 
-  const updateTask = useCallback((updatedTask: Task) => {
+  const updateTask = useCallback(async (updatedTask: Task) => {
+    const taskRef = doc(db, 'tasks', updatedTask.id);
+    await updateDoc(taskRef, updatedTask);
     dispatch({
-      tasks: tasks.map(t => (t.id === updatedTask.id ? updatedTask : t)),
+      tasks: store.tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
     });
-  }, [tasks, dispatch]);
-
-  const deleteTask = useCallback((taskId: string) => {
+  }, [store.tasks, dispatch]);
+  
+  const deleteTask = useCallback(async (taskId: string) => {
+    await deleteDoc(doc(db, 'tasks', taskId));
     dispatch({
-      tasks: tasks.filter(t => t.id !== taskId),
+        tasks: store.tasks.filter(t => t.id !== taskId)
     });
-  }, [tasks, dispatch]);
-
+  }, [store.tasks, dispatch]);
+  
   const getParticipant = useCallback((participantId: string) => {
-    return participants.find(p => p.id === participantId);
-  }, [participants]);
-  
-  const addParticipant = useCallback((participant: Omit<Participant, 'id' | 'avatar'>) => {
-    const newParticipant: Participant = {
-      ...participant,
-      id: `user-${Date.now()}`,
-      avatar: `/avatars/0${(participants.length % 5) + 1}.png`
-    };
-    dispatch({ participants: [...participants, newParticipant]});
-  }, [participants, dispatch]);
+      return store.participants.find(p => p.id === participantId);
+  }, [store.participants]);
 
-  const updateParticipant = useCallback((updatedParticipant: Participant) => {
+  const addParticipant = useCallback(async (participant: Omit<Participant, 'id' | 'avatar'> & { password?: string }) => {
+    if (!participant.password) throw new Error("Senha é obrigatória para novo usuário.");
+    
+    // 1. Create Firebase Auth user
+    const userCredential = await createUserWithEmailAndPassword(auth, participant.email, participant.password);
+    const { uid } = userCredential.user;
+
+    // 2. Create participant document in Firestore
+    const newParticipantData: Omit<Participant, 'id'|'password'> = {
+      name: participant.name,
+      email: participant.email,
+      roleId: participant.roleId,
+      avatar: `/avatars/0${(store.participants.length % 5) + 1}.png`,
+    };
+    await setDoc(doc(db, 'participants', uid), { ...newParticipantData, id: uid, uid });
+    
+    const newParticipant = { ...newParticipantData, id: uid };
+    dispatch({ participants: [...store.participants, newParticipant]});
+  }, [store.participants, dispatch]);
+
+  const updateParticipant = useCallback(async (updatedParticipant: Participant) => {
+    const participantRef = doc(db, 'participants', updatedParticipant.id);
+    // You typically don't update the email this way, would require re-auth.
+    // For this app, we'll just update the non-sensitive fields.
+    const { email, ...updateData } = updatedParticipant;
+    await updateDoc(participantRef, updateData);
     dispatch({
-      participants: participants.map(p => p.id === updatedParticipant.id ? updatedParticipant : p)
+      participants: store.participants.map(p => p.id === updatedParticipant.id ? updatedParticipant : p)
     });
-  }, [participants, dispatch]);
-  
-  const deleteParticipant = useCallback((participantId: string) => {
+  }, [store.participants, dispatch]);
+
+  const deleteParticipant = useCallback(async (participantId: string) => {
+    // Note: Deleting from Firestore. Deleting from Firebase Auth is a separate, more complex operation
+    // usually handled by a backend function for security reasons. We'll skip that part here.
+    await deleteDoc(doc(db, 'participants', participantId));
     dispatch({
-      participants: participants.filter(p => p.id !== participantId)
+      participants: store.participants.filter(p => p.id !== participantId)
     });
-  }, [participants, dispatch]);
-  
+  }, [store.participants, dispatch]);
+
   const getRole = useCallback((roleId: string) => {
-    return roles.find(r => r.id === roleId);
-  }, [roles]);
+    return store.roles.find(r => r.id === roleId);
+  }, [store.roles]);
 
-  const addRole = useCallback((role: Omit<Role, 'id'>) => {
-    const newRole: Role = {
-      ...role,
-      id: `role-${Date.now()}`
-    };
-    dispatch({ roles: [...roles, newRole] });
-  }, [roles, dispatch]);
-  
-  const updateRole = useCallback((updatedRole: Role) => {
+  const addRole = useCallback(async (role: Omit<Role, 'id'>) => {
+    const docRef = await addDoc(rolesCol, role);
+    const newRole = { ...role, id: docRef.id };
+    await updateDoc(docRef, {id: docRef.id}); // write the id back
+    dispatch({ roles: [...store.roles, newRole]});
+  }, [store.roles, dispatch]);
+
+  const updateRole = useCallback(async (updatedRole: Role) => {
+    const roleRef = doc(db, 'roles', updatedRole.id);
+    await updateDoc(roleRef, updatedRole);
     dispatch({
-      roles: roles.map(r => r.id === updatedRole.id ? updatedRole : r)
+      roles: store.roles.map(r => r.id === updatedRole.id ? updatedRole : r)
     });
-  }, [roles, dispatch]);
-
-  const deleteRole = useCallback((roleId: string) => {
-    // Prevent deleting a role that is in use
-    const isRoleInUse = participants.some(p => p.roleId === roleId);
-    if (isRoleInUse) {
+  }, [store.roles, dispatch]);
+  
+  const deleteRole = useCallback(async (roleId: string) => {
+    const isRoleInUse = store.participants.some(p => p.roleId === roleId);
+    if(isRoleInUse) {
         alert("Esta função está em uso e não pode ser excluída.");
         return;
     }
+    await deleteDoc(doc(db, 'roles', roleId));
     dispatch({
-      roles: roles.filter(r => r.id !== roleId)
+        roles: store.roles.filter(r => r.id !== roleId)
     });
-  }, [roles, participants, dispatch]);
+  }, [store.roles, store.participants, dispatch]);
 
   const getClient = useCallback((clientId: string) => {
-    return clients.find(c => c.id === clientId);
-  }, [clients]);
+    return store.clients.find(c => c.id === clientId);
+  }, [store.clients]);
 
-  const addClient = useCallback((client: Omit<Client, 'id' | 'avatar'>) => {
-    const newClient: Client = {
-      ...client,
-      id: `client-${Date.now()}`,
-      avatar: `/avatars/c0${(clients.length % 3) + 1}.png`
+  const addClient = useCallback(async (client: Omit<Client, 'id' | 'avatar'>) => {
+    const newClientData: Omit<Client, 'id'> = {
+        ...client,
+        avatar: `/avatars/c0${(store.clients.length % 3) + 1}.png`
     };
-    dispatch({ clients: [...clients, newClient]});
-  }, [clients, dispatch]);
+    const docRef = await addDoc(clientsCol, newClientData);
+    const newClient = { ...newClientData, id: docRef.id };
+    await updateDoc(docRef, {id: docRef.id});
+    dispatch({ clients: [...store.clients, newClient]});
+  }, [store.clients, dispatch]);
 
-  const updateClient = useCallback((updatedClient: Client) => {
+  const updateClient = useCallback(async (updatedClient: Client) => {
+    const clientRef = doc(db, 'clients', updatedClient.id);
+    await updateDoc(clientRef, updatedClient);
     dispatch({
-      clients: clients.map(c => c.id === updatedClient.id ? updatedClient : c)
+      clients: store.clients.map(c => c.id === updatedClient.id ? updatedClient : c)
     });
-  }, [clients, dispatch]);
+  }, [store.clients, dispatch]);
 
-  const deleteClient = useCallback((clientId: string) => {
+  const deleteClient = useCallback(async (clientId: string) => {
+    await deleteDoc(doc(db, 'clients', clientId));
     dispatch({
-      clients: clients.filter(c => c.id !== clientId)
+      clients: store.clients.filter(c => c.id !== clientId)
     });
-  }, [clients, dispatch]);
+  }, [store.clients, dispatch]);
 
   return {
-    isLoaded,
-    projects,
-    tasks,
-    participants,
-    roles,
-    clients,
-    currentUser,
+    ...store,
     login,
     logout,
     getProjectTasks,

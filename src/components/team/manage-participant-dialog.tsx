@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import type { Participant } from '@/lib/types';
 import { Eye, EyeOff } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ManageParticipantDialogProps {
   children?: ReactNode;
@@ -31,20 +32,27 @@ interface ManageParticipantDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ManageParticipantDialog({ children, participant, open, onOpenChange }: ManageParticipantDialogProps) {
+export function ManageParticipantDialog({
+  children,
+  participant,
+  open,
+  onOpenChange,
+}: ManageParticipantDialogProps) {
   const { roles, addParticipant, updateParticipant } = useStore();
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [roleId, setRoleId] = useState('');
-  
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     if (participant) {
       setName(participant.name);
       setEmail(participant.email);
       setRoleId(participant.roleId);
-      setPassword(participant.password || ''); // Existing users might not have a password
+      setPassword(''); // Password is not editable for existing users in this dialog
     } else {
       // Reset form when adding new
       setName('');
@@ -53,30 +61,52 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
       setPassword('');
     }
     setShowPassword(false);
+    setIsLoading(false);
   }, [participant, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !roleId || (!participant && !password)) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    if (!name || !email || !roleId) {
+      toast({ variant: 'destructive', description: 'Por favor, preencha nome, email e função.' });
+      return;
+    }
+    if (!participant && !password) {
+      toast({ variant: 'destructive', description: 'Senha é obrigatória para novos usuários.' });
       return;
     }
 
-    if (participant) {
-      updateParticipant({
-        ...participant,
-        name,
-        email,
-        roleId,
-        password: password || participant.password, // Only update password if a new one is entered
+    setIsLoading(true);
+
+    try {
+      if (participant) {
+        await updateParticipant({
+          ...participant,
+          name,
+          email,
+          roleId,
+        });
+        toast({ description: 'Membro da equipe atualizado com sucesso.' });
+      } else {
+        await addParticipant({ name, email, roleId, password });
+        toast({ description: 'Novo membro da equipe adicionado.' });
+      }
+      onOpenChange(false);
+    } catch (error) {
+      console.error(error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Ocorreu um erro desconhecido.';
+      toast({
+        variant: 'destructive',
+        title: 'Falha ao salvar',
+        description: errorMessage,
       });
-    } else {
-      addParticipant({ name, email, roleId, password });
+    } finally {
+      setIsLoading(false);
     }
-    
-    onOpenChange(false);
   };
-  
+
   const Trigger = children ? <DialogTrigger asChild>{children}</DialogTrigger> : null;
 
   return (
@@ -105,6 +135,7 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
                 onChange={(e) => setName(e.target.value)}
                 className="col-span-3"
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -118,38 +149,46 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
                 onChange={(e) => setEmail(e.target.value)}
                 className="col-span-3"
                 required
+                disabled={isLoading || !!participant} // Cannot change email for existing user via this form
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="password" className="text-right">
-                Senha
-              </Label>
-              <div className="col-span-3 relative">
-                <Input
+            {!participant && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="password" className="text-right">
+                  Senha
+                </Label>
+                <div className="col-span-3 relative">
+                  <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pr-10"
-                    placeholder={participant ? 'Deixe em branco para não alterar' : ''}
                     required={!participant}
-                />
-                <Button
+                    disabled={isLoading}
+                  />
+                  <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     className="absolute top-0 right-0 h-full px-3"
                     onClick={() => setShowPassword(!showPassword)}
-                >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="role" className="text-right">
                 Função
               </Label>
-              <Select value={roleId} onValueChange={setRoleId} required>
+              <Select value={roleId} onValueChange={setRoleId} required disabled={isLoading}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Selecione uma função" />
                 </SelectTrigger>
@@ -164,8 +203,12 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit">{participant ? 'Salvar Alterações' : 'Criar Membro'}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Salvando...' : (participant ? 'Salvar Alterações' : 'Criar Membro')}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

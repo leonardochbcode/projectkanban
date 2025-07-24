@@ -14,23 +14,29 @@ import {
 import { useStore } from '@/hooks/use-store';
 import { Skeleton } from './ui/skeleton';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export function UserNav() {
   const { currentUser, isLoaded, logout } = useStore();
   const router = useRouter();
+  const [hydrated, setHydrated] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
-  
+
   // Wait for the store to be loaded and user to be authenticated
-  if (!isLoaded || !currentUser) {
+  if (!hydrated || !isLoaded || !currentUser) {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
   const user = currentUser;
-  
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
