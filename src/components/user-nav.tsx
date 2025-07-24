@@ -12,10 +12,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/hooks/use-store';
+import { Skeleton } from './ui/skeleton';
 
 export function UserNav() {
-  const { participants } = useStore();
+  const { participants, isLoaded } = useStore();
   const user = participants[0]; // Assume first participant is the current user
+
+  if (!isLoaded) {
+    return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
 
   return (
     <DropdownMenu>
