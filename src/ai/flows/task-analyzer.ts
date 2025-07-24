@@ -9,7 +9,7 @@
  * - AnalyzeTaskCommentsOutput - The return type for the analyzeTaskComments function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, gemini15Flash} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeTaskCommentsInputSchema = z.object({
@@ -35,20 +35,6 @@ export async function analyzeTaskComments(input: AnalyzeTaskCommentsInput): Prom
   return analyzeTaskCommentsFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'analyzeTaskCommentsPrompt',
-  input: {schema: AnalyzeTaskCommentsInputSchema},
-  output: {schema: AnalyzeTaskCommentsOutputSchema},
-  prompt: `You are an AI-powered project management assistant. Your task is to analyze the latest task comments provided and extract actionable insights.
-
-  Based on the comments, identify and prioritize action items that need to be addressed. Also, analyze the discussion to determine if any task reassignments are necessary based on the skills, workload, or availability of team members.
-
-  Task Comments: {{{taskComments}}}
-
-  Output the priority action items and suggested reassignments in a clear and concise manner.
-  `,
-});
-
 const analyzeTaskCommentsFlow = ai.defineFlow(
   {
     name: 'analyzeTaskCommentsFlow',
@@ -56,7 +42,20 @@ const analyzeTaskCommentsFlow = ai.defineFlow(
     outputSchema: AnalyzeTaskCommentsOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await ai.generate({
+      model: gemini15Flash,
+      prompt: `You are an AI-powered project management assistant. Your task is to analyze the latest task comments provided and extract actionable insights.
+
+  Based on the comments, identify and prioritize action items that need to be addressed. Also, analyze the discussion to determine if any task reassignments are necessary based on the skills, workload, or availability of team members.
+
+  Task Comments: ${input.taskComments}
+
+  Output the priority action items and suggested reassignments in a clear and concise manner.
+  `,
+      output: {
+        schema: AnalyzeTaskCommentsOutputSchema,
+      },
+    });
     return output!;
   }
 );

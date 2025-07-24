@@ -14,11 +14,5 @@ export async function getAnalysis(input: { taskComments: string }) {
     throw new Error('Invalid input.');
   }
 
-  try {
-    const result = await analyzeTaskComments({ taskComments: validatedFields.data.taskComments });
-    return result;
-  } catch (error) {
-    console.error('Error in Genkit flow:', error);
-    throw new Error('An error occurred during analysis.');
-  }
+  return await analyzeTaskComments({ taskComments: validatedFields.data.taskComments });
 }
