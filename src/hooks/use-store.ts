@@ -31,6 +31,7 @@ import {
   writeBatch,
   query,
   where,
+  runTransaction,
 } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import type { Project, Task, Participant, Role, Client } from '@/lib/types';
@@ -70,58 +71,74 @@ const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>
 
 const seedInitialData = async () => {
     console.log("Checking if seeding is needed...");
-    const rolesSnapshot = await getDocs(rolesCol);
-    if (!rolesSnapshot.empty) {
-        console.log("Data already seeded. Skipping.");
-        return; // Data already seeded
-    }
-
-    console.log("Seeding initial data...");
-    const batch = writeBatch(db);
-
-    // Seed Roles
-    initialRoles.forEach(role => {
-        const docRef = doc(db, 'roles', role.id);
-        batch.set(docRef, role);
-    });
+    const seedingMarkerRef = doc(db, 'internal', 'seedingComplete');
     
-    // Seed Clients
-    initialClients.forEach(client => {
-        const docRef = doc(db, 'clients', client.id);
-        batch.set(docRef, client);
-    });
+    try {
+        await runTransaction(db, async (transaction) => {
+            const seedingMarkerDoc = await transaction.get(seedingMarkerRef);
+            if (seedingMarkerDoc.exists()) {
+                console.log("Data already seeded. Skipping.");
+                return;
+            }
 
-    // Seed Participants and create Auth users
-    for (const p of initialParticipants) {
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, p.email, p.password!);
-        const { uid } = userCredential.user;
-        const participantDocRef = doc(db, 'participants', uid);
-        const { password, ...participantData } = p; // Don't store password in Firestore
-        batch.set(participantDocRef, { ...participantData, id: uid, uid });
-      } catch (error: any) {
-         if (error.code !== 'auth/email-already-in-use') {
-             console.error(`Error creating auth user for ${p.email}:`, error);
-         } else {
-             console.log(`User ${p.email} already exists in Auth.`);
-         }
-      }
+            console.log("Seeding initial data...");
+
+            // Seed Roles
+            initialRoles.forEach(role => {
+                const docRef = doc(db, 'roles', role.id);
+                transaction.set(docRef, role);
+            });
+            
+            // Seed Clients
+            initialClients.forEach(client => {
+                const docRef = doc(db, 'clients', client.id);
+                transaction.set(docRef, client);
+            });
+
+            // Seed Projects
+            initialProjects.forEach(project => {
+                const docRef = doc(db, 'projects', project.id);
+                transaction.set(docRef, project);
+            });
+
+            // Seed Tasks
+            initialTasks.forEach(task => {
+                const docRef = doc(db, 'tasks', task.id);
+                transaction.set(docRef, task);
+            });
+
+            // Mark seeding as complete
+            transaction.set(seedingMarkerRef, { completed: true, seededAt: new Date() });
+        });
+
+        // Create Auth users separately as it cannot be done in a transaction
+        // We'll check if they exist first
+        for (const p of initialParticipants) {
+          try {
+            // This is not a perfect check for existence without a backend, 
+            // but createUserWithEmailAndPassword will fail if the user exists, which is what we want.
+            const userCredential = await createUserWithEmailAndPassword(auth, p.email, p.password!);
+            const { uid } = userCredential.user;
+            const participantDocRef = doc(db, 'participants', uid);
+            const { password, ...participantData } = p; // Don't store password in Firestore
+            await setDoc(participantDocRef, { ...participantData, id: uid, uid });
+          } catch (error: any) {
+             if (error.code !== 'auth/email-already-in-use') {
+                 console.error(`Error creating auth user for ${p.email}:`, error);
+             } else {
+                 console.log(`Auth user ${p.email} already exists.`);
+                 // If user exists in Auth, ensure they exist in Firestore participants collection too.
+                 // This covers cases where Firestore seeding might have failed after Auth creation.
+                 // This part of the logic is complex and would ideally be handled by a backend function.
+                 // For this prototype, we'll assume if auth/email-already-in-use, the Firestore doc is also there.
+             }
+          }
+        }
+        
+        console.log("Initial data seeding process completed.");
+    } catch (e) {
+        console.error("Error during seeding transaction: ", e);
     }
-    
-    // Seed Projects
-    initialProjects.forEach(project => {
-        const docRef = doc(db, 'projects', project.id);
-        batch.set(docRef, project);
-    });
-
-    // Seed Tasks
-    initialTasks.forEach(task => {
-        const docRef = doc(db, 'tasks', task.id);
-        batch.set(docRef, task);
-    });
-
-    await batch.commit();
-    console.log("Initial data seeded successfully.");
 };
 
 
@@ -140,6 +157,11 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = (newState: Partial<Store>) => {
     setStore((prevState) => ({ ...prevState, ...newState }));
   };
+  
+  // Seed data once on initial load
+  useEffect(() => {
+    seedInitialData();
+  }, []);
 
   useEffect(() => {
     const fetchAllData = async (user: FirebaseUser | null) => {
@@ -156,8 +178,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
       }
-
-      await seedInitialData();
 
       const [
         projectsSnap,
@@ -196,7 +216,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  return React.createElement(StoreContext.Provider, { value: { ...store, dispatch } }, children);
+  const value = useMemo(() => ({ ...store, dispatch }), [store]);
+
+  return React.createElement(StoreContext.Provider, { value }, children);
 };
 
 const useStoreRaw = () => {
@@ -234,6 +256,7 @@ export const useStore = () => {
     };
     const docRef = await addDoc(projectsCol, newProjectData);
     const newProject = { ...newProjectData, id: docRef.id };
+    await updateDoc(docRef, {id: docRef.id});
     dispatch({ projects: [...store.projects, newProject]});
     return newProject;
   }, [store.projects, dispatch]);
@@ -267,6 +290,7 @@ export const useStore = () => {
     };
     const docRef = await addDoc(tasksCol, newTaskData);
     const newTask = { ...newTaskData, id: docRef.id };
+    await updateDoc(docRef, {id: docRef.id});
     dispatch({ tasks: [...store.tasks, newTask]});
     return newTask;
   }, [store.tasks, dispatch]);

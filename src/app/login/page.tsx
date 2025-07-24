@@ -13,8 +13,8 @@ export default function LoginPage() {
   const { login } = useStore();
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('alice@example.com');
+  const [password, setPassword] = useState('password123');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -30,7 +30,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error(error);
-      let description = 'Email ou senha incorretos. Por favor, tente novamente.';
+      let description = 'Ocorreu um erro desconhecido. Tente novamente.';
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/configuration-not-found') {
           description = 'O método de login por Email/Senha não está ativado no Firebase. Por favor, ative-o no console do Firebase.';
