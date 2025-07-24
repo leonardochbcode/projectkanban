@@ -3,6 +3,15 @@ export interface Role {
   name: string;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  avatar?: string;
+}
+
 export interface Participant {
   id: string;
   name: string;
@@ -38,4 +47,5 @@ export interface Project {
   endDate: string;
   status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído';
   participantIds: string[];
+  clientId?: string;
 }

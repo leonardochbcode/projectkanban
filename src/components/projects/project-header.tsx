@@ -5,11 +5,13 @@ import { useStore } from '@/hooks/use-store';
 import type { Project } from '@/lib/types';
 import { AddTaskDialog } from '../tasks/add-task-dialog';
 import { Button } from '../ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Briefcase } from 'lucide-react';
+import { Badge } from '../ui/badge';
 
 export function ProjectHeader({ project }: { project: Project }) {
-  const { getProjectTasks } = useStore();
+  const { getProjectTasks, getClient } = useStore();
   const tasks = getProjectTasks(project.id);
+  const client = project.clientId ? getClient(project.clientId) : null;
   const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
 
@@ -18,7 +20,15 @@ export function ProjectHeader({ project }: { project: Project }) {
         <div className="flex items-center justify-between space-y-2 mb-4">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight font-headline">{project.name}</h1>
-                <p className="text-muted-foreground">{project.description}</p>
+                <div className="flex items-center gap-4">
+                    <p className="text-muted-foreground">{project.description}</p>
+                    {client && (
+                        <Badge variant="secondary" className="gap-1.5">
+                            <Briefcase className="h-3 w-3" />
+                            {client.name}
+                        </Badge>
+                    )}
+                </div>
             </div>
             <AddTaskDialog projectId={project.id}>
                 <Button>

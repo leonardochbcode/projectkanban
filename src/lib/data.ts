@@ -1,4 +1,4 @@
-import type { Project, Task, Participant, Role } from './types';
+import type { Project, Task, Participant, Role, Client } from './types';
 
 export const initialRoles: Role[] = [
   { id: 'role-1', name: 'Gerente' },
@@ -14,6 +14,13 @@ export const initialParticipants: Participant[] = [
   { id: 'user-4', name: 'Diana Prince', email: 'diana@example.com', roleId: 'role-4', avatar: '/avatars/04.png' },
 ];
 
+export const initialClients: Client[] = [
+    { id: 'client-1', name: 'Acme Corporation', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png' },
+    { id: 'client-2', name: 'Stark Industries', email: 'tony@starkindustries.com', company: 'Stark Industries', avatar: '/avatars/c02.png' },
+    { id: 'client-3', name: 'Wayne Enterprises', email: 'bruce@wayne.com', company: 'Wayne Enterprises', avatar: '/avatars/c03.png' },
+];
+
+
 export const initialProjects: Project[] = [
   {
     id: 'proj-1',
@@ -23,6 +30,7 @@ export const initialProjects: Project[] = [
     endDate: '2024-10-31',
     status: 'Em Andamento',
     participantIds: ['user-1', 'user-2', 'user-3'],
+    clientId: 'client-1',
   },
   {
     id: 'proj-2',
@@ -32,6 +40,7 @@ export const initialProjects: Project[] = [
     endDate: '2025-01-15',
     status: 'Planejamento',
     participantIds: ['user-1', 'user-2', 'user-4'],
+    clientId: 'client-2',
   },
   {
     id: 'proj-3',
@@ -41,6 +50,7 @@ export const initialProjects: Project[] = [
     endDate: '2024-12-31',
     status: 'Pausado',
     participantIds: ['user-1', 'user-4'],
+    clientId: 'client-3',
   },
   {
     id: 'proj-4',

@@ -25,7 +25,7 @@ import {
 
 export function AddProjectDialog({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { addProject } = useStore();
+  const { addProject, clients } = useStore();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -33,6 +33,7 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído'>(
     'Planejamento'
   );
+  const [clientId, setClientId] = useState<string | undefined>();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,13 +42,14 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
       alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
-    addProject({ name, description, startDate, endDate, status });
+    addProject({ name, description, startDate, endDate, status, clientId });
     // Reset form
     setName('');
     setDescription('');
     setStartDate('');
     setEndDate('');
     setStatus('Planejamento');
+    setClientId(undefined);
     setOpen(false);
   };
 
@@ -85,6 +87,23 @@ export function AddProjectDialog({ children }: { children: ReactNode }) {
                 onChange={(e) => setDescription(e.target.value)}
                 className="col-span-3"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="client" className="text-right">
+                Cliente
+              </Label>
+              <Select value={clientId} onValueChange={setClientId}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="start-date" className="text-right">

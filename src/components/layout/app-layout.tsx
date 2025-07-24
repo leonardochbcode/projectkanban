@@ -7,6 +7,7 @@ import {
   LineChart,
   Settings,
   Menu,
+  Briefcase,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -22,6 +23,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/', label: 'Painel', icon: LayoutDashboard },
     { href: '/projects', label: 'Projetos', icon: FolderKanban },
+    { href: '/clients', label: 'Clientes', icon: Briefcase },
     { href: '/team', label: 'Equipe', icon: Users },
     { href: '/reports', label: 'Relatórios', icon: LineChart },
     { href: '/settings', label: 'Configurações', icon: Settings },

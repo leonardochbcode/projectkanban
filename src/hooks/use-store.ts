@@ -1,27 +1,30 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Project, Task, Participant, Role } from '@/lib/types';
-import { initialProjects, initialTasks, initialParticipants, initialRoles } from '@/lib/data';
+import type { Project, Task, Participant, Role, Client } from '@/lib/types';
+import { initialProjects, initialTasks, initialParticipants, initialRoles, initialClients } from '@/lib/data';
 
 type Store = {
   projects: Project[];
   tasks: Task[];
   participants: Participant[];
   roles: Role[];
+  clients: Client[];
 };
 
 const getInitialState = (): Store => {
   if (typeof window === 'undefined') {
-    return { projects: [], tasks: [], participants: [], roles: [] };
+    return { projects: [], tasks: [], participants: [], roles: [], clients: [] };
   }
   try {
     const item = window.localStorage.getItem('visiotask-store');
     if (item) {
       const storedData = JSON.parse(item);
-      // Ensure roles are present, if not, use initialRoles
       if (!storedData.roles) {
         storedData.roles = initialRoles;
+      }
+      if (!storedData.clients) {
+        storedData.clients = initialClients;
       }
       return storedData;
     }
@@ -33,6 +36,7 @@ const getInitialState = (): Store => {
     tasks: initialTasks,
     participants: initialParticipants,
     roles: initialRoles,
+    clients: initialClients,
   };
 };
 
@@ -66,7 +70,7 @@ const updateStore = (newState: Partial<Store>) => {
 
 
 export const useStore = () => {
-  const { projects, tasks, participants, roles } = useStoreState();
+  const { projects, tasks, participants, roles, clients } = useStoreState();
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -179,6 +183,30 @@ export const useStore = () => {
     });
   }, [roles]);
 
+  const getClient = useCallback((clientId: string) => {
+    return clients.find(c => c.id === clientId);
+  }, [clients]);
+
+  const addClient = useCallback((client: Omit<Client, 'id' | 'avatar'>) => {
+    const newClient: Client = {
+      ...client,
+      id: `client-${Date.now()}`,
+      avatar: `/avatars/c0${(clients.length % 3) + 1}.png`
+    };
+    updateStore({ clients: [...clients, newClient]});
+  }, [clients]);
+
+  const updateClient = useCallback((updatedClient: Client) => {
+    updateStore({
+      clients: clients.map(c => c.id === updatedClient.id ? updatedClient : c)
+    });
+  }, [clients]);
+
+  const deleteClient = useCallback((clientId: string) => {
+    updateStore({
+      clients: clients.filter(c => c.id !== clientId)
+    });
+  }, [clients]);
 
   return {
     isLoaded,
@@ -186,6 +214,7 @@ export const useStore = () => {
     tasks,
     participants,
     roles,
+    clients,
     getProjectTasks,
     addProject,
     updateProject,
@@ -201,5 +230,9 @@ export const useStore = () => {
     addRole,
     updateRole,
     deleteRole,
+    getClient,
+    addClient,
+    updateClient,
+    deleteClient,
   };
 };
