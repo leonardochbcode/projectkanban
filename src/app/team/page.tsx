@@ -27,9 +27,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { AppLayout } from '@/components/layout/app-layout';
 
-export default function TeamPage() {
-  const { participants, roles, getRole, deleteParticipant } = useStore();
+function TeamPageContent() {
+  const { participants, roles, getRole, deleteParticipant, currentUser } = useStore();
   const [editingParticipant, setEditingParticipant] = useState<Participant | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -87,6 +88,7 @@ export default function TeamPage() {
                 <TableBody>
                   {participants.map((participant) => {
                     const role = getRole(participant.roleId);
+                    const isCurrentUser = participant.id === currentUser?.id;
                     return (
                       <TableRow key={participant.id}>
                         <TableCell>
@@ -120,7 +122,10 @@ export default function TeamPage() {
                                   Editar
                                 </DropdownMenuItem>
                                 <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                  <DropdownMenuItem 
+                                    className="text-destructive focus:text-destructive"
+                                    disabled={isCurrentUser}
+                                  >
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Excluir
                                   </DropdownMenuItem>
@@ -157,4 +162,12 @@ export default function TeamPage() {
       </div>
     </div>
   );
+}
+
+export default function TeamPage() {
+    return (
+        <AppLayout>
+            <TeamPageContent />
+        </AppLayout>
+    )
 }

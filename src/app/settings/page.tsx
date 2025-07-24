@@ -1,6 +1,7 @@
+import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -21,4 +22,12 @@ export default function SettingsPage() {
       </Card>
     </div>
   );
+}
+
+export default function SettingsPage() {
+    return (
+        <AppLayout>
+            <SettingsPageContent />
+        </AppLayout>
+    )
 }

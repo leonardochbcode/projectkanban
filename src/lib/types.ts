@@ -1,6 +1,19 @@
+export const availablePermissions = {
+    view_dashboard: 'Ver Painel',
+    manage_projects: 'Gerenciar Projetos',
+    manage_clients: 'Gerenciar Clientes',
+    manage_team: 'Gerenciar Equipe',
+    view_reports: 'Ver Relatórios',
+    manage_settings: 'Gerenciar Configurações'
+} as const;
+
+export type Permission = keyof typeof availablePermissions;
+
+
 export interface Role {
   id: string;
   name: string;
+  permissions: Permission[];
 }
 
 export interface Client {
@@ -21,6 +34,7 @@ export interface Participant {
   email: string;
   roleId: string;
   avatar: string;
+  password?: string;
 }
 
 export interface TaskComment {

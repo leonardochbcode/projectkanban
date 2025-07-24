@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import type { Project, Task, Participant, Role, Client } from '@/lib/types';
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useMemo } from 'react';
+import React from 'react';
+import type { Project, Task, Participant, Role, Client, Permission } from '@/lib/types';
 import { initialProjects, initialTasks, initialParticipants, initialRoles, initialClients } from '@/lib/data';
 
 type Store = {
@@ -10,22 +11,31 @@ type Store = {
   participants: Participant[];
   roles: Role[];
   clients: Client[];
+  currentUserId: string | null;
 };
+
+const STORE_KEY = 'chbproject-store';
 
 const getInitialState = (): Store => {
   if (typeof window === 'undefined') {
-    return { projects: [], tasks: [], participants: [], roles: [], clients: [] };
+    return { projects: [], tasks: [], participants: [], roles: [], clients: [], currentUserId: null };
   }
   try {
-    const item = window.localStorage.getItem('chbproject-store');
+    const item = window.localStorage.getItem(STORE_KEY);
     if (item) {
       const storedData = JSON.parse(item);
-      if (!storedData.roles) {
-        storedData.roles = initialRoles;
+      // Basic schema validation and migration
+      if (!storedData.roles) storedData.roles = initialRoles;
+      if (!storedData.clients) storedData.clients = initialClients;
+      if (!storedData.participants) storedData.participants = initialParticipants;
+      if (storedData.participants.some((p: Participant) => !p.password)) {
+          storedData.participants = initialParticipants; // Reset if old data structure
       }
-      if (!storedData.clients) {
-        storedData.clients = initialClients;
+      if (storedData.roles.some((r: Role) => !r.permissions)) {
+          storedData.roles = initialRoles; // Reset if old data structure
       }
+      if (typeof storedData.currentUserId === 'undefined') storedData.currentUserId = null;
+      
       return storedData;
     }
   } catch (error) {
@@ -37,6 +47,7 @@ const getInitialState = (): Store => {
     participants: initialParticipants,
     roles: initialRoles,
     clients: initialClients,
+    currentUserId: null,
   };
 };
 
@@ -44,24 +55,10 @@ const getInitialState = (): Store => {
 let storeState: Store = getInitialState();
 const listeners = new Set<() => void>();
 
-const useStoreState = () => {
-  const [state, setState] = useState(storeState);
-
-  useEffect(() => {
-    const listener = () => setState(storeState);
-    listeners.add(listener);
-    // Sync with a potentially updated store on mount
-    listener(); 
-    return () => listeners.delete(listener);
-  }, []);
-
-  return state;
-};
-
-const updateStore = (newState: Partial<Store>) => {
-  storeState = { ...storeState, ...newState };
+const updateStore = (newState: Partial<Store>, overwrite = false) => {
+  storeState = overwrite ? (newState as Store) : { ...storeState, ...newState };
   try {
-    window.localStorage.setItem('chbproject-store', JSON.stringify(storeState));
+    window.localStorage.setItem(STORE_KEY, JSON.stringify(storeState));
   } catch (error) {
     console.warn('Error writing to localStorage', error);
   }
@@ -69,20 +66,76 @@ const updateStore = (newState: Partial<Store>) => {
 };
 
 
+const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(null);
+
+export const StoreProvider = ({ children }: { children: ReactNode }) => {
+    const [state, setState] = useState(storeState);
+
+    useEffect(() => {
+        const listener = () => setState(storeState);
+        listeners.add(listener);
+        // Sync with a potentially updated store on mount (e.g. from another tab)
+        listener(); 
+        
+        const handleStorageChange = (event: StorageEvent) => {
+            if (event.key === STORE_KEY) {
+                storeState = getInitialState();
+                listener();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            listeners.delete(listener);
+            window.removeEventListener('storage', handleStorageChange);
+        }
+    }, []);
+
+    const dispatch = (newState: Partial<Store>) => {
+        updateStore(newState);
+    }
+
+    return React.createElement(StoreContext.Provider, { value: {...state, dispatch} }, children);
+}
+
+const useStoreRaw = () => {
+    const context = useContext(StoreContext);
+    if (!context) {
+        throw new Error('useStore must be used within a StoreProvider');
+    }
+    return context;
+}
+
 export const useStore = () => {
-  const { projects, tasks, participants, roles, clients } = useStoreState();
+  const { projects, tasks, participants, roles, clients, currentUserId, dispatch } = useStoreRaw();
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // This effect runs only on the client, ensuring localStorage is available.
-    // Hydrate the store from localStorage on mount.
-    const hydratedState = getInitialState();
-    if (JSON.stringify(storeState) !== JSON.stringify(hydratedState)) {
-      storeState = hydratedState;
-      listeners.forEach(l => l());
-    }
+    // Hydration check
     setIsLoaded(true);
   }, []);
+
+  const currentUser = useMemo(() => {
+    if (!currentUserId) return null;
+    return participants.find(p => p.id === currentUserId) || null;
+  }, [currentUserId, participants]);
+
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    const user = participants.find(p => p.email.toLowerCase() === email.toLowerCase());
+    // NOTE: In a real app, this would be a fetch call to a backend,
+    // and password checking would be done with hashing.
+    if (user && user.password === password) {
+      dispatch({ currentUserId: user.id });
+      return true;
+    }
+    return false;
+  }, [participants, dispatch]);
+
+  const logout = useCallback(() => {
+    dispatch({ currentUserId: null });
+  }, [dispatch]);
 
   const getProjectTasks = useCallback((projectId: string) => {
     return tasks.filter(task => task.projectId === projectId);
@@ -94,22 +147,22 @@ export const useStore = () => {
       id: `proj-${Date.now()}`,
       participantIds: [],
     };
-    updateStore({ projects: [...projects, newProject] });
+    dispatch({ projects: [...projects, newProject] });
     return newProject;
-  }, [projects]);
+  }, [projects, dispatch]);
 
   const updateProject = useCallback((updatedProject: Project) => {
-    updateStore({
+    dispatch({
       projects: projects.map(p => (p.id === updatedProject.id ? updatedProject : p)),
     });
-  }, [projects]);
+  }, [projects, dispatch]);
   
   const deleteProject = useCallback((projectId: string) => {
-    updateStore({
+    dispatch({
       projects: projects.filter(p => p.id !== projectId),
       tasks: tasks.filter(t => t.projectId !== projectId)
     });
-  }, [projects, tasks]);
+  }, [projects, tasks, dispatch]);
 
 
   const addTask = useCallback((task: Omit<Task, 'id' | 'comments'>) => {
@@ -118,21 +171,21 @@ export const useStore = () => {
       id: `task-${Date.now()}`,
       comments: [],
     };
-    updateStore({ tasks: [...tasks, newTask] });
+    dispatch({ tasks: [...tasks, newTask] });
     return newTask;
-  }, [tasks]);
+  }, [tasks, dispatch]);
 
   const updateTask = useCallback((updatedTask: Task) => {
-    updateStore({
+    dispatch({
       tasks: tasks.map(t => (t.id === updatedTask.id ? updatedTask : t)),
     });
-  }, [tasks]);
+  }, [tasks, dispatch]);
 
   const deleteTask = useCallback((taskId: string) => {
-    updateStore({
+    dispatch({
       tasks: tasks.filter(t => t.id !== taskId),
     });
-  }, [tasks]);
+  }, [tasks, dispatch]);
 
   const getParticipant = useCallback((participantId: string) => {
     return participants.find(p => p.id === participantId);
@@ -144,20 +197,20 @@ export const useStore = () => {
       id: `user-${Date.now()}`,
       avatar: `/avatars/0${(participants.length % 5) + 1}.png`
     };
-    updateStore({ participants: [...participants, newParticipant]});
-  }, [participants]);
+    dispatch({ participants: [...participants, newParticipant]});
+  }, [participants, dispatch]);
 
   const updateParticipant = useCallback((updatedParticipant: Participant) => {
-    updateStore({
+    dispatch({
       participants: participants.map(p => p.id === updatedParticipant.id ? updatedParticipant : p)
     });
-  }, [participants]);
+  }, [participants, dispatch]);
   
   const deleteParticipant = useCallback((participantId: string) => {
-    updateStore({
+    dispatch({
       participants: participants.filter(p => p.id !== participantId)
     });
-  }, [participants]);
+  }, [participants, dispatch]);
   
   const getRole = useCallback((roleId: string) => {
     return roles.find(r => r.id === roleId);
@@ -168,20 +221,26 @@ export const useStore = () => {
       ...role,
       id: `role-${Date.now()}`
     };
-    updateStore({ roles: [...roles, newRole] });
-  }, [roles]);
+    dispatch({ roles: [...roles, newRole] });
+  }, [roles, dispatch]);
   
   const updateRole = useCallback((updatedRole: Role) => {
-    updateStore({
+    dispatch({
       roles: roles.map(r => r.id === updatedRole.id ? updatedRole : r)
     });
-  }, [roles]);
+  }, [roles, dispatch]);
 
   const deleteRole = useCallback((roleId: string) => {
-    updateStore({
+    // Prevent deleting a role that is in use
+    const isRoleInUse = participants.some(p => p.roleId === roleId);
+    if (isRoleInUse) {
+        alert("Esta função está em uso e não pode ser excluída.");
+        return;
+    }
+    dispatch({
       roles: roles.filter(r => r.id !== roleId)
     });
-  }, [roles]);
+  }, [roles, participants, dispatch]);
 
   const getClient = useCallback((clientId: string) => {
     return clients.find(c => c.id === clientId);
@@ -193,20 +252,20 @@ export const useStore = () => {
       id: `client-${Date.now()}`,
       avatar: `/avatars/c0${(clients.length % 3) + 1}.png`
     };
-    updateStore({ clients: [...clients, newClient]});
-  }, [clients]);
+    dispatch({ clients: [...clients, newClient]});
+  }, [clients, dispatch]);
 
   const updateClient = useCallback((updatedClient: Client) => {
-    updateStore({
+    dispatch({
       clients: clients.map(c => c.id === updatedClient.id ? updatedClient : c)
     });
-  }, [clients]);
+  }, [clients, dispatch]);
 
   const deleteClient = useCallback((clientId: string) => {
-    updateStore({
+    dispatch({
       clients: clients.filter(c => c.id !== clientId)
     });
-  }, [clients]);
+  }, [clients, dispatch]);
 
   return {
     isLoaded,
@@ -215,6 +274,9 @@ export const useStore = () => {
     participants,
     roles,
     clients,
+    currentUser,
+    login,
+    logout,
     getProjectTasks,
     addProject,
     updateProject,

@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Participant } from '@/lib/types';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface ManageParticipantDialogProps {
   children?: ReactNode;
@@ -34,6 +35,8 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
   const { roles, addParticipant, updateParticipant } = useStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [roleId, setRoleId] = useState('');
   
   useEffect(() => {
@@ -41,18 +44,21 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
       setName(participant.name);
       setEmail(participant.email);
       setRoleId(participant.roleId);
+      setPassword(participant.password || ''); // Existing users might not have a password
     } else {
       // Reset form when adding new
       setName('');
       setEmail('');
       setRoleId('');
+      setPassword('');
     }
+    setShowPassword(false);
   }, [participant, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !roleId) {
-      alert('Por favor, preencha todos os campos.');
+    if (!name || !email || !roleId || (!participant && !password)) {
+      alert('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
@@ -62,9 +68,10 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
         name,
         email,
         roleId,
+        password: password || participant.password, // Only update password if a new one is entered
       });
     } else {
-      addParticipant({ name, email, roleId });
+      addParticipant({ name, email, roleId, password });
     }
     
     onOpenChange(false);
@@ -75,15 +82,15 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {Trigger}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-headline">
-              {participant ? 'Editar Participante' : 'Adicionar Novo Participante'}
+              {participant ? 'Editar Membro' : 'Adicionar Novo Membro'}
             </DialogTitle>
             <DialogDescription>
               {participant
-                ? 'Atualize os detalhes do participante abaixo.'
+                ? 'Atualize os detalhes do membro da equipe abaixo.'
                 : 'Preencha os detalhes para adicionar um novo membro à equipe.'}
             </DialogDescription>
           </DialogHeader>
@@ -114,6 +121,31 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Senha
+              </Label>
+              <div className="col-span-3 relative">
+                <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pr-10"
+                    placeholder={participant ? 'Deixe em branco para não alterar' : ''}
+                    required={!participant}
+                />
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-0 right-0 h-full px-3"
+                    onClick={() => setShowPassword(!showPassword)}
+                >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="role" className="text-right">
                 Função
               </Label>
@@ -133,7 +165,7 @@ export function ManageParticipantDialog({ children, participant, open, onOpenCha
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit">{participant ? 'Salvar Alterações' : 'Criar Participante'}</Button>
+            <Button type="submit">{participant ? 'Salvar Alterações' : 'Criar Membro'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

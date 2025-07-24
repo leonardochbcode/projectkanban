@@ -8,12 +8,13 @@ import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { AddProjectDialog } from '@/components/dashboard/add-project-dialog';
 import { useStore } from '@/hooks/use-store';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AppLayout } from '@/components/layout/app-layout';
 
 export default function DashboardPage() {
   const { projects, isLoaded } = useStore();
 
-  return (
-    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
+  const PageContent = () => (
+     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Painel</h1>
         <div className="flex items-center space-x-2">
@@ -41,5 +42,11 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  )
+
+  return (
+    <AppLayout>
+      <PageContent />
+    </AppLayout>
   );
 }

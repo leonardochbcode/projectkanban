@@ -5,8 +5,9 @@ import { ProjectHeader } from '@/components/projects/project-header';
 import { KanbanBoard } from '@/components/projects/kanban-board';
 import { notFound } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AppLayout } from '@/components/layout/app-layout';
 
-export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+function ProjectDetailsPageContent({ params }: { params: { id: string } }) {
   const { isLoaded, projects, getProjectTasks } = useStore();
   const projectId = params.id;
   
@@ -60,4 +61,12 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
       </div>
     </div>
   );
+}
+
+export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+    return (
+        <AppLayout>
+            <ProjectDetailsPageContent params={params} />
+        </AppLayout>
+    )
 }

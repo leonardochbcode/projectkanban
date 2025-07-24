@@ -13,19 +13,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/hooks/use-store';
 import { Skeleton } from './ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
-  const { participants, isLoaded } = useStore();
+  const { currentUser, isLoaded, logout } = useStore();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
   
-  if (!isLoaded) {
+  // Wait for the store to be loaded and user to be authenticated
+  if (!isLoaded || !currentUser) {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
-  const user = participants[0]; // Assume first participant is the current user
-
-  if (!user) {
-     return <Skeleton className="h-8 w-8 rounded-full" />;
-  }
+  const user = currentUser;
   
   return (
     <DropdownMenu>
@@ -50,7 +54,7 @@ export function UserNav() {
           <DropdownMenuItem>Configurações</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Sair</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -26,8 +26,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ManageClientDialog } from '@/components/clients/manage-client-dialog';
 import { Badge } from '@/components/ui/badge';
+import { AppLayout } from '@/components/layout/app-layout';
 
-export default function ClientsPage() {
+function ClientsPageContent() {
   const { clients, deleteClient } = useStore();
   const [editingClient, setEditingClient] = useState<Client | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -152,4 +153,12 @@ export default function ClientsPage() {
       </Card>
     </div>
   );
+}
+
+export default function ClientsPage() {
+    return (
+        <AppLayout>
+            <ClientsPageContent />
+        </AppLayout>
+    )
 }

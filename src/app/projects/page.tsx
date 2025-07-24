@@ -8,8 +8,9 @@ import { useStore } from '@/hooks/use-store';
 import { cn } from '@/lib/utils';
 import { AddProjectDialog } from '@/components/dashboard/add-project-dialog';
 import Link from 'next/link';
+import { AppLayout } from '@/components/layout/app-layout';
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
   const { projects } = useStore();
 
   const statusColors: { [key: string]: string } = {
@@ -69,4 +70,12 @@ export default function ProjectsPage() {
       </Card>
     </div>
   );
+}
+
+export default function ProjectsPage() {
+    return (
+        <AppLayout>
+            <ProjectsPageContent />
+        </AppLayout>
+    )
 }
