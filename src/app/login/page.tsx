@@ -25,16 +25,17 @@ export default function LoginPage() {
       if (success) {
         router.push('/');
       } else {
+        // This case might not be reached if login throws, but it's good practice.
         throw new Error('Falha no login');
       }
     } catch (error) {
       console.error(error);
       let description = 'Email ou senha incorretos. Por favor, tente novamente.';
       if (error instanceof FirebaseError) {
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        if (error.code === 'auth/configuration-not-found') {
+          description = 'O método de login por Email/Senha não está ativado no Firebase. Por favor, ative-o no console do Firebase.';
+        } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
           description = 'Credenciais inválidas. Verifique seu email e senha.';
-        } else if (error.code === 'auth/configuration-not-found') {
-          description = 'O método de login por email/senha não está ativado no Firebase.';
         }
       }
       toast({
