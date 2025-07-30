@@ -27,13 +27,15 @@ interface ManageLeadDialogProps {
 }
 
 export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageLeadDialogProps) {
-  const { addLead, updateLead } = useStore();
+  const { addLead, updateLead, clients } = useStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<Lead['status']>('Novo');
+  const [value, setValue] = useState(0);
+  const [clientId, setClientId] = useState<string | undefined>();
 
 
   useEffect(() => {
@@ -44,6 +46,8 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
       setCompany(lead.company || '');
       setDescription(lead.description);
       setStatus(lead.status);
+      setValue(lead.value);
+      setClientId(lead.clientId);
     } else {
       setName('');
       setEmail('');
@@ -51,6 +55,8 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
       setCompany('');
       setDescription('');
       setStatus('Novo');
+      setValue(0);
+      setClientId(undefined);
     }
   }, [lead, open]);
 
@@ -68,6 +74,8 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
         company,
         description,
         status,
+        value,
+        clientId,
     };
 
     if (lead) {
@@ -112,6 +120,24 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
                 required
               />
             </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="client" className="text-right">
+                Cliente
+              </Label>
+              <Select value={clientId} onValueChange={setClientId}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Novo Cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                   <SelectItem value="new">Novo Cliente</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
                 Email
@@ -144,6 +170,18 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
                 id="company"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="value" className="text-right">
+                Valor (R$)
+              </Label>
+              <Input
+                id="value"
+                type="number"
+                value={value}
+                onChange={(e) => setValue(Number(e.target.value))}
                 className="col-span-3"
               />
             </div>

@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Lead } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
-import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, User } from 'lucide-react';
+import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, User, DollarSign, Briefcase } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { LeadCommentForm } from './lead-comment-form';
 import { useRouter } from 'next/navigation';
@@ -27,9 +27,11 @@ import { format } from 'date-fns';
 import { Button } from '../ui/button';
 
 export function LeadDetailsSheet({ lead, children }: { lead: Lead; children: ReactNode }) {
-  const { participants, updateLead, addClient, addProject } = useStore();
+  const { participants, updateLead, addClient, addProject, getClient } = useStore();
   const router = useRouter();
   const { toast } = useToast();
+  const existingClient = lead.clientId ? getClient(lead.clientId) : null;
+
 
   const handleStatusChange = (status: Lead['status']) => {
     updateLead({ ...lead, status });
@@ -40,26 +42,33 @@ export function LeadDetailsSheet({ lead, children }: { lead: Lead; children: Rea
     const endDate = new Date();
     endDate.setDate(today.getDate() + 30); // Set end date to 30 days from now
 
-    // 1. Create a new client from the lead
-    const newClient = addClient({
-      name: lead.name,
-      email: lead.email,
-      company: lead.company,
-      phone: lead.phone,
-    });
+    let finalClientId: string;
 
+    if (existingClient) {
+      finalClientId = existingClient.id;
+    } else {
+       // 1. Create a new client from the lead if one isn't linked
+      const newClient = addClient({
+        name: lead.company || lead.name,
+        email: lead.email,
+        company: lead.company,
+        phone: lead.phone,
+      });
+      finalClientId = newClient.id;
+    }
+    
     // 2. Create a new project linked to the new client
     const newProject = addProject({
-      name: `Projeto - ${lead.name}`,
+      name: lead.name,
       description: lead.description,
-      clientId: newClient.id,
+      clientId: finalClientId,
       startDate: format(today, 'yyyy-MM-dd'),
       endDate: format(endDate, 'yyyy-MM-dd'),
       status: 'Planejamento',
     });
 
     // 3. Update the lead's status to 'Converted'
-    updateLead({ ...lead, status: 'Convertido' });
+    updateLead({ ...lead, status: 'Convertido', clientId: finalClientId });
 
     toast({
       title: 'Lead Convertido!',
@@ -69,6 +78,11 @@ export function LeadDetailsSheet({ lead, children }: { lead: Lead; children: Rea
     // 4. Redirect to the new project page
     router.push(`/projects/${newProject.id}`);
   };
+
+  const formattedValue = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(lead.value);
 
   return (
     <Sheet>
@@ -98,6 +112,13 @@ export function LeadDetailsSheet({ lead, children }: { lead: Lead; children: Rea
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-muted-foreground w-32">
+                    <DollarSign className="h-4 w-4" />
+                    <span>Valor</span>
+                </div>
+                <p className="font-semibold">{formattedValue}</p>
+            </div>
              <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-muted-foreground w-32">
                     <Mail className="h-4 w-4" />
@@ -121,6 +142,15 @@ export function LeadDetailsSheet({ lead, children }: { lead: Lead; children: Rea
                         <span>Empresa</span>
                     </div>
                     <p>{lead.company}</p>
+                </div>
+            )}
+            {existingClient && (
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-muted-foreground w-32">
+                        <Briefcase className="h-4 w-4" />
+                        <span>Cliente Vinculado</span>
+                    </div>
+                    <p className="font-medium">{existingClient.name}</p>
                 </div>
             )}
             <div className="flex items-center gap-4">

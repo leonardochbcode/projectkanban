@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Lead } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Building, Calendar, Mail, Phone } from 'lucide-react';
+import { Building, Calendar, DollarSign } from 'lucide-react';
 import { LeadDetailsSheet } from './lead-details-sheet';
 
 interface LeadCardProps {
@@ -20,6 +20,11 @@ export function LeadCard({ lead }: LeadCardProps) {
     'Convertido': 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
     'Perdido': 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
   };
+
+  const formattedValue = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(lead.value);
 
   return (
     <LeadDetailsSheet lead={lead}>
@@ -39,16 +44,10 @@ export function LeadCard({ lead }: LeadCardProps) {
                     <span>{lead.company}</span>
                  </div>
                )}
-                <div className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5" />
-                    <span>{lead.email}</span>
+                <div className="flex items-center gap-2 font-semibold">
+                    <DollarSign className="h-3.5 w-3.5" />
+                    <span>{formattedValue}</span>
                 </div>
-                 {lead.phone && (
-                    <div className="flex items-center gap-2">
-                        <Phone className="h-3.5 w-3.5" />
-                        <span>{lead.phone}</span>
-                    </div>
-                 )}
                  <div className="flex items-center gap-2 pt-1">
                     <Calendar className="h-3.5 w-3.5" />
                     <span>Criado em: {new Date(lead.createdAt).toLocaleDateString()}</span>

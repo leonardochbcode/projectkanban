@@ -46,6 +46,8 @@ export interface Lead {
     status: 'Novo' | 'Em Contato' | 'Proposta Enviada' | 'Convertido' | 'Perdido';
     createdAt: string;
     comments: LeadComment[];
+    value: number;
+    clientId?: string;
 }
 
 export interface Participant {
