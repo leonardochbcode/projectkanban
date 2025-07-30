@@ -19,6 +19,7 @@ import {
   initialClients,
   initialLeads,
   initialCompanyInfo,
+  defaultThemeColors
 } from '@/lib/data';
 
 interface Store {
@@ -75,7 +76,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [leads, setLeads] = useLocalStorage<Lead[]>('leads', initialLeads);
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', initialCompanyInfo);
-  const [themeColors, setThemeColors] = useLocalStorage<ThemeColors | null>('themeColors', { primary: '#283156', background: '#f0f4f8', accent: '#e0e7ff', menuText: '#ffffff' });
+  const [themeColors, setThemeColors] = useLocalStorage<ThemeColors | null>('themeColors', defaultThemeColors);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {

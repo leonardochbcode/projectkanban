@@ -25,7 +25,6 @@ import { Skeleton } from '../ui/skeleton';
 import { CompanyHeaderInfo } from './company-header-info';
 import Image from 'next/image';
 
-// Utility to convert hex to HSL string
 const hexToHslString = (hex: string) => {
     if (!hex) return '';
     hex = hex.replace('#', '');
@@ -47,16 +46,29 @@ const hexToHslString = (hex: string) => {
       }
       h /= 6;
     }
-    
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 };
 
 const applyColors = (colors: ThemeColors) => {
-     if (colors.primary) document.documentElement.style.setProperty('--primary', hexToHslString(colors.primary));
-     if (colors.background) document.documentElement.style.setProperty('--background', hexToHslString(colors.background));
-     if (colors.accent) document.documentElement.style.setProperty('--accent', hexToHslString(colors.accent));
-     if (colors.primary) document.documentElement.style.setProperty('--muted', hexToHslString(colors.primary));
-     if (colors.menuText) document.documentElement.style.setProperty('--menu-foreground', hexToHslString(colors.menuText));
+    let styleString = '';
+    if (colors.light) {
+        styleString += ':root, .light {';
+        for (const [key, value] of Object.entries(colors.light)) {
+            styleString += `--${key}: ${hexToHslString(value)};\n`;
+        }
+        styleString += '}\n';
+    }
+    if (colors.dark) {
+        styleString += '.dark {';
+        for (const [key, value] of Object.entries(colors.dark)) {
+            styleString += `--${key}: ${hexToHslString(value)};\n`;
+        }
+        styleString += '}';
+    }
+    const styleElement = document.getElementById('custom-theme-styles');
+    if (styleElement) {
+        styleElement.innerHTML = styleString;
+    }
 };
 
 

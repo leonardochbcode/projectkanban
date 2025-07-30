@@ -18,11 +18,32 @@ export interface CompanyInfo {
     logoUrl?: string;
 }
 
-export interface ThemeColors {
-    primary: string;
+export type ColorScheme = {
     background: string;
+    foreground: string;
+    card: string;
+    cardForeground: string;
+    popover: string;
+    popoverForeground: string;
+    primary: string;
+    primaryForeground: string;
+    secondary: string;
+    secondaryForeground: string;
+    muted: string;
+    mutedForeground: string;
     accent: string;
-    menuText: string;
+    accentForeground: string;
+    destructive: string;
+    destructiveForeground: string;
+    border: string;
+    input: string;
+    ring: string;
+    menuForeground: string;
+}
+
+export interface ThemeColors {
+    light: ColorScheme;
+    dark: ColorScheme;
 }
 
 export interface Role {

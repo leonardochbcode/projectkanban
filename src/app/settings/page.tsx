@@ -11,6 +11,8 @@ import { useStore } from '@/hooks/use-store';
 import { useEffect, useState, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from 'next/image';
+import type { ThemeColors } from '@/lib/types';
+import { Separator } from '@/components/ui/separator';
 
 function CompanyInfoForm() {
     const { companyInfo, updateCompanyInfo, isLoaded } = useStore();
@@ -113,18 +115,78 @@ function CompanyInfoForm() {
     )
 }
 
+const ColorPicker = ({ label, color, setColor }: { label: string, color: string, setColor: (color: string) => void }) => (
+    <div className="flex items-center gap-4">
+        <Label className="w-40">{label}</Label>
+        <Input type="color" value={color} onChange={e => setColor(e.target.value)} className="p-1 h-10 w-16"/>
+        <span className="text-sm text-muted-foreground font-mono">{color}</span>
+    </div>
+);
+
+const defaultThemeColors: ThemeColors = {
+  light: {
+    background: '#f8fafc',
+    foreground: '#020817',
+    card: '#ffffff',
+    cardForeground: '#020817',
+    popover: '#ffffff',
+    popoverForeground: '#020817',
+    primary: '#4f46e5',
+    primaryForeground: '#f8fafc',
+    secondary: '#f1f5f9',
+    secondaryForeground: '#0f172a',
+    muted: '#f1f5f9',
+    mutedForeground: '#64748b',
+    accent: '#f1f5f9',
+    accentForeground: '#0f172a',
+    destructive: '#ef4444',
+    destructiveForeground: '#f8fafc',
+    border: '#e2e8f0',
+    input: '#e2e8f0',
+    ring: '#4f46e5',
+    menuForeground: '#f8fafc'
+  },
+  dark: {
+    background: '#020817',
+    foreground: '#f8fafc',
+    card: '#020817',
+    cardForeground: '#f8fafc',
+    popover: '#020817',
+    popoverForeground: '#f8fafc',
+    primary: '#4f46e5',
+    primaryForeground: '#f8fafc',
+    secondary: '#1e293b',
+    secondaryForeground: '#f8fafc',
+    muted: '#1e293b',
+    mutedForeground: '#94a3b8',
+    accent: '#1e293b',
+    accentForeground: '#f8fafc',
+    destructive: '#ef4444',
+    destructiveForeground: '#f8fafc',
+    border: '#1e293b',
+    input: '#1e293b',
+    ring: '#4f46e5',
+    menuForeground: '#f8fafc'
+  }
+};
+
 
 function CustomizationForm() {
-  const { themeColors, updateThemeColors } = useStore();
+  const { themeColors: storedThemeColors, updateThemeColors } = useStore();
   const { toast } = useToast();
   
-  const [primary, setPrimary] = useState(themeColors?.primary || '#283156');
-  const [background, setBackground] = useState(themeColors?.background || '#f0f4f8');
-  const [accent, setAccent] = useState(themeColors?.accent || '#e0e7ff');
-  const [menuText, setMenuText] = useState(themeColors?.menuText || '#ffffff');
+  // Initialize with stored colors or defaults
+  const [lightTheme, setLightTheme] = useState(storedThemeColors?.light ?? defaultThemeColors.light);
+  const [darkTheme, setDarkTheme] = useState(storedThemeColors?.dark ?? defaultThemeColors.dark);
 
+  const createColorSetter = (theme: 'light' | 'dark', key: keyof ThemeColors['light']) => (color: string) => {
+    if (theme === 'light') {
+      setLightTheme(prev => ({ ...prev, [key]: color }));
+    } else {
+      setDarkTheme(prev => ({ ...prev, [key]: color }));
+    }
+  };
 
-  // Utility to convert hex to HSL string
   const hexToHslString = (hex: string) => {
     hex = hex.replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16) / 255;
@@ -145,28 +207,67 @@ function CustomizationForm() {
       }
       h /= 6;
     }
-    
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
   };
-
-  const applyColors = (colors: {primary: string, background: string, accent: string, menuText: string}) => {
-     document.documentElement.style.setProperty('--primary', hexToHslString(colors.primary));
-     document.documentElement.style.setProperty('--background', hexToHslString(colors.background));
-     document.documentElement.style.setProperty('--accent', hexToHslString(colors.accent));
-     
-     // Update sidebar color dynamically as well
-     document.documentElement.style.setProperty('--muted', hexToHslString(colors.primary));
-     document.documentElement.style.setProperty('--menu-foreground', hexToHslString(colors.menuText));
-  }
   
+  const applyColors = () => {
+    let styleString = ':root {';
+    for (const [key, value] of Object.entries(lightTheme)) {
+      styleString += `--${key}: ${hexToHslString(value)};\n`;
+    }
+    styleString += '}\n';
+    
+    styleString += '.dark {';
+    for (const [key, value] of Object.entries(darkTheme)) {
+        styleString += `--${key}: ${hexToHslString(value)};\n`;
+    }
+    styleString += '}';
+    
+    const styleElement = document.getElementById('custom-theme-styles');
+    if (styleElement) {
+        styleElement.innerHTML = styleString;
+    }
+  };
+
   const handleSave = () => {
-    const newColors = { primary, background, accent, menuText };
-    applyColors(newColors);
+    const newColors = { light: lightTheme, dark: darkTheme };
+    applyColors();
     updateThemeColors(newColors);
     toast({
       title: 'Tema Salvo',
       description: 'As cores do seu tema foram salvas com sucesso.',
     });
+  };
+
+  const ThemeEditor = ({ theme, setTheme }: { theme: 'light' | 'dark', setTheme: (colors: any) => void }) => {
+    const colors = theme === 'light' ? lightTheme : darkTheme;
+    const colorSetter = (key: keyof ThemeColors['light']) => (color: string) => {
+        setTheme((prev: any) => ({ ...prev, [key]: color }));
+    }
+    
+    return (
+        <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Cores Gerais</h3>
+            <ColorPicker label="Cor de Fundo" color={colors.background} setColor={colorSetter('background')} />
+            <ColorPicker label="Cor do Texto" color={colors.foreground} setColor={colorSetter('foreground')} />
+            <ColorPicker label="Cor da Borda" color={colors.border} setColor={colorSetter('border')} />
+
+            <Separator className="my-6" />
+            <h3 className="font-semibold text-lg">Cores Primárias</h3>
+            <ColorPicker label="Primária (Botões)" color={colors.primary} setColor={colorSetter('primary')} />
+            <ColorPicker label="Texto da Primária" color={colors.primaryForeground} setColor={colorSetter('primaryForeground')} />
+           
+            <Separator className="my-6" />
+            <h3 className="font-semibold text-lg">Cores de Destaque</h3>
+            <ColorPicker label="Destaque (Hover)" color={colors.accent} setColor={colorSetter('accent')} />
+            <ColorPicker label="Texto do Destaque" color={colors.accentForeground} setColor={colorSetter('accentForeground')} />
+
+            <Separator className="my-6" />
+            <h3 className="font-semibold text-lg">Menu Lateral</h3>
+            <ColorPicker label="Fundo do Menu" color={colors.muted} setColor={colorSetter('muted')} />
+            <ColorPicker label="Fonte do Menu" color={colors.menuForeground} setColor={colorSetter('menuForeground')} />
+        </div>
+    );
   }
 
   return (
@@ -174,31 +275,24 @@ function CustomizationForm() {
           <CardHeader>
             <CardTitle>Personalização da Aparência</CardTitle>
             <CardDescription>
-                Escolha as cores que melhor se adaptam à sua marca.
+                Escolha as cores que melhor se adaptam à sua marca. As alterações são aplicadas em tempo real.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-              <div className="flex items-center gap-4">
-                  <Label htmlFor="primaryColor" className="w-32">Cor Primária</Label>
-                  <Input id="primaryColor" type="color" value={primary} onChange={e => setPrimary(e.target.value)} className="p-1 h-10 w-16"/>
-                  <span className="text-sm text-muted-foreground">{primary}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                  <Label htmlFor="bgColor" className="w-32">Cor de Fundo</Label>
-                  <Input id="bgColor" type="color" value={background} onChange={e => setBackground(e.target.value)} className="p-1 h-10 w-16"/>
-                  <span className="text-sm text-muted-foreground">{background}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                  <Label htmlFor="accentColor" className="w-32">Cor de Destaque</Label>
-                  <Input id="accentColor" type="color" value={accent} onChange={e => setAccent(e.target.value)} className="p-1 h-10 w-16"/>
-                   <span className="text-sm text-muted-foreground">{accent}</span>
-              </div>
-               <div className="flex items-center gap-4">
-                  <Label htmlFor="menuTextColor" className="w-32">Cor da Fonte do Menu</Label>
-                  <Input id="menuTextColor" type="color" value={menuText} onChange={e => setMenuText(e.target.value)} className="p-1 h-10 w-16"/>
-                   <span className="text-sm text-muted-foreground">{menuText}</span>
-              </div>
-               <Button onClick={handleSave}>Salvar Tema</Button>
+          <CardContent>
+            <Tabs defaultValue="light" className="w-full">
+                <TabsList>
+                    <TabsTrigger value="light">Tema Claro</TabsTrigger>
+                    <TabsTrigger value="dark">Tema Escuro</TabsTrigger>
+                </TabsList>
+                <TabsContent value="light" className="pt-4">
+                    <ThemeEditor theme="light" setTheme={setLightTheme} />
+                </TabsContent>
+                <TabsContent value="dark" className="pt-4">
+                     <ThemeEditor theme="dark" setTheme={setDarkTheme} />
+                </TabsContent>
+            </Tabs>
+             <Separator className="my-6" />
+             <Button onClick={handleSave}>Salvar Tema</Button>
           </CardContent>
       </Card>
   )
