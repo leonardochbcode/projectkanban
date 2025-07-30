@@ -21,9 +21,9 @@ export const initialClients: Client[] = [
 ];
 
 export const initialLeads: Lead[] = [
-    { id: 'lead-1', name: 'Futuro Cliente Web', email: 'lead1@email.com', company: 'Inovatech', description: 'Interessado em um novo site institucional.', status: 'Novo', createdAt: '2024-08-01T10:00:00Z', phone: '11 98765-4321' },
-    { id: 'lead-2', name: 'App de E-commerce', email: 'lead2@email.com', company: 'VarejoGlobal', description: 'Solicitou uma proposta para um app de e-commerce.', status: 'Proposta Enviada', createdAt: '2024-07-25T15:30:00Z', phone: '21 91234-5678' },
-    { id: 'lead-3', name: 'Marketing Digital', email: 'lead3@email.com', company: 'Consultoria XYZ', description: 'Buscando consultoria para campanha de marketing digital.', status: 'Em Contato', createdAt: '2024-08-05T11:00:00Z', phone: '31 99999-8888' },
+    { id: 'lead-1', name: 'Futuro Cliente Web', email: 'lead1@email.com', company: 'Inovatech', description: 'Interessado em um novo site institucional.', status: 'Novo', createdAt: '2024-08-01T10:00:00Z', phone: '11 98765-4321', comments: [] },
+    { id: 'lead-2', name: 'App de E-commerce', email: 'lead2@email.com', company: 'VarejoGlobal', description: 'Solicitou uma proposta para um app de e-commerce.', status: 'Proposta Enviada', createdAt: '2024-07-25T15:30:00Z', phone: '21 91234-5678', comments: [] },
+    { id: 'lead-3', name: 'Marketing Digital', email: 'lead3@email.com', company: 'Consultoria XYZ', description: 'Buscando consultoria para campanha de marketing digital.', status: 'Em Contato', createdAt: '2024-08-05T11:00:00Z', phone: '31 99999-8888', comments: [] },
 ];
 
 

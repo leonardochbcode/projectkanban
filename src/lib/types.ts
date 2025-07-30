@@ -29,6 +29,13 @@ export interface Client {
   suportewebCode?: string;
 }
 
+export interface LeadComment {
+  id: string;
+  content: string;
+  authorId: string;
+  createdAt: string;
+}
+
 export interface Lead {
     id: string;
     name: string;
@@ -38,6 +45,7 @@ export interface Lead {
     description: string;
     status: 'Novo' | 'Em Contato' | 'Proposta Enviada' | 'Convertido' | 'Perdido';
     createdAt: string;
+    comments: LeadComment[];
 }
 
 export interface Participant {
