@@ -123,7 +123,7 @@ function CustomizationForm() {
      
      // Update sidebar color dynamically as well
      document.documentElement.style.setProperty('--muted', hexToHslString(colors.primary));
-     document.documentElement.style.setProperty('--muted-foreground', hexToHslString(colors.menuText));
+     document.documentElement.style.setProperty('--menu-foreground', hexToHslString(colors.menuText));
   }
   
   const handleSave = () => {

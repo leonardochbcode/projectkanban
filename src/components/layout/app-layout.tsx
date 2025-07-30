@@ -55,7 +55,7 @@ const applyColors = (colors: ThemeColors) => {
      if (colors.background) document.documentElement.style.setProperty('--background', hexToHslString(colors.background));
      if (colors.accent) document.documentElement.style.setProperty('--accent', hexToHslString(colors.accent));
      if (colors.primary) document.documentElement.style.setProperty('--muted', hexToHslString(colors.primary));
-     if (colors.menuText) document.documentElement.style.setProperty('--muted-foreground', hexToHslString(colors.menuText));
+     if (colors.menuText) document.documentElement.style.setProperty('--menu-foreground', hexToHslString(colors.menuText));
 };
 
 
@@ -117,7 +117,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           key={label}
           href={href}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-primary/20 hover:text-primary-foreground',
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-menu-foreground transition-all hover:bg-primary/20 hover:text-primary-foreground',
             { 'bg-primary text-primary-foreground': pathname === href }
           )}
         >
@@ -144,7 +144,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLinks />
           </div>
           <div className="mt-auto p-4">
-             <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-primary/20 hover:text-primary-foreground" onClick={handleLogout}>
+             <Button variant="ghost" className="w-full justify-start text-menu-foreground hover:bg-primary/20 hover:text-primary-foreground" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
              </Button>
@@ -160,7 +160,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <span className="sr-only">Alternar menu de navegação</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col bg-muted text-muted-foreground p-0">
+            <SheetContent side="left" className="flex flex-col bg-muted text-menu-foreground p-0">
                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary-foreground">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
@@ -171,7 +171,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               <NavLinks />
               <div className="mt-auto p-4 border-t">
-                <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-primary/20 hover:text-primary-foreground" onClick={handleLogout}>
+                <Button variant="ghost" className="w-full justify-start text-menu-foreground hover:bg-primary/20 hover:text-primary-foreground" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair
                 </Button>
