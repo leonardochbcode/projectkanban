@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead, LeadComment, LeadAttachment } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -18,6 +18,7 @@ import {
   initialRoles,
   initialClients,
   initialLeads,
+  initialCompanyInfo,
 } from '@/lib/data';
 
 interface Store {
@@ -29,6 +30,7 @@ interface Store {
   clients: Client[];
   leads: Lead[];
   currentUser: Participant | null;
+  companyInfo: CompanyInfo | null;
 }
 
 const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(
@@ -71,6 +73,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [clients, setClients] = useLocalStorage<Client[]>('clients', initialClients);
   const [leads, setLeads] = useLocalStorage<Lead[]>('leads', initialLeads);
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
+  const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', initialCompanyInfo);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -86,7 +89,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     clients,
     leads,
     currentUser,
-  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser]);
+    companyInfo,
+  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
@@ -96,6 +100,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.clients) setClients(newState.clients);
     if (newState.leads) setLeads(newState.leads);
     if (newState.hasOwnProperty('currentUser')) setCurrentUser(newState.currentUser ?? null);
+    if (newState.companyInfo) setCompanyInfo(newState.companyInfo);
   };
   
   const value = useMemo(() => ({ ...store, dispatch }), [store]);
@@ -309,6 +314,10 @@ export const useStore = () => {
       });
   }, [store.leads, dispatch]);
 
+  const updateCompanyInfo = useCallback((info: CompanyInfo) => {
+    dispatch({ companyInfo: info });
+  }, [dispatch]);
+
   return {
     ...store,
     login,
@@ -336,5 +345,6 @@ export const useStore = () => {
     addLead,
     updateLead,
     deleteLead,
+    updateCompanyInfo,
   };
 };

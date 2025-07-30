@@ -1,4 +1,4 @@
-import type { Project, Task, Participant, Role, Client, Lead } from './types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo } from './types';
 
 export const initialRoles: Role[] = [
   { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_leads'] },
@@ -13,6 +13,13 @@ export const initialParticipants: (Omit<Participant, 'id'> & { id: string, passw
   { id: 'user-3', name: 'Charlie Brown', email: 'charlie@example.com', roleId: 'role-3', avatar: '/avatars/03.png', password: 'password123' },
   { id: 'user-4', name: 'Diana Prince', email: 'diana@example.com', roleId: 'role-4', avatar: '/avatars/04.png', password: 'password123' },
 ];
+
+export const initialCompanyInfo: CompanyInfo = {
+    name: 'CHB Systems',
+    cnpj: '00.000.000/0001-00',
+    address: '123 Main St, Anytown, USA',
+    suportewebCode: 'CHB001'
+}
 
 export const initialClients: Client[] = [
     { id: 'client-1', name: 'Acme Corporation', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-00', address: '123 Main St, Anytown, USA', suportewebCode: 'ACME001' },

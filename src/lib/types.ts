@@ -10,6 +10,12 @@ export const availablePermissions = {
 
 export type Permission = keyof typeof availablePermissions;
 
+export interface CompanyInfo {
+    name: string;
+    cnpj: string;
+    address: string;
+    suportewebCode: string;
+}
 
 export interface Role {
   id: string;
