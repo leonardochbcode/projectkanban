@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/hooks/use-store';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Image from 'next/image';
 
 function CompanyInfoForm() {
     const { companyInfo, updateCompanyInfo, isLoaded } = useStore();
@@ -19,6 +20,8 @@ function CompanyInfoForm() {
     const [cnpj, setCnpj] = useState('');
     const [address, setAddress] = useState('');
     const [suportewebCode, setSuportewebCode] = useState('');
+    const [logoUrl, setLogoUrl] = useState<string | undefined>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
   
     useEffect(() => {
       if(companyInfo) {
@@ -26,6 +29,7 @@ function CompanyInfoForm() {
         setCnpj(companyInfo.cnpj);
         setAddress(companyInfo.address);
         setSuportewebCode(companyInfo.suportewebCode);
+        setLogoUrl(companyInfo.logoUrl);
       }
     }, [companyInfo, isLoaded])
   
@@ -35,13 +39,26 @@ function CompanyInfoForm() {
         name,
         cnpj,
         address,
-        suportewebCode
+        suportewebCode,
+        logoUrl,
       });
       toast({
         title: 'Configurações Salvas',
         description: 'As informações da empresa foram atualizadas com sucesso.',
       });
     }
+
+    const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
 
     if (!isLoaded || !companyInfo) {
       return <div>Carregando...</div>
@@ -57,6 +74,22 @@ function CompanyInfoForm() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label>Logo da Empresa</Label>
+                    <div className="flex items-center gap-4">
+                        {logoUrl ? (
+                            <Image src={logoUrl} alt="Logo" width={64} height={64} className="h-16 w-16 rounded-md object-contain border p-1" />
+                        ) : (
+                            <div className="h-16 w-16 rounded-md border flex items-center justify-center bg-muted">
+                                <span className="text-xs text-muted-foreground">Sem Logo</span>
+                            </div>
+                        )}
+                        <Input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleLogoUpload} />
+                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                            Alterar Logo
+                        </Button>
+                    </div>
+                </div>
                 <div className="space-y-2">
                 <Label htmlFor="companyName">Nome da Empresa</Label>
                 <Input id="companyName" value={name} onChange={(e) => setName(e.target.value)} />

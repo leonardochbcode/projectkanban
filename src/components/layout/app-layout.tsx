@@ -23,6 +23,7 @@ import { useEffect } from 'react';
 import type { Permission, ThemeColors } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { CompanyHeaderInfo } from './company-header-info';
+import Image from 'next/image';
 
 // Utility to convert hex to HSL string
 const hexToHslString = (hex: string) => {
@@ -62,7 +63,7 @@ const applyColors = (colors: ThemeColors) => {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoaded, currentUser, getRole, logout, themeColors } = useStore();
+  const { isLoaded, currentUser, getRole, logout, themeColors, companyInfo } = useStore();
 
   useEffect(() => {
     if (isLoaded && !currentUser) {
@@ -134,9 +135,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary-foreground">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
-                <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
-              </svg>
+              {companyInfo?.logoUrl ? (
+                <Image src={companyInfo.logoUrl} alt="Company Logo" width={24} height={24} className="h-6 w-6" />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
+                  <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
+                </svg>
+              )}
               <span className="">CHBProject</span>
             </Link>
           </div>
@@ -163,9 +168,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SheetContent side="left" className="flex flex-col bg-muted text-menu-foreground p-0">
                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary-foreground">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
-                            <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
-                        </svg>
+                        {companyInfo?.logoUrl ? (
+                          <Image src={companyInfo.logoUrl} alt="Company Logo" width={24} height={24} className="h-6 w-6" />
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
+                              <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
+                          </svg>
+                        )}
                         <span className="">CHBProject</span>
                     </Link>
                 </div>

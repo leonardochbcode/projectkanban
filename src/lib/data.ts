@@ -18,7 +18,8 @@ export const initialCompanyInfo: CompanyInfo = {
     name: 'CHB Systems',
     cnpj: '00.000.000/0001-00',
     address: '123 Main St, Anytown, USA',
-    suportewebCode: 'CHB001'
+    suportewebCode: 'CHB001',
+    logoUrl: ''
 }
 
 export const initialClients: Client[] = [

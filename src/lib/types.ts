@@ -15,6 +15,7 @@ export interface CompanyInfo {
     cnpj: string;
     address: string;
     suportewebCode: string;
+    logoUrl?: string;
 }
 
 export interface ThemeColors {
