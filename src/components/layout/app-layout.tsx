@@ -75,8 +75,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           key={label}
           href={href}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-            { 'bg-muted text-primary': pathname === href }
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-primary/20 hover:text-primary-foreground',
+            { 'bg-primary text-primary-foreground': pathname === href }
           )}
         >
           <Icon className="h-4 w-4" />
@@ -88,11 +88,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
+      <div className="hidden border-r bg-muted md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-primary">
+            <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary-foreground">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
                 <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
               </svg>
               <span className="">CHBProject</span>
@@ -102,7 +102,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLinks />
           </div>
           <div className="mt-auto p-4">
-             <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+             <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-primary/20 hover:text-primary-foreground" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair
              </Button>
@@ -118,10 +118,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <span className="sr-only">Alternar menu de navegação</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
+            <SheetContent side="left" className="flex flex-col bg-muted text-muted-foreground p-0">
                <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                    <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-primary">
+                    <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary-foreground">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
                             <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
                         </svg>
                         <span className="">CHBProject</span>
@@ -129,7 +129,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               <NavLinks />
               <div className="mt-auto p-4 border-t">
-                <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+                <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-primary/20 hover:text-primary-foreground" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair
                 </Button>

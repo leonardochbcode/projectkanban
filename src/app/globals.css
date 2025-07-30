@@ -8,28 +8,37 @@ body {
 
 @layer base {
   :root {
-    --background: 210 40% 96.1%;
+    --background: 210 40% 98%; /* Slightly lighter background */
     --foreground: 222.2 84% 4.9%;
+
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 208 44% 62%;
-    --primary-foreground: 210 40% 98%;
+
+    --primary: 231 38% 30%; /* Using the new blue as primary */
+    --primary-foreground: 0 0% 100%;
+
     --secondary: 210 40% 92.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 209 46% 77%;
+
+    --muted: 231 38% 25%; /* Sidebar background */
+    --muted-foreground: 210 40% 92%; /* Sidebar text */
+    
+    --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 208 44% 62%;
-    --chart-1: 208 44% 62%;
-    --chart-2: 209 46% 77%;
-    --chart-3: 197 37% 24%;
+    --ring: 231 38% 30%;
+
+    --chart-1: 231 38% 30%;
+    --chart-2: 231 38% 45%;
+    --chart-3: 231 38% 60%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
@@ -37,26 +46,35 @@ body {
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
+
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
+
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 208 44% 62%;
-    --primary-foreground: 210 40% 98%;
+    
+    --primary: 231 38% 40%; /* A slightly lighter blue for dark mode primary */
+    --primary-foreground: 0 0% 100%;
+
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 209 46% 77%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 231 38% 25%; /* Sidebar background for dark mode */
+    --muted-foreground: 210 40% 88%; /* Sidebar text for dark mode */
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 208 44% 62%;
-    --chart-1: 208 44% 62%;
-    --chart-2: 209 46% 77%;
-    --chart-3: 197 37% 24%;
+    --ring: 231 38% 40%;
+
+    --chart-1: 231 38% 40%;
+    --chart-2: 231 38% 55%;
+    --chart-3: 231 38% 70%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
   }
