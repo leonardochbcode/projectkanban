@@ -1,5 +1,5 @@
 'use client';
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import {
   Sheet,
   SheetClose,
@@ -28,12 +28,31 @@ import { format } from 'date-fns';
 import { Button } from '../ui/button';
 import { LeadAttachmentForm } from './lead-attachment-form';
 import { formatBytes } from '@/lib/utils';
+import { ManageLeadDialog } from './manage-lead-dialog';
 
-export function LeadDetailsSheet({ lead, children, onEdit }: { lead: Lead; children: ReactNode, onEdit: (lead: Lead) => void; }) {
+export function LeadDetailsSheet({ 
+    lead, 
+    children, 
+    onEdit,
+    open,
+    onOpenChange,
+}: { 
+    lead: Lead; 
+    children?: ReactNode, 
+    onEdit: (lead: Lead) => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}) {
   const { participants, updateLead, addClient, addProject, getClient } = useStore();
   const router = useRouter();
   const { toast } = useToast();
   const existingClient = lead.clientId ? getClient(lead.clientId) : null;
+  const [isSheetOpen, setIsSheetOpen] = useState(open ?? false);
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setIsSheetOpen(isOpen);
+    onOpenChange?.(isOpen);
+  };
 
 
   const handleStatusChange = (status: Lead['status']) => {
@@ -62,12 +81,13 @@ export function LeadDetailsSheet({ lead, children, onEdit }: { lead: Lead; child
     
     // 2. Create a new project linked to the new client
     const newProject = addProject({
-      name: lead.name,
+      name: `Projeto: ${lead.name}`,
       description: lead.description,
       clientId: finalClientId,
       startDate: format(today, 'yyyy-MM-dd'),
       endDate: format(endDate, 'yyyy-MM-dd'),
       status: 'Planejamento',
+      leadId: lead.id, // Store the original lead ID for traceability
     });
 
     // 3. Update the lead's status to 'Converted'
@@ -79,6 +99,7 @@ export function LeadDetailsSheet({ lead, children, onEdit }: { lead: Lead; child
     });
 
     // 4. Redirect to the new project page
+    handleOpenChange(false);
     router.push(`/projects/${newProject.id}`);
   };
 
@@ -91,10 +112,12 @@ export function LeadDetailsSheet({ lead, children, onEdit }: { lead: Lead; child
     const updatedAttachments = lead.attachments.filter(att => att.id !== attachmentId);
     updateLead({ ...lead, attachments: updatedAttachments });
   };
+  
+  const Trigger = children ? <SheetTrigger asChild onClick={() => handleOpenChange(true)}>{children}</SheetTrigger> : null;
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>{children}</SheetTrigger>
+    <Sheet open={isSheetOpen} onOpenChange={handleOpenChange}>
+      {Trigger}
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
         <SheetHeader className="mb-4 pr-12">
             <div className="flex justify-between items-start">
@@ -102,12 +125,10 @@ export function LeadDetailsSheet({ lead, children, onEdit }: { lead: Lead; child
                     <SheetTitle className="font-headline text-2xl">{lead.name}</SheetTitle>
                     <SheetDescription>{lead.description}</SheetDescription>
                 </div>
-                 <SheetClose asChild>
-                    <Button variant="outline" onClick={() => onEdit(lead)}>
-                        <Edit className="mr-2" />
-                        Editar
-                    </Button>
-                 </SheetClose>
+                 <Button variant="outline" onClick={() => { handleOpenChange(false); onEdit(lead); }}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                </Button>
             </div>
         </SheetHeader>
         <div className="space-y-6">

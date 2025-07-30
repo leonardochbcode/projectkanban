@@ -281,6 +281,10 @@ export const useStore = () => {
       clients: store.clients.filter(c => c.id !== clientId)
     });
   }, [store.clients, dispatch]);
+    
+  const getLead = useCallback((leadId: string) => {
+      return store.leads.find(l => l.id === leadId);
+  }, [store.leads]);
 
   const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt' | 'comments' | 'attachments'>) => {
       const newLead: Lead = {
@@ -328,6 +332,7 @@ export const useStore = () => {
     addClient,
     updateClient,
     deleteClient,
+    getLead,
     addLead,
     updateLead,
     deleteLead,

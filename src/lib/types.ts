@@ -97,4 +97,5 @@ export interface Project {
   status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído';
   participantIds: string[];
   clientId?: string;
+  leadId?: string;
 }
