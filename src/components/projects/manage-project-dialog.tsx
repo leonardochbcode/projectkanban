@@ -27,10 +27,19 @@ import type { Project } from '@/lib/types';
 interface ManageProjectDialogProps {
   children: ReactNode;
   project?: Project;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ManageProjectDialog({ children, project }: ManageProjectDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ManageProjectDialog({ children, project, open: openProp, onOpenChange: onOpenChangeProp }: ManageProjectDialogProps) {
+  // Internal state for when the component is not controlled
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Determine if the dialog is controlled or not
+  const isControlled = openProp !== undefined && onOpenChangeProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = isControlled ? onOpenChangeProp : setInternalOpen;
+
   const { addProject, updateProject, clients } = useStore();
   
   const [name, setName] = useState('');
@@ -41,6 +50,7 @@ export function ManageProjectDialog({ children, project }: ManageProjectDialogPr
   const [clientId, setClientId] = useState<string | undefined>();
 
   useEffect(() => {
+    // Populate form when dialog opens for an existing project
     if (project && open) {
         setName(project.name);
         setDescription(project.description);
@@ -48,8 +58,8 @@ export function ManageProjectDialog({ children, project }: ManageProjectDialogPr
         setEndDate(project.endDate);
         setStatus(project.status);
         setClientId(project.clientId);
-    } else if (!project) {
-        // Reset for "Add New" mode
+    } else if (!project && open) {
+        // Reset form for "Add New" mode when dialog opens
         setName('');
         setDescription('');
         setStartDate('');
@@ -57,7 +67,7 @@ export function ManageProjectDialog({ children, project }: ManageProjectDialogPr
         setStatus('Planejamento');
         setClientId(undefined);
     }
-  }, [project, open])
+  }, [project, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +138,7 @@ export function ManageProjectDialog({ children, project }: ManageProjectDialogPr
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
                 <SelectContent>
+                   <SelectItem value="none">Nenhum</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
@@ -185,6 +196,7 @@ export function ManageProjectDialog({ children, project }: ManageProjectDialogPr
             </div>
           </div>
           <DialogFooter>
+             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button type="submit">{project ? 'Salvar Alterações' : 'Criar Projeto'}</Button>
           </DialogFooter>
         </form>
