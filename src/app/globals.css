@@ -23,8 +23,8 @@ body {
     --secondary: 210 40% 92.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 231 38% 25%; /* Sidebar background */
-    --muted-foreground: 210 40% 92%; /* Sidebar text */
+    --muted: 230 42% 25%; /* #283156 Sidebar background */
+    --muted-foreground: 222.2 47.4% 11.2%; /* Darker text for descriptions etc. */
     
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
@@ -59,8 +59,8 @@ body {
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 231 38% 25%; /* Sidebar background for dark mode */
-    --muted-foreground: 210 40% 88%; /* Sidebar text for dark mode */
+    --muted: 230 42% 25%; /* #283156 Sidebar background for dark mode */
+    --muted-foreground: 210 40% 62%; /* Lighter text for descriptions in dark mode */
 
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
