@@ -20,12 +20,13 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { UserNav } from '@/components/user-nav';
 import { useStore } from '@/hooks/use-store';
 import { useEffect } from 'react';
-import type { Permission } from '@/lib/types';
+import type { Permission, ThemeColors } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { CompanyHeaderInfo } from './company-header-info';
 
 // Utility to convert hex to HSL string
 const hexToHslString = (hex: string) => {
+    if (!hex) return '';
     hex = hex.replace('#', '');
     const r = parseInt(hex.substring(0, 2), 16) / 255;
     const g = parseInt(hex.substring(2, 4), 16) / 255;
@@ -49,11 +50,12 @@ const hexToHslString = (hex: string) => {
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 };
 
-const applyColors = (colors: {primary: string, background: string, accent: string}) => {
-     document.documentElement.style.setProperty('--primary', hexToHslString(colors.primary));
-     document.documentElement.style.setProperty('--background', hexToHslString(colors.background));
-     document.documentElement.style.setProperty('--accent', hexToHslString(colors.accent));
-     document.documentElement.style.setProperty('--muted', hexToHslString(colors.primary));
+const applyColors = (colors: ThemeColors) => {
+     if (colors.primary) document.documentElement.style.setProperty('--primary', hexToHslString(colors.primary));
+     if (colors.background) document.documentElement.style.setProperty('--background', hexToHslString(colors.background));
+     if (colors.accent) document.documentElement.style.setProperty('--accent', hexToHslString(colors.accent));
+     if (colors.primary) document.documentElement.style.setProperty('--muted', hexToHslString(colors.primary));
+     if (colors.menuText) document.documentElement.style.setProperty('--muted-foreground', hexToHslString(colors.menuText));
 };
 
 

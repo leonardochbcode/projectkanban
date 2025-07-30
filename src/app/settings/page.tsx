@@ -88,6 +88,8 @@ function CustomizationForm() {
   const [primary, setPrimary] = useState(themeColors?.primary || '#283156');
   const [background, setBackground] = useState(themeColors?.background || '#f0f4f8');
   const [accent, setAccent] = useState(themeColors?.accent || '#e0e7ff');
+  const [menuText, setMenuText] = useState(themeColors?.menuText || '#ffffff');
+
 
   // Utility to convert hex to HSL string
   const hexToHslString = (hex: string) => {
@@ -114,17 +116,18 @@ function CustomizationForm() {
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
   };
 
-  const applyColors = (colors: {primary: string, background: string, accent: string}) => {
+  const applyColors = (colors: {primary: string, background: string, accent: string, menuText: string}) => {
      document.documentElement.style.setProperty('--primary', hexToHslString(colors.primary));
      document.documentElement.style.setProperty('--background', hexToHslString(colors.background));
      document.documentElement.style.setProperty('--accent', hexToHslString(colors.accent));
      
      // Update sidebar color dynamically as well
      document.documentElement.style.setProperty('--muted', hexToHslString(colors.primary));
+     document.documentElement.style.setProperty('--muted-foreground', hexToHslString(colors.menuText));
   }
   
   const handleSave = () => {
-    const newColors = { primary, background, accent };
+    const newColors = { primary, background, accent, menuText };
     applyColors(newColors);
     updateThemeColors(newColors);
     toast({
@@ -143,19 +146,24 @@ function CustomizationForm() {
           </CardHeader>
           <CardContent className="space-y-6">
               <div className="flex items-center gap-4">
-                  <Label htmlFor="primaryColor" className="w-28">Cor Primária</Label>
+                  <Label htmlFor="primaryColor" className="w-32">Cor Primária</Label>
                   <Input id="primaryColor" type="color" value={primary} onChange={e => setPrimary(e.target.value)} className="p-1 h-10 w-16"/>
                   <span className="text-sm text-muted-foreground">{primary}</span>
               </div>
               <div className="flex items-center gap-4">
-                  <Label htmlFor="bgColor" className="w-28">Cor de Fundo</Label>
+                  <Label htmlFor="bgColor" className="w-32">Cor de Fundo</Label>
                   <Input id="bgColor" type="color" value={background} onChange={e => setBackground(e.target.value)} className="p-1 h-10 w-16"/>
                   <span className="text-sm text-muted-foreground">{background}</span>
               </div>
               <div className="flex items-center gap-4">
-                  <Label htmlFor="accentColor" className="w-28">Cor de Destaque</Label>
+                  <Label htmlFor="accentColor" className="w-32">Cor de Destaque</Label>
                   <Input id="accentColor" type="color" value={accent} onChange={e => setAccent(e.target.value)} className="p-1 h-10 w-16"/>
                    <span className="text-sm text-muted-foreground">{accent}</span>
+              </div>
+               <div className="flex items-center gap-4">
+                  <Label htmlFor="menuTextColor" className="w-32">Cor da Fonte do Menu</Label>
+                  <Input id="menuTextColor" type="color" value={menuText} onChange={e => setMenuText(e.target.value)} className="p-1 h-10 w-16"/>
+                   <span className="text-sm text-muted-foreground">{menuText}</span>
               </div>
                <Button onClick={handleSave}>Salvar Tema</Button>
           </CardContent>

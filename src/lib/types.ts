@@ -21,6 +21,7 @@ export interface ThemeColors {
     primary: string;
     background: string;
     accent: string;
+    menuText: string;
 }
 
 export interface Role {
