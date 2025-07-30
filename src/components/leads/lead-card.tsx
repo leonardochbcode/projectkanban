@@ -9,9 +9,10 @@ import { LeadDetailsSheet } from './lead-details-sheet';
 
 interface LeadCardProps {
   lead: Lead;
+  onEdit: (lead: Lead) => void;
 }
 
-export function LeadCard({ lead }: LeadCardProps) {
+export function LeadCard({ lead, onEdit }: LeadCardProps) {
   
   const statusColors: { [key: string]: string } = {
     'Novo': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
@@ -27,7 +28,7 @@ export function LeadCard({ lead }: LeadCardProps) {
   }).format(lead.value);
 
   return (
-    <LeadDetailsSheet lead={lead}>
+    <LeadDetailsSheet lead={lead} onEdit={onEdit}>
         <Card className="hover:bg-card/90 cursor-pointer transition-colors">
             <CardHeader className="p-4 pb-2">
                  <div className="flex justify-between items-start gap-2">

@@ -14,18 +14,23 @@ const statuses: Lead['status'][] = ['Novo', 'Em Contato', 'Proposta Enviada', 'C
 function LeadsPageContent() {
   const { leads } = useStore();
   const [editingLead, setEditingLead] = useState<Lead | undefined>(undefined);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isManageLeadDialogOpen, setIsManageLeadDialogOpen] = useState(false);
 
   const handleAdd = () => {
     setEditingLead(undefined);
-    setIsDialogOpen(true);
+    setIsManageLeadDialogOpen(true);
   };
   
+  const handleEdit = (lead: Lead) => {
+    setEditingLead(lead);
+    setIsManageLeadDialogOpen(true);
+  }
+
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setEditingLead(undefined);
     }
-    setIsDialogOpen(open);
+    setIsManageLeadDialogOpen(open);
   }
 
   return (
@@ -35,7 +40,7 @@ function LeadsPageContent() {
             <div className="flex items-center space-x-2">
             <ManageLeadDialog
                 lead={editingLead}
-                open={isDialogOpen}
+                open={isManageLeadDialogOpen}
                 onOpenChange={handleDialogClose}
             >
                 <Button onClick={handleAdd}>
@@ -55,7 +60,7 @@ function LeadsPageContent() {
                         {leads
                         .filter((lead) => lead.status === status)
                         .map((lead) => (
-                            <LeadCard key={lead.id} lead={lead} />
+                            <LeadCard key={lead.id} lead={lead} onEdit={handleEdit}/>
                         ))}
                     </div>
                     </div>

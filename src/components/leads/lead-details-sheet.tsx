@@ -2,6 +2,7 @@
 import { type ReactNode } from 'react';
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -18,7 +19,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Lead } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
-import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, DollarSign, Briefcase, Paperclip, X } from 'lucide-react';
+import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, DollarSign, Briefcase, Paperclip, X, Edit } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { LeadCommentForm } from './lead-comment-form';
 import { useRouter } from 'next/navigation';
@@ -28,7 +29,7 @@ import { Button } from '../ui/button';
 import { LeadAttachmentForm } from './lead-attachment-form';
 import { formatBytes } from '@/lib/utils';
 
-export function LeadDetailsSheet({ lead, children }: { lead: Lead; children: ReactNode }) {
+export function LeadDetailsSheet({ lead, children, onEdit }: { lead: Lead; children: ReactNode, onEdit: (lead: Lead) => void; }) {
   const { participants, updateLead, addClient, addProject, getClient } = useStore();
   const router = useRouter();
   const { toast } = useToast();
@@ -95,9 +96,19 @@ export function LeadDetailsSheet({ lead, children }: { lead: Lead; children: Rea
     <Sheet>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
-        <SheetHeader className="mb-4">
-          <SheetTitle className="font-headline text-2xl">{lead.name}</SheetTitle>
-          <SheetDescription>{lead.description}</SheetDescription>
+        <SheetHeader className="mb-4 pr-12">
+            <div className="flex justify-between items-start">
+                <div>
+                    <SheetTitle className="font-headline text-2xl">{lead.name}</SheetTitle>
+                    <SheetDescription>{lead.description}</SheetDescription>
+                </div>
+                 <SheetClose asChild>
+                    <Button variant="outline" onClick={() => onEdit(lead)}>
+                        <Edit className="mr-2" />
+                        Editar
+                    </Button>
+                 </SheetClose>
+            </div>
         </SheetHeader>
         <div className="space-y-6">
           <div className="grid gap-3 text-sm">
