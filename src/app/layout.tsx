@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { AppLayout } from '@/components/layout/app-layout';
 import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/components/theme-provider';
 import { StoreProvider } from '@/hooks/use-store';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -27,19 +25,11 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <style id="custom-theme-styles"></style>
       </head>
       <body className={`${inter.variable} font-body antialiased`}>
         <StoreProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
             {children}
             <Toaster />
-          </ThemeProvider>
         </StoreProvider>
       </body>
     </html>

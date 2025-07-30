@@ -1,4 +1,4 @@
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ThemeColors } from './types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo } from './types';
 
 export const initialRoles: Role[] = [
   { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_leads'] },
@@ -21,54 +21,6 @@ export const initialCompanyInfo: CompanyInfo = {
     suportewebCode: 'CHB001',
     logoUrl: ''
 }
-
-export const defaultThemeColors: ThemeColors = {
-  light: {
-    background: '#ffffff',
-    foreground: '#020817',
-    card: '#ffffff',
-    cardForeground: '#020817',
-    popover: '#ffffff',
-    popoverForeground: '#020817',
-    primary: '#283156',
-    primaryForeground: '#ffffff',
-    secondary: '#f1f5f9',
-    secondaryForeground: '#0f172a',
-    muted: '#283156',
-    mutedForeground: '#64748b',
-    accent: '#f1f5f9',
-    accentForeground: '#0f172a',
-    destructive: '#ef4444',
-    destructiveForeground: '#f8fafc',
-    border: '#e2e8f0',
-    input: '#e2e8f0',
-    ring: '#4f46e5',
-    menuForeground: '#ffffff'
-  },
-  dark: {
-    background: '#020817',
-    foreground: '#f8fafc',
-    card: '#020817',
-    cardForeground: '#f8fafc',
-    popover: '#020817',
-    popoverForeground: '#f8fafc',
-    primary: '#283156',
-    primaryForeground: '#ffffff',
-    secondary: '#1e293b',
-    secondaryForeground: '#f8fafc',
-    muted: '#283156',
-    mutedForeground: '#94a3b8',
-    accent: '#1e293b',
-    accentForeground: '#f8fafc',
-    destructive: '#ef4444',
-    destructiveForeground: '#f8fafc',
-    border: '#1e293b',
-    input: '#1e293b',
-    ring: '#4f46e5',
-    menuForeground: '#ffffff'
-  }
-};
-
 
 export const initialClients: Client[] = [
     { id: 'client-1', name: 'Acme Corporation', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-00', address: '123 Main St, Anytown, USA', suportewebCode: 'ACME001' },
