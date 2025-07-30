@@ -71,9 +71,7 @@ function LeadsPageContent() {
         <div className="flex items-center justify-between space-y-2 p-4 sm:p-8 pb-4 pt-6 border-b">
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-bold tracking-tight font-headline">Funil de Vendas</h1>
-            </div>
-             <div className="flex items-center gap-2">
-                <ManageLeadDialog
+              <ManageLeadDialog
                     lead={editingLead}
                     open={isManageLeadDialogOpen}
                     onOpenChange={handleDialogClose}
@@ -82,8 +80,8 @@ function LeadsPageContent() {
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Lead
                     </Button>
-                </ManageLeadDialog>
-                <div className="flex items-center gap-2 ml-4">
+              </ManageLeadDialog>
+              <div className="flex items-center gap-2">
                     <Button variant={viewMode === 'kanban' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('kanban')}>
                         <LayoutGrid className="h-4 w-4" />
                     </Button>
