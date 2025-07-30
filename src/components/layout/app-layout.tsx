@@ -22,6 +22,7 @@ import { useStore } from '@/hooks/use-store';
 import { useEffect } from 'react';
 import type { Permission } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
+import { CompanyHeaderInfo } from './company-header-info';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -110,7 +111,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+        <header className="flex h-auto items-center gap-4 border-b bg-muted/40 px-4 lg:h-auto lg:px-6 py-2">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0 md:hidden">
@@ -137,7 +138,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            {/* Can add search here */}
+            <CompanyHeaderInfo />
           </div>
           <ThemeToggle />
           <UserNav />
