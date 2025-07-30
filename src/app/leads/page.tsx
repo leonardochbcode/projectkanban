@@ -71,24 +71,26 @@ function LeadsPageContent() {
         <div className="flex items-center justify-between space-y-2 p-4 sm:p-8 pb-4 pt-6 border-b">
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-bold tracking-tight font-headline">Funil de Vendas</h1>
-              <ManageLeadDialog
-                  lead={editingLead}
-                  open={isManageLeadDialogOpen}
-                  onOpenChange={handleDialogClose}
-              >
-                  <Button onClick={handleAdd} size="sm">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Adicionar Lead
-                  </Button>
-              </ManageLeadDialog>
             </div>
              <div className="flex items-center gap-2">
-                <Button variant={viewMode === 'kanban' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('kanban')}>
-                    <LayoutGrid className="h-4 w-4" />
-                </Button>
-                 <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')}>
-                    <List className="h-4 w-4" />
-                </Button>
+                <ManageLeadDialog
+                    lead={editingLead}
+                    open={isManageLeadDialogOpen}
+                    onOpenChange={handleDialogClose}
+                >
+                    <Button onClick={handleAdd} size="sm">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Lead
+                    </Button>
+                </ManageLeadDialog>
+                <div className="flex items-center gap-2 ml-4">
+                    <Button variant={viewMode === 'kanban' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('kanban')}>
+                        <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                    <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')}>
+                        <List className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
         </div>
       
