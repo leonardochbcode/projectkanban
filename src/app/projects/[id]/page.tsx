@@ -6,10 +6,13 @@ import { KanbanBoard } from '@/components/projects/kanban-board';
 import { notFound } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppLayout } from '@/components/layout/app-layout';
+import { TasksTable } from '@/components/projects/tasks-table';
+import { useState } from 'react';
 
 function ProjectDetailsPageContent({ params }: { params: { id: string } }) {
   const { isLoaded, projects, getProjectTasks } = useStore();
   const projectId = params.id;
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   
   if (!isLoaded) {
     return (
@@ -55,9 +58,13 @@ function ProjectDetailsPageContent({ params }: { params: { id: string } }) {
 
   return (
     <div className="flex flex-col h-full">
-      <ProjectHeader project={project} />
+      <ProjectHeader project={project} viewMode={viewMode} setViewMode={setViewMode}/>
       <div className="flex-1 overflow-x-auto p-4 sm:p-6">
-        <KanbanBoard tasks={tasks} projectId={project.id} />
+        {viewMode === 'kanban' ? (
+          <KanbanBoard tasks={tasks} projectId={project.id} />
+        ) : (
+          <TasksTable tasks={tasks} />
+        )}
       </div>
     </div>
   );

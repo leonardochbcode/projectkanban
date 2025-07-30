@@ -6,19 +6,25 @@ import { ManageProjectDialog } from './manage-project-dialog';
 import type { Project } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 import { Progress } from '@/components/ui/progress';
-import { PlusCircle, Briefcase, Edit, ClipboardList } from 'lucide-react';
+import { PlusCircle, Briefcase, Edit, ClipboardList, LayoutGrid, List } from 'lucide-react';
 import { LeadDetailsSheet } from '../leads/lead-details-sheet';
 import { useState } from 'react';
 import type { Lead } from '@/lib/types';
 
 
-export function ProjectHeader({ project }: { project: Project }) {
+interface ProjectHeaderProps {
+  project: Project;
+  viewMode: 'kanban' | 'list';
+  setViewMode: (mode: 'kanban' | 'list') => void;
+}
+
+
+export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderProps) {
   const { getProjectTasks, getClient, getLead } = useStore();
   const tasks = getProjectTasks(project.id);
   const client = project.clientId ? getClient(project.clientId) : null;
   const lead = project.leadId ? getLead(project.leadId) : null;
   
-  const [editingLead, setEditingLead] = useState<Lead | undefined>(undefined);
   const [isLeadSheetOpen, setIsLeadSheetOpen] = useState(false);
 
   const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
@@ -59,6 +65,14 @@ export function ProjectHeader({ project }: { project: Project }) {
           </div>
         </div>
         <div className="flex-shrink-0 flex items-center gap-2">
+            <div className="flex items-center gap-2">
+                <Button variant={viewMode === 'kanban' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('kanban')}>
+                    <LayoutGrid className="h-4 w-4" />
+                </Button>
+                 <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="icon" onClick={() => setViewMode('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+            </div>
             <ManageProjectDialog project={project}>
                 <Button variant="outline">
                     <Edit className="mr-2 h-4 w-4" />
