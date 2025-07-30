@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead, LeadComment } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead, LeadComment, LeadAttachment } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -282,12 +282,13 @@ export const useStore = () => {
     });
   }, [store.clients, dispatch]);
 
-  const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt' | 'comments'>) => {
+  const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt' | 'comments' | 'attachments'>) => {
       const newLead: Lead = {
           id: `lead-${Date.now()}`,
           createdAt: new Date().toISOString(),
           ...lead,
           comments: [],
+          attachments: [],
       };
       dispatch({ leads: [...store.leads, newLead]});
   }, [store.leads, dispatch]);

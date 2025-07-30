@@ -124,7 +124,7 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
               <Label htmlFor="client" className="text-right">
                 Cliente
               </Label>
-              <Select value={clientId} onValueChange={setClientId}>
+              <Select value={clientId} onValueChange={(v) => setClientId(v === 'new' ? undefined : v)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Novo Cliente" />
                 </SelectTrigger>

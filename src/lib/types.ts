@@ -36,6 +36,15 @@ export interface LeadComment {
   createdAt: string;
 }
 
+export interface LeadAttachment {
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    url: string; // In a real app, this would be a URL to the stored file
+    createdAt: string;
+}
+
 export interface Lead {
     id: string;
     name: string;
@@ -46,6 +55,7 @@ export interface Lead {
     status: 'Novo' | 'Em Contato' | 'Proposta Enviada' | 'Convertido' | 'Perdido';
     createdAt: string;
     comments: LeadComment[];
+    attachments: LeadAttachment[];
     value: number;
     clientId?: string;
 }
