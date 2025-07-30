@@ -25,7 +25,7 @@ import {
 import type { Project } from '@/lib/types';
 
 interface ManageProjectDialogProps {
-  children: ReactNode;
+  children?: ReactNode; // Tornando children opcional
   project?: Project;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -38,7 +38,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   // Determine if the dialog is controlled or not
   const isControlled = openProp !== undefined && onOpenChangeProp !== undefined;
   const open = isControlled ? openProp : internalOpen;
-  const setOpen = isControlled ? onOpenChangeProp : setInternalOpen;
+  const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
   const { addProject, updateProject, clients } = useStore();
   
@@ -93,10 +93,12 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
 
     setOpen(false);
   };
+  
+  const Trigger = children ? <DialogTrigger asChild>{children}</DialogTrigger> : null;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {Trigger}
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
