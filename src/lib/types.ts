@@ -2,6 +2,7 @@ export const availablePermissions = {
     view_dashboard: 'Ver Painel',
     manage_projects: 'Gerenciar Projetos',
     manage_clients: 'Gerenciar Clientes',
+    manage_leads: 'Gerenciar Leads',
     manage_team: 'Gerenciar Equipe',
     view_reports: 'Ver Relatórios',
     manage_settings: 'Gerenciar Configurações'
@@ -26,6 +27,17 @@ export interface Client {
   cnpj?: string;
   address?: string;
   suportewebCode?: string;
+}
+
+export interface Lead {
+    id: string;
+    name: string;
+    email: string;
+    company?: string;
+    phone?: string;
+    description: string;
+    status: 'Novo' | 'Em Contato' | 'Proposta Enviada' | 'Convertido' | 'Perdido';
+    createdAt: string;
 }
 
 export interface Participant {

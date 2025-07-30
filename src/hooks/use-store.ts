@@ -10,13 +10,14 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
   initialParticipants,
   initialRoles,
   initialClients,
+  initialLeads,
 } from '@/lib/data';
 
 interface Store {
@@ -26,6 +27,7 @@ interface Store {
   participants: Participant[];
   roles: Role[];
   clients: Client[];
+  leads: Lead[];
   currentUser: Participant | null;
 }
 
@@ -67,6 +69,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [participants, setParticipants] = useLocalStorage<Participant[]>('participants', initialParticipants);
   const [roles, setRoles] = useLocalStorage<Role[]>('roles', initialRoles);
   const [clients, setClients] = useLocalStorage<Client[]>('clients', initialClients);
+  const [leads, setLeads] = useLocalStorage<Lead[]>('leads', initialLeads);
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -81,8 +84,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     participants,
     roles,
     clients,
+    leads,
     currentUser,
-  }), [isLoaded, projects, tasks, participants, roles, clients, currentUser]);
+  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
@@ -90,6 +94,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.participants) setParticipants(newState.participants);
     if (newState.roles) setRoles(newState.roles);
     if (newState.clients) setClients(newState.clients);
+    if (newState.leads) setLeads(newState.leads);
     if (newState.hasOwnProperty('currentUser')) setCurrentUser(newState.currentUser ?? null);
   };
   
@@ -246,6 +251,7 @@ export const useStore = () => {
       avatar: `/avatars/c0${(store.clients.length % 3) + 1}.png`,
     };
     dispatch({ clients: [...store.clients, newClient]});
+    return newClient;
   }, [store.clients, dispatch]);
 
   const updateClient = useCallback((updatedClient: Client) => {
@@ -259,6 +265,27 @@ export const useStore = () => {
       clients: store.clients.filter(c => c.id !== clientId)
     });
   }, [store.clients, dispatch]);
+
+  const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt'>) => {
+      const newLead: Lead = {
+          id: `lead-${Date.now()}`,
+          createdAt: new Date().toISOString(),
+          ...lead,
+      };
+      dispatch({ leads: [...store.leads, newLead]});
+  }, [store.leads, dispatch]);
+
+  const updateLead = useCallback((updatedLead: Lead) => {
+      dispatch({
+          leads: store.leads.map(l => l.id === updatedLead.id ? updatedLead : l)
+      });
+  }, [store.leads, dispatch]);
+
+  const deleteLead = useCallback((leadId: string) => {
+      dispatch({
+          leads: store.leads.filter(l => l.id !== leadId)
+      });
+  }, [store.leads, dispatch]);
 
   return {
     ...store,
@@ -283,5 +310,8 @@ export const useStore = () => {
     addClient,
     updateClient,
     deleteClient,
+    addLead,
+    updateLead,
+    deleteLead,
   };
 };

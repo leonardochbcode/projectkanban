@@ -9,6 +9,7 @@ import {
   Menu,
   Briefcase,
   LogOut,
+  ClipboardList,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -58,6 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/', label: 'Painel', icon: LayoutDashboard, permission: 'view_dashboard' as Permission },
     { href: '/projects', label: 'Projetos', icon: FolderKanban, permission: 'manage_projects' as Permission },
+    { href: '/leads', label: 'Leads', icon: ClipboardList, permission: 'manage_leads' as Permission },
     { href: '/clients', label: 'Clientes', icon: Briefcase, permission: 'manage_clients' as Permission },
     { href: '/team', label: 'Equipe', icon: Users, permission: 'manage_team' as Permission },
     { href: '/reports', label: 'Relatórios', icon: LineChart, permission: 'view_reports' as Permission },

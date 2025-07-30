@@ -1,7 +1,7 @@
-import type { Project, Task, Participant, Role, Client } from './types';
+import type { Project, Task, Participant, Role, Client, Lead } from './types';
 
 export const initialRoles: Role[] = [
-  { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings'] },
+  { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_leads'] },
   { id: 'role-2', name: 'Desenvolvedor', permissions: ['view_dashboard', 'manage_projects', 'view_reports'] },
   { id: 'role-3', name: 'Designer', permissions: ['view_dashboard', 'manage_projects'] },
   { id: 'role-4', name: 'Analista', permissions: ['view_dashboard', 'view_reports'] },
@@ -18,6 +18,12 @@ export const initialClients: Client[] = [
     { id: 'client-1', name: 'Acme Corporation', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-00', address: '123 Main St, Anytown, USA', suportewebCode: 'ACME001' },
     { id: 'client-2', name: 'Stark Industries', email: 'tony@starkindustries.com', company: 'Stark Industries', avatar: '/avatars/c02.png', cnpj: '11.111.111/0001-11', address: '10880 Malibu Point, 90265', suportewebCode: 'STARK002' },
     { id: 'client-3', name: 'Wayne Enterprises', email: 'bruce@wayne.com', company: 'Wayne Enterprises', avatar: '/avatars/c03.png', cnpj: '22.222.222/0001-22', address: '1007 Mountain Drive, Gotham', suportewebCode: 'WAYNE003' },
+];
+
+export const initialLeads: Lead[] = [
+    { id: 'lead-1', name: 'Futuro Cliente Web', email: 'lead1@email.com', company: 'Inovatech', description: 'Interessado em um novo site institucional.', status: 'Novo', createdAt: '2024-08-01T10:00:00Z', phone: '11 98765-4321' },
+    { id: 'lead-2', name: 'App de E-commerce', email: 'lead2@email.com', company: 'VarejoGlobal', description: 'Solicitou uma proposta para um app de e-commerce.', status: 'Proposta Enviada', createdAt: '2024-07-25T15:30:00Z', phone: '21 91234-5678' },
+    { id: 'lead-3', name: 'Marketing Digital', email: 'lead3@email.com', company: 'Consultoria XYZ', description: 'Buscando consultoria para campanha de marketing digital.', status: 'Em Contato', createdAt: '2024-08-05T11:00:00Z', phone: '31 99999-8888' },
 ];
 
 
