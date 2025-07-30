@@ -17,6 +17,12 @@ export interface CompanyInfo {
     suportewebCode: string;
 }
 
+export interface ThemeColors {
+    primary: string;
+    background: string;
+    accent: string;
+}
+
 export interface Role {
   id: string;
   name: string;

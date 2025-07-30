@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ThemeColors } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -31,6 +31,7 @@ interface Store {
   leads: Lead[];
   currentUser: Participant | null;
   companyInfo: CompanyInfo | null;
+  themeColors: ThemeColors | null;
 }
 
 const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(
@@ -74,6 +75,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [leads, setLeads] = useLocalStorage<Lead[]>('leads', initialLeads);
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', initialCompanyInfo);
+  const [themeColors, setThemeColors] = useLocalStorage<ThemeColors | null>('themeColors', null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -90,7 +92,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     leads,
     currentUser,
     companyInfo,
-  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo]);
+    themeColors,
+  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo, themeColors]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
@@ -101,6 +104,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.leads) setLeads(newState.leads);
     if (newState.hasOwnProperty('currentUser')) setCurrentUser(newState.currentUser ?? null);
     if (newState.companyInfo) setCompanyInfo(newState.companyInfo);
+    if (newState.themeColors) setThemeColors(newState.themeColors);
   };
   
   const value = useMemo(() => ({ ...store, dispatch }), [store]);
@@ -317,6 +321,10 @@ export const useStore = () => {
   const updateCompanyInfo = useCallback((info: CompanyInfo) => {
     dispatch({ companyInfo: info });
   }, [dispatch]);
+  
+  const updateThemeColors = useCallback((colors: ThemeColors) => {
+    dispatch({ themeColors: colors });
+  }, [dispatch]);
 
   return {
     ...store,
@@ -346,5 +354,6 @@ export const useStore = () => {
     updateLead,
     deleteLead,
     updateCompanyInfo,
+    updateThemeColors,
   };
 };
