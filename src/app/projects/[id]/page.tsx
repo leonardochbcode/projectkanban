@@ -7,12 +7,24 @@ import { notFound } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppLayout } from '@/components/layout/app-layout';
 import { TasksTable } from '@/components/projects/tasks-table';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function ProjectDetailsPageContent({ params }: { params: { id: string } }) {
   const { isLoaded, projects, getProjectTasks } = useStore();
   const projectId = params.id;
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>(() => {
+     if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('projectTasksViewMode');
+      return (savedMode as 'kanban' | 'list') || 'kanban';
+    }
+    return 'kanban';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('projectTasksViewMode', viewMode);
+    }
+  }, [viewMode]);
   
   if (!isLoaded) {
     return (

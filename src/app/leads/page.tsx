@@ -2,7 +2,7 @@
 import { PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/hooks/use-store';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Lead } from '@/lib/types';
 import { AppLayout } from '@/components/layout/app-layout';
 import { ManageLeadDialog } from '@/components/leads/manage-lead-dialog';
@@ -16,7 +16,19 @@ function LeadsPageContent() {
   const { leads } = useStore();
   const [editingLead, setEditingLead] = useState<Lead | undefined>(undefined);
   const [isManageLeadDialogOpen, setIsManageLeadDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>(() => {
+    if (typeof window !== 'undefined') {
+      const savedMode = localStorage.getItem('leadsViewMode');
+      return (savedMode as 'kanban' | 'list') || 'kanban';
+    }
+    return 'kanban';
+  });
+
+  useEffect(() => {
+     if (typeof window !== 'undefined') {
+      localStorage.setItem('leadsViewMode', viewMode);
+    }
+  }, [viewMode]);
 
   const handleAdd = () => {
     setEditingLead(undefined);
