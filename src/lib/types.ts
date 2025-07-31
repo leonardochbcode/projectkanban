@@ -83,6 +83,15 @@ export interface TaskComment {
   createdAt: string;
 }
 
+export interface TaskAttachment {
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    url: string;
+    createdAt: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -93,6 +102,7 @@ export interface Task {
   assigneeId?: string;
   projectId: string;
   comments: TaskComment[];
+  attachments: TaskAttachment[];
 }
 
 export interface Project {

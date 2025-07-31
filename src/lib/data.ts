@@ -80,18 +80,18 @@ export const initialProjects: Project[] = [
 
 export const initialTasks: Task[] = [
   // Project 1 Tasks
-  { id: 'task-1', projectId: 'proj-1', title: 'Desenhar mockups da nova homepage', description: 'Criar mockups de alta fidelidade no Figma.', status: 'Concluída', priority: 'Alta', dueDate: '2024-08-15', assigneeId: 'user-3', comments: [] },
-  { id: 'task-2', projectId: 'proj-1', title: 'Desenvolver componentes de frontend', description: 'Construir componentes React para o novo sistema de design.', status: 'Em Andamento', priority: 'Alta', dueDate: '2024-09-30', assigneeId: 'user-2', comments: [{ id: 'comment-1', content: 'Precisamos garantir que os componentes sejam acessíveis.', authorId: 'user-1', createdAt: '2024-09-01T10:00:00Z' }] },
-  { id: 'task-3', projectId: 'proj-1', title: 'Configurar repositório do projeto', description: 'Inicializar repositório no GitHub e estrutura básica do projeto.', status: 'Concluída', priority: 'Média', dueDate: '2024-08-05', assigneeId: 'user-2', comments: [] },
-  { id: 'task-4', projectId: 'proj-1', title: 'Teste de usuário para o novo design', description: 'Realizar testes de usabilidade com um grupo de foco.', status: 'A Fazer', priority: 'Média', dueDate: '2024-10-10', assigneeId: 'user-4', comments: [] },
+  { id: 'task-1', projectId: 'proj-1', title: 'Desenhar mockups da nova homepage', description: 'Criar mockups de alta fidelidade no Figma.', status: 'Concluída', priority: 'Alta', dueDate: '2024-08-15', assigneeId: 'user-3', comments: [], attachments: [] },
+  { id: 'task-2', projectId: 'proj-1', title: 'Desenvolver componentes de frontend', description: 'Construir componentes React para o novo sistema de design.', status: 'Em Andamento', priority: 'Alta', dueDate: '2024-09-30', assigneeId: 'user-2', comments: [{ id: 'comment-1', content: 'Precisamos garantir que os componentes sejam acessíveis.', authorId: 'user-1', createdAt: '2024-09-01T10:00:00Z' }], attachments: [] },
+  { id: 'task-3', projectId: 'proj-1', title: 'Configurar repositório do projeto', description: 'Inicializar repositório no GitHub e estrutura básica do projeto.', status: 'Concluída', priority: 'Média', dueDate: '2024-08-05', assigneeId: 'user-2', comments: [], attachments: [] },
+  { id: 'task-4', projectId: 'proj-1', title: 'Teste de usuário para o novo design', description: 'Realizar testes de usabilidade com um grupo de foco.', status: 'A Fazer', priority: 'Média', dueDate: '2024-10-10', assigneeId: 'user-4', comments: [], attachments: [] },
 
   // Project 2 Tasks
-  { id: 'task-5', projectId: 'proj-2', title: 'Definir recursos e requisitos do app', description: 'Criar um documento detalhado de requisitos do produto.', status: 'Em Andamento', priority: 'Alta', dueDate: '2024-09-30', assigneeId: 'user-1', comments: [] },
-  { id: 'task-6', projectId: 'proj-2', title: 'Escolher a stack de tecnologia', description: 'Pesquisar e decidir as melhores tecnologias para o aplicativo.', status: 'A Fazer', priority: 'Alta', dueDate: '2024-10-05', assigneeId: 'user-2', comments: [] },
+  { id: 'task-5', projectId: 'proj-2', title: 'Definir recursos e requisitos do app', description: 'Criar um documento detalhado de requisitos do produto.', status: 'Em Andamento', priority: 'Alta', dueDate: '2024-09-30', assigneeId: 'user-1', comments: [], attachments: [] },
+  { id: 'task-6', projectId: 'proj-2', title: 'Escolher a stack de tecnologia', description: 'Pesquisar e decidir as melhores tecnologias para o aplicativo.', status: 'A Fazer', priority: 'Alta', dueDate: '2024-10-05', assigneeId: 'user-2', comments: [], attachments: [] },
 
   // Project 3 Tasks
-  { id: 'task-7', projectId: 'proj-3', title: 'Criar texto para anúncios', description: 'Escrever textos persuasivos para anúncios em redes sociais.', status: 'A Fazer', priority: 'Média', dueDate: '2024-10-15', comments: [] },
+  { id: 'task-7', projectId: 'proj-3', title: 'Criar texto para anúncios', description: 'Escrever textos persuasivos para anúncios em redes sociais.', status: 'A Fazer', priority: 'Média', dueDate: '2024-10-15', comments: [], attachments: [] },
 
   // Project 4 Tasks
-  { id: 'task-8', projectId: 'proj-4', title: 'Implementar API de gateway de pagamento', description: 'Integrar a API do Stripe para pagamentos.', status: 'Concluída', priority: 'Alta', dueDate: '2024-08-30', assigneeId: 'user-2', comments: [] },
+  { id: 'task-8', projectId: 'proj-4', title: 'Implementar API de gateway de pagamento', description: 'Integrar a API do Stripe para pagamentos.', status: 'Concluída', priority: 'Alta', dueDate: '2024-08-30', assigneeId: 'user-2', comments: [], attachments: [] },
 ];

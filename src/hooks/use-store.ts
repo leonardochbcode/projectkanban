@@ -185,11 +185,12 @@ export const useStore = () => {
     });
   }, [store.projects, store.tasks, dispatch]);
 
-  const addTask = useCallback((task: Omit<Task, 'id' | 'comments'>) => {
+  const addTask = useCallback((task: Omit<Task, 'id' | 'comments' | 'attachments'>) => {
     const newTask: Task = {
       id: `task-${Date.now()}`,
       ...task,
       comments: [],
+      attachments: [],
     };
     dispatch({ tasks: [...store.tasks, newTask] });
     return newTask;

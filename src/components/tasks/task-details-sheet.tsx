@@ -18,9 +18,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Task } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
-import { CalendarIcon, User, Flag, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon, User, Flag, ChevronsUpDown, Paperclip, X } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { TaskCommentForm } from './task-comment-form';
+import { TaskAttachmentForm } from './task-attachment-form';
+import { Button } from '../ui/button';
+import { formatBytes } from '@/lib/utils';
+
 
 export function TaskDetailsSheet({ task, children }: { task: Task; children: ReactNode }) {
   const { participants, updateTask } = useStore();
@@ -34,6 +38,11 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
   };
   const handleAssigneeChange = (assigneeId: string) => {
     updateTask({ ...task, assigneeId });
+  };
+  
+  const handleRemoveAttachment = (attachmentId: string) => {
+    const updatedAttachments = task.attachments.filter(att => att.id !== attachmentId);
+    updateTask({ ...task, attachments: updatedAttachments });
   };
 
   return (
@@ -78,21 +87,25 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-muted-foreground w-32">
+            <div className="flex items-start gap-4">
+                <div className="flex items-center gap-2 text-muted-foreground w-32 pt-2">
                     <User className="h-4 w-4" />
                     <span>Responsável</span>
                 </div>
-                 <Select value={assignee?.id} onValueChange={handleAssigneeChange}>
-                    <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Não atribuído" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {participants.map(p => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                 <div className="flex flex-col gap-2 w-48">
+                    <Select value={assignee?.id} onValueChange={handleAssigneeChange}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Não atribuído" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="unassigned">Não atribuído</SelectItem>
+                            {participants.map(p => (
+                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {assignee && <p className="text-sm text-muted-foreground">Analista: {assignee.name}</p>}
+                 </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-muted-foreground w-32">
@@ -103,6 +116,32 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
             </div>
           </div>
                     
+          <Separator />
+
+           <div>
+            <h3 className="font-semibold mb-2 font-headline">Anexos</h3>
+             <div className="space-y-2">
+                {task.attachments.map((attachment) => (
+                    <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                           <Paperclip className="h-4 w-4 flex-shrink-0" />
+                           <div className="truncate">
+                            <p className="font-medium truncate">{attachment.name}</p>
+                            <p className="text-xs text-muted-foreground">{formatBytes(attachment.size)}</p>
+                           </div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleRemoveAttachment(attachment.id)}>
+                            <X className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                ))}
+                {task.attachments.length === 0 && (
+                    <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
+                )}
+             </div>
+             <TaskAttachmentForm task={task} />
+          </div>
+
           <Separator />
           
           <div>

@@ -48,6 +48,7 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
       priority,
       dueDate,
       assigneeId,
+      attachments: [], // Initializing attachments
     });
     // Reset form
     setTitle('');
