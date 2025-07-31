@@ -354,6 +354,26 @@ export const useStore = () => {
     });
     return newProject;
   }, [store.projects, store.tasks, getProjectTasks, dispatch]);
+
+  const addProjectTemplate = useCallback((template: Omit<ProjectTemplate, 'id'>) => {
+    const newTemplate: ProjectTemplate = {
+      id: `template-${Date.now()}`,
+      ...template,
+    };
+    dispatch({ projectTemplates: [...store.projectTemplates, newTemplate] });
+  }, [store.projectTemplates, dispatch]);
+
+  const updateProjectTemplate = useCallback((updatedTemplate: ProjectTemplate) => {
+    dispatch({
+      projectTemplates: store.projectTemplates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t)
+    });
+  }, [store.projectTemplates, dispatch]);
+
+  const deleteProjectTemplate = useCallback((templateId: string) => {
+    dispatch({
+      projectTemplates: store.projectTemplates.filter(t => t.id !== templateId)
+    });
+  }, [store.projectTemplates, dispatch]);
   
   return {
     ...store,
@@ -384,5 +404,8 @@ export const useStore = () => {
     deleteLead,
     updateCompanyInfo,
     duplicateProject,
+    addProjectTemplate,
+    updateProjectTemplate,
+    deleteProjectTemplate,
   };
 };
