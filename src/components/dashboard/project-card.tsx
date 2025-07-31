@@ -37,10 +37,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
     .filter(Boolean) as (typeof participants[0])[];
 
   const statusColors: { [key: string]: string } = {
-    'Em Andamento': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
-    Planejamento: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
-    Concluído: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
-    Pausado: 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30',
+    'Em Andamento': 'bg-secondary text-secondary-foreground',
+    Planejamento: 'bg-secondary text-secondary-foreground',
+    Concluído: 'bg-secondary text-secondary-foreground',
+    Pausado: 'bg-secondary text-secondary-foreground',
   };
 
   return (

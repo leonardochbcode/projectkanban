@@ -31,11 +31,11 @@ export function LeadsTable({ leads, onEdit }: LeadsTableProps) {
   };
 
   const statusColors: { [key: string]: string } = {
-    'Novo': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
-    'Em Contato': 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border-cyan-500/30',
-    'Proposta Enviada': 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
-    'Convertido': 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
-    'Perdido': 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
+    'Novo': 'bg-secondary text-secondary-foreground',
+    'Em Contato': 'bg-secondary text-secondary-foreground',
+    'Proposta Enviada': 'bg-secondary text-secondary-foreground',
+    'Convertido': 'bg-secondary text-secondary-foreground',
+    'Perdido': 'bg-destructive text-destructive-foreground',
   };
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', {

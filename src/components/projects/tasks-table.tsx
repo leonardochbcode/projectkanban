@@ -17,15 +17,15 @@ export function TasksTable({ tasks }: TasksTableProps) {
   const { getParticipant } = useStore();
 
   const statusColors: { [key: string]: string } = {
-    'A Fazer': 'bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-500/30',
-    'Em Andamento': 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
-    'Concluída': 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
+    'A Fazer': 'bg-secondary text-secondary-foreground',
+    'Em Andamento': 'bg-secondary text-secondary-foreground',
+    'Concluída': 'bg-secondary text-secondary-foreground',
   };
 
   const priorityColors: { [key: string]: string } = {
-    'Alta': 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
-    'Média': 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
-    'Baixa': 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
+    'Alta': 'bg-destructive text-destructive-foreground',
+    'Média': 'bg-secondary text-secondary-foreground',
+    'Baixa': 'bg-secondary text-secondary-foreground',
   };
 
   return (
