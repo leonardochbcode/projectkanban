@@ -9,9 +9,8 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { TasksTable } from '@/components/projects/tasks-table';
 import { useState, useEffect } from 'react';
 
-function ProjectDetailsPageContent({ params }: { params: { id: string } }) {
+function ProjectDetailsPageContent({ projectId }: { projectId: string }) {
   const { isLoaded, projects, getProjectTasks } = useStore();
-  const projectId = params.id;
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>(() => {
      if (typeof window !== 'undefined') {
       const savedMode = localStorage.getItem('projectTasksViewMode');
@@ -85,7 +84,7 @@ function ProjectDetailsPageContent({ params }: { params: { id: string } }) {
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
     return (
         <AppLayout>
-            <ProjectDetailsPageContent params={params} />
+            <ProjectDetailsPageContent projectId={params.id} />
         </AppLayout>
     )
 }
