@@ -76,7 +76,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           key={label}
           href={href}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-accent',
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
             { 'bg-accent text-accent-foreground': pathname === href }
           )}
         >

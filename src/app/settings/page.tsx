@@ -10,6 +10,56 @@ import { useToast } from '@/hooks/use-toast';
 import { useStore } from '@/hooks/use-store';
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
+import { Check } from 'lucide-react';
+
+const themes = [
+    { name: 'Light', value: 'light', colors: ['bg-white', 'bg-gray-200', 'bg-gray-800'] },
+    { name: 'Dark', value: 'dark', colors: ['bg-gray-800', 'bg-gray-700', 'bg-gray-100'] },
+    { name: 'Cinza', value: 'theme-gray', colors: ['bg-gray-100', 'bg-gray-300', 'bg-gray-900'] },
+    { name: 'Verde', value: 'theme-green', colors: ['bg-green-100', 'bg-green-300', 'bg-green-900'] },
+    { name: 'Azul', value: 'theme-blue', colors: ['bg-blue-100', 'bg-blue-300', 'bg-blue-800'] },
+];
+
+
+function ThemeSelector() {
+    const { theme, setTheme } = useTheme();
+  
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Temas</CardTitle>
+          <CardDescription>
+            Selecione um tema para a aplicação.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+            {themes.map((t) => (
+                <div key={t.value} className="space-y-2">
+                    <Button
+                        variant="outline"
+                        className={cn("w-full h-24 p-2 flex-col items-start justify-start relative",
+                            theme === t.value && "border-primary ring-2 ring-primary"
+                        )}
+                        onClick={() => setTheme(t.value)}
+                    >
+                         <div className="flex items-center justify-center w-full h-full gap-1">
+                            {t.colors.map((color, i) => (
+                                <div key={i} className={cn("h-4/5 w-1/3 rounded", color)}></div>
+                            ))}
+                        </div>
+                        {theme === t.value && (
+                             <Check className="h-5 w-5 absolute top-2 right-2 text-primary" />
+                        )}
+                    </Button>
+                     <p className="text-sm font-medium text-center">{t.name}</p>
+                </div>
+            ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
 function CompanyInfoForm() {
     const { companyInfo, updateCompanyInfo, isLoaded } = useStore();
@@ -118,7 +168,10 @@ function SettingsPageContent() {
       <div className="flex items-center justify-between space-y-2">
         <h1 className="text-3xl font-bold tracking-tight font-headline">Configurações</h1>
       </div>
-      <CompanyInfoForm />
+      <div className="space-y-4">
+        <ThemeSelector />
+        <CompanyInfoForm />
+      </div>
     </div>
   );
 }
