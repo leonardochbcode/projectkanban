@@ -8,28 +8,14 @@ import { cn } from '@/lib/utils';
 import { MoreVertical, Edit } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
-import { useState } from 'react';
-import { LeadDetailsSheet } from './lead-details-sheet';
 
 interface LeadsTableProps {
   leads: Lead[];
   onEdit: (lead: Lead) => void;
+  onViewDetails: (lead: Lead) => void;
 }
 
-export function LeadsTable({ leads, onEdit }: LeadsTableProps) {
-  const [selectedLead, setSelectedLead] = useState<Lead | undefined>(undefined);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-
-  const handleViewDetails = (lead: Lead) => {
-    setSelectedLead(lead);
-    setIsSheetOpen(true);
-  };
-  
-  const handleEdit = (lead: Lead) => {
-    setIsSheetOpen(false);
-    onEdit(lead);
-  };
-
+export function LeadsTable({ leads, onEdit, onViewDetails }: LeadsTableProps) {
   const statusColors: { [key: string]: string } = {
     'Novo': 'bg-blue-500/20 text-blue-700',
     'Em Contato': 'bg-yellow-500/20 text-yellow-700',
@@ -64,7 +50,7 @@ export function LeadsTable({ leads, onEdit }: LeadsTableProps) {
             </TableHeader>
             <TableBody>
               {leads.map((lead) => (
-                <TableRow key={lead.id} className="cursor-pointer" onClick={() => handleViewDetails(lead)}>
+                <TableRow key={lead.id} className="cursor-pointer" onClick={() => onViewDetails(lead)}>
                   <TableCell className="font-medium">{lead.name}</TableCell>
                   <TableCell>{lead.company || 'N/A'}</TableCell>
                   <TableCell>
@@ -82,7 +68,7 @@ export function LeadsTable({ leads, onEdit }: LeadsTableProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => handleEdit(lead)}>
+                        <DropdownMenuItem onSelect={() => onEdit(lead)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
@@ -95,14 +81,6 @@ export function LeadsTable({ leads, onEdit }: LeadsTableProps) {
           </Table>
         </CardContent>
       </Card>
-      {selectedLead && (
-        <LeadDetailsSheet 
-            lead={selectedLead} 
-            onEdit={handleEdit} 
-            open={isSheetOpen} 
-            onOpenChange={setIsSheetOpen} 
-        />
-      )}
     </div>
   );
 }

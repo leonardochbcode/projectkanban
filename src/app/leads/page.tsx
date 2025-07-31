@@ -11,6 +11,7 @@ import { AppLayout } from '@/components/layout/app-layout';
 import { ManageLeadDialog } from '@/components/leads/manage-lead-dialog';
 import { LeadCard } from '@/components/leads/lead-card';
 import { LeadsTable } from '@/components/leads/leads-table';
+import { LeadDetailsSheet } from '@/components/leads/lead-details-sheet';
 
 const statuses: Lead['status'][] = ['Novo', 'Em Contato', 'Proposta Enviada', 'Convertido', 'Perdido'];
 
@@ -18,6 +19,9 @@ function LeadsPageContent() {
   const { leads, clients } = useStore();
   const [editingLead, setEditingLead] = useState<Lead | undefined>(undefined);
   const [isManageLeadDialogOpen, setIsManageLeadDialogOpen] = useState(false);
+  
+  const [viewingLead, setViewingLead] = useState<Lead | undefined>(undefined);
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
 
   const [nameFilter, setNameFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -69,18 +73,24 @@ function LeadsPageContent() {
     currency: 'BRL',
   }).format(value);
 
-
   const handleAdd = () => {
     setEditingLead(undefined);
     setIsManageLeadDialogOpen(true);
   };
   
   const handleEdit = (lead: Lead) => {
+    setIsDetailsSheetOpen(false);
+    setViewingLead(undefined);
     setEditingLead(lead);
     setIsManageLeadDialogOpen(true);
   }
 
-  const handleDialogClose = (open: boolean) => {
+  const handleViewDetails = (lead: Lead) => {
+    setViewingLead(lead);
+    setIsDetailsSheetOpen(true);
+  }
+
+  const handleManageDialogClose = (open: boolean) => {
     if (!open) {
       setEditingLead(undefined);
     }
@@ -115,7 +125,7 @@ function LeadsPageContent() {
                     <ManageLeadDialog
                             lead={editingLead}
                             open={isManageLeadDialogOpen}
-                            onOpenChange={handleDialogClose}
+                            onOpenChange={handleManageDialogClose}
                         >
                             <Button onClick={handleAdd} size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
@@ -192,8 +202,16 @@ function LeadsPageContent() {
             </div>
         </div>
       
-        {viewMode === 'kanban' ? <KanbanView /> : <LeadsTable leads={filteredLeads} onEdit={handleEdit} />}
+        {viewMode === 'kanban' ? <KanbanView /> : <LeadsTable leads={filteredLeads} onEdit={handleEdit} onViewDetails={handleViewDetails} />}
        
+        {viewingLead && (
+            <LeadDetailsSheet
+                lead={viewingLead}
+                onEdit={handleEdit}
+                open={isDetailsSheetOpen}
+                onOpenChange={setIsDetailsSheetOpen}
+            />
+        )}
     </div>
   );
 }
