@@ -2,24 +2,14 @@
 
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ProjectCard } from '@/components/dashboard/project-card';
-import { SummaryCharts } from '@/components/dashboard/summary-charts';
-import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { AddProjectDialog } from '@/components/dashboard/add-project-dialog';
 import { useStore } from '@/hooks/use-store';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AppLayout } from '@/components/layout/app-layout';
+import { ProjectsOverviewReport } from '@/components/reports/projects-overview-report';
+
 
 export default function DashboardPage() {
-  const { projects, isLoaded, currentUser, getRole } = useStore();
-
-  const userRole = currentUser ? getRole(currentUser.roleId) : null;
-  const canViewAllProjects = userRole?.permissions.includes('manage_projects') ?? false;
-
-  const visibleProjects = canViewAllProjects
-    ? projects
-    : projects.filter(p => p.participantIds.includes(currentUser?.id ?? ''));
-
+  const { projects, isLoaded, tasks, clients } = useStore();
 
   const PageContent = () => (
      <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -34,21 +24,12 @@ export default function DashboardPage() {
           </AddProjectDialog>
         </div>
       </div>
-      <div className="space-y-4">
-        <SummaryCharts />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-12 lg:col-span-4">
-            <h2 className="text-2xl font-bold tracking-tight mb-4 font-headline">Projetos</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {!isLoaded && Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48" />)}
-              {isLoaded && visibleProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
-          </div>
-          <RecentActivity />
-        </div>
-      </div>
+        <ProjectsOverviewReport
+          projects={projects}
+          tasks={tasks}
+          clients={clients}
+          isLoaded={isLoaded}
+        />
     </div>
   )
 
