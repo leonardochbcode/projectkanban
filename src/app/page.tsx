@@ -11,7 +11,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AppLayout } from '@/components/layout/app-layout';
 
 export default function DashboardPage() {
-  const { projects, isLoaded } = useStore();
+  const { projects, isLoaded, currentUser, getRole } = useStore();
+
+  const userRole = currentUser ? getRole(currentUser.roleId) : null;
+  const canViewAllProjects = userRole?.permissions.includes('manage_projects') ?? false;
+
+  const visibleProjects = canViewAllProjects
+    ? projects
+    : projects.filter(p => p.participantIds.includes(currentUser?.id ?? ''));
+
 
   const PageContent = () => (
      <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -33,7 +41,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold tracking-tight mb-4 font-headline">Projetos</h2>
             <div className="grid gap-4 md:grid-cols-2">
               {!isLoaded && Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-48" />)}
-              {isLoaded && projects.map((project) => (
+              {isLoaded && visibleProjects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}
             </div>

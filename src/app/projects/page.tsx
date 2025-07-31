@@ -20,9 +20,16 @@ import type { Project } from '@/lib/types';
 import { ManageProjectDialog } from '@/components/projects/manage-project-dialog';
 
 function ProjectsPageContent() {
-  const { projects } = useStore();
+  const { projects, currentUser, getRole } = useStore();
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const userRole = currentUser ? getRole(currentUser.roleId) : null;
+  const canViewAllProjects = userRole?.permissions.includes('manage_projects') ?? false;
+
+  const visibleProjects = canViewAllProjects
+    ? projects
+    : projects.filter(p => p.participantIds.includes(currentUser?.id ?? ''));
 
   const statusColors: { [key: string]: string } = {
     'Em Andamento': 'bg-blue-500/20 text-blue-700',
@@ -76,7 +83,7 @@ function ProjectsPageContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
+              {visibleProjects.map((project) => (
                 <TableRow key={project.id}>
                   <TableCell className="font-medium">
                     <Link href={`/projects/${project.id}`} className="hover:underline">
