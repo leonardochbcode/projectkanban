@@ -32,8 +32,8 @@ export function SummaryCharts() {
 
   const COLORS = {
     Alta: 'hsl(var(--destructive))',
-    Média: 'hsl(var(--primary))',
-    Baixa: 'hsl(var(--accent))',
+    Média: 'hsl(var(--chart-2))',
+    Baixa: 'hsl(var(--chart-3))',
   };
 
   if (!isLoaded) {
@@ -62,7 +62,7 @@ export function SummaryCharts() {
                   borderColor: 'hsl(var(--border))'
                 }}
               />
-              <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="total" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
