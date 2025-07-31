@@ -41,7 +41,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
   };
   
   const handleRemoveAttachment = (attachmentId: string) => {
-    const updatedAttachments = task.attachments.filter(att => att.id !== attachmentId);
+    const updatedAttachments = (task.attachments || []).filter(att => att.id !== attachmentId);
     updateTask({ ...task, attachments: updatedAttachments });
   };
 
@@ -121,7 +121,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
            <div>
             <h3 className="font-semibold mb-2 font-headline">Anexos</h3>
              <div className="space-y-2">
-                {task.attachments.map((attachment) => (
+                {(task.attachments || []).map((attachment) => (
                     <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
                         <div className="flex items-center gap-2 overflow-hidden">
                            <Paperclip className="h-4 w-4 flex-shrink-0" />
@@ -135,7 +135,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                         </Button>
                     </div>
                 ))}
-                {task.attachments.length === 0 && (
+                {(!task.attachments || task.attachments.length === 0) && (
                     <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
                 )}
              </div>

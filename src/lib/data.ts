@@ -90,7 +90,7 @@ export const initialTasks: Task[] = [
   { id: 'task-6', projectId: 'proj-2', title: 'Escolher a stack de tecnologia', description: 'Pesquisar e decidir as melhores tecnologias para o aplicativo.', status: 'A Fazer', priority: 'Alta', dueDate: '2024-10-05', assigneeId: 'user-2', comments: [], attachments: [] },
 
   // Project 3 Tasks
-  { id: 'task-7', projectId: 'proj-3', title: 'Criar texto para anúncios', description: 'Escrever textos persuasivos para anúncios em redes sociais.', status: 'A Fazer', priority: 'Média', dueDate: '2024-10-15', comments: [], attachments: [] },
+  { id: 'task-7', projectId: 'proj-3', title: 'Criar texto para anúncios', description: 'Escrever textos persuasivos para anúncios em redes sociais.', status: 'A Fazer', priority: 'Média', dueDate: '2024-10-15', assigneeId: undefined, comments: [], attachments: [] },
 
   // Project 4 Tasks
   { id: 'task-8', projectId: 'proj-4', title: 'Implementar API de gateway de pagamento', description: 'Integrar a API do Stripe para pagamentos.', status: 'Concluída', priority: 'Alta', dueDate: '2024-08-30', assigneeId: 'user-2', comments: [], attachments: [] },
