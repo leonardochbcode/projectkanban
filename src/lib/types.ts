@@ -92,6 +92,12 @@ export interface TaskAttachment {
     createdAt: string;
 }
 
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -103,6 +109,7 @@ export interface Task {
   projectId: string;
   comments: TaskComment[];
   attachments: TaskAttachment[];
+  checklist: ChecklistItem[];
 }
 
 export interface Project {

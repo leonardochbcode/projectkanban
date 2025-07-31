@@ -144,6 +144,7 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
                         <SelectValue placeholder="Não atribuído" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="unassigned">Não atribuído</SelectItem>
                         {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
                 </Select>

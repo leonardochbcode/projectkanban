@@ -24,6 +24,7 @@ import { TaskCommentForm } from './task-comment-form';
 import { TaskAttachmentForm } from './task-attachment-form';
 import { Button } from '../ui/button';
 import { formatBytes } from '@/lib/utils';
+import { TaskChecklist } from './task-checklist';
 
 
 export function TaskDetailsSheet({ task, children }: { task: Task; children: ReactNode }) {
@@ -118,6 +119,13 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                     
           <Separator />
 
+          <div>
+            <h3 className="font-semibold mb-4 font-headline">Checklist de Ações</h3>
+            <TaskChecklist task={task} />
+          </div>
+
+          <Separator />
+
            <div>
             <h3 className="font-semibold mb-2 font-headline">Anexos</h3>
              <div className="space-y-2">
@@ -147,7 +155,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
           <div>
             <h3 className="font-semibold mb-4 font-headline">Comentários</h3>
             <div className="space-y-4">
-              {task.comments.map((comment) => {
+              {(task.comments || []).map((comment) => {
                 const author = participants.find(p => p.id === comment.authorId);
                 return (
                   <div key={comment.id} className="flex items-start gap-3">
@@ -165,7 +173,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                   </div>
                 )
               })}
-               {task.comments.length === 0 && (
+               {(!task.comments || task.comments.length === 0) && (
                 <p className="text-sm text-muted-foreground">Nenhum comentário ainda.</p>
               )}
             </div>

@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate, TemplateTask } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate, TemplateTask, ChecklistItem } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -176,6 +176,7 @@ export const useStore = () => {
             dueDate: format(dueDate, 'yyyy-MM-dd'),
             comments: [],
             attachments: [],
+            checklist: [],
           };
         });
       }
@@ -201,12 +202,13 @@ export const useStore = () => {
     });
   }, [store.projects, store.tasks, dispatch]);
 
-  const addTask = useCallback((task: Omit<Task, 'id' | 'comments' | 'attachments'>) => {
+  const addTask = useCallback((task: Omit<Task, 'id' | 'comments' | 'attachments' | 'checklist'>) => {
     const newTask: Task = {
       id: `task-${Date.now()}`,
       ...task,
       comments: [],
       attachments: [],
+      checklist: [],
     };
     dispatch({ tasks: [...store.tasks, newTask] });
     return newTask;
