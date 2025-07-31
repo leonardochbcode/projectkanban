@@ -25,10 +25,10 @@ function ProjectsPageContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const statusColors: { [key: string]: string } = {
-    'Em Andamento': 'bg-secondary text-secondary-foreground',
-    Planejamento: 'bg-secondary text-secondary-foreground',
-    Concluído: 'bg-secondary text-secondary-foreground',
-    Pausado: 'bg-secondary text-secondary-foreground',
+    'Em Andamento': 'bg-blue-500/20 text-blue-700',
+    Planejamento: 'bg-yellow-500/20 text-yellow-700',
+    Concluído: 'bg-green-500/20 text-green-700',
+    Pausado: 'bg-gray-500/20 text-gray-700',
   };
 
   const handleEdit = (project: Project) => {
