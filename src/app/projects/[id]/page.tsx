@@ -81,10 +81,10 @@ function ProjectDetailsPageContent({ projectId }: { projectId: string }) {
   );
 }
 
-export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailsPage({ params: { id } }: { params: { id: string } }) {
     return (
         <AppLayout>
-            <ProjectDetailsPageContent projectId={params.id} />
+            <ProjectDetailsPageContent projectId={id} />
         </AppLayout>
     )
 }
