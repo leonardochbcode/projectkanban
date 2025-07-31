@@ -30,12 +30,12 @@ export function LeadAttachmentForm({ lead }: { lead: Lead }) {
       createdAt: new Date().toISOString(),
     };
 
-    const updatedAttachments = [...lead.attachments, newAttachment];
+    const updatedAttachments = [...(lead.attachments || []), newAttachment];
     updateLead({ ...lead, attachments: updatedAttachments });
 
     toast({
         title: 'Anexo adicionado',
-        description: `O arquivo "${file.name}" foi anexado ao lead.`,
+        description: `O arquivo "${file.name}" foi anexado à proposta.`,
     });
     
     setIsLoading(false);

@@ -47,8 +47,8 @@ export function LeadsTable({ leads, onEdit }: LeadsTableProps) {
     <div className="p-4 sm:p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Leads</CardTitle>
-          <CardDescription>Uma visão geral de todos os seus leads em prospecção.</CardDescription>
+          <CardTitle>Lista de Propostas</CardTitle>
+          <CardDescription>Uma visão geral de todas as suas propostas em prospecção.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>

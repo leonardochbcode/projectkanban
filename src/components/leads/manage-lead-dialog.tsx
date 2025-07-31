@@ -99,12 +99,12 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-headline">
-              {lead ? 'Editar Lead' : 'Adicionar Novo Lead'}
+              {lead ? 'Editar Proposta' : 'Adicionar Nova Proposta'}
             </DialogTitle>
             <DialogDescription>
               {lead
-                ? 'Atualize os detalhes do lead abaixo.'
-                : 'Preencha os detalhes para adicionar um novo lead.'}
+                ? 'Atualize os detalhes da proposta abaixo.'
+                : 'Preencha os detalhes para adicionar uma nova proposta.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -216,7 +216,7 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit">{lead ? 'Salvar Alterações' : 'Adicionar Lead'}</Button>
+            <Button type="submit">{lead ? 'Salvar Alterações' : 'Adicionar Proposta'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

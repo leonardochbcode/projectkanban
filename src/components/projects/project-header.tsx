@@ -58,7 +58,7 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
               <LeadDetailsSheet lead={lead} onEdit={handleEditLead} open={isLeadSheetOpen} onOpenChange={setIsLeadSheetOpen}>
                 <Badge variant="outline" className="gap-1.5 cursor-pointer hover:bg-muted" onClick={onLeadBadgeClick}>
                     <ClipboardList className="h-3 w-3" />
-                    Originado do Lead: {lead.name}
+                    Originado da Proposta: {lead.name}
                 </Badge>
               </LeadDetailsSheet>
             )}

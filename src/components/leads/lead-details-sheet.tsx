@@ -94,7 +94,7 @@ export function LeadDetailsSheet({
     updateLead({ ...lead, status: 'Convertido', clientId: finalClientId });
 
     toast({
-      title: 'Lead Convertido!',
+      title: 'Proposta Convertida!',
       description: `O projeto "${newProject.name}" foi criado com sucesso.`,
     });
 
