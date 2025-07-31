@@ -28,7 +28,7 @@ export function TaskAttachmentForm({ task }: { task: Task }) {
       createdAt: new Date().toISOString(),
     };
 
-    const updatedAttachments = [...task.attachments, newAttachment];
+    const updatedAttachments = [...(task.attachments || []), newAttachment];
     updateTask({ ...task, attachments: updatedAttachments });
 
     toast({
