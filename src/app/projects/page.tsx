@@ -1,5 +1,5 @@
 'use client';
-import { PlusCircle, MoreVertical, Edit } from 'lucide-react';
+import { PlusCircle, MoreVertical, Edit, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,7 +20,7 @@ import type { Project } from '@/lib/types';
 import { ManageProjectDialog } from '@/components/projects/manage-project-dialog';
 
 function ProjectsPageContent() {
-  const { projects, currentUser, getRole } = useStore();
+  const { projects, currentUser, getRole, duplicateProject } = useStore();
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -41,6 +41,12 @@ function ProjectsPageContent() {
   const handleEdit = (project: Project) => {
     setEditingProject(project);
     setIsDialogOpen(true);
+  };
+  
+  const handleDuplicate = (project: Project) => {
+    const newProject = duplicateProject(project);
+    // Open the dialog to edit the newly created duplicate
+    handleEdit(newProject);
   };
 
   const handleDialogClose = (open: boolean) => {
@@ -108,6 +114,10 @@ function ProjectsPageContent() {
                         <DropdownMenuItem onSelect={() => handleEdit(project)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleDuplicate(project)}>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicar
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

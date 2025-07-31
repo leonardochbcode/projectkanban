@@ -40,7 +40,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, clients } = useStore();
+  const { addProject, updateProject, clients, projectTemplates } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -48,6 +48,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState<Project['status']>('Planejamento');
   const [clientId, setClientId] = useState<string | undefined>();
+  const [templateId, setTemplateId] = useState<string | undefined>();
 
   useEffect(() => {
     // Populate form when dialog opens for an existing project
@@ -58,6 +59,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setEndDate(project.endDate);
         setStatus(project.status);
         setClientId(project.clientId);
+        setTemplateId(undefined); // Don't show template when editing
     } else if (!project && open) {
         // Reset form for "Add New" mode when dialog opens
         setName('');
@@ -66,6 +68,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setEndDate('');
         setStatus('Planejamento');
         setClientId(undefined);
+        setTemplateId(undefined);
     }
   }, [project, open]);
 
@@ -88,7 +91,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
     if (project) {
         updateProject({ ...project, ...projectData });
     } else {
-        addProject(projectData);
+        addProject(projectData, templateId);
     }
 
     setOpen(false);
@@ -108,6 +111,26 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {!project && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="template" className="text-right">
+                  Template
+                </Label>
+                <Select value={templateId} onValueChange={setTemplateId}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Começar do zero" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Começar do zero</SelectItem>
+                    {projectTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
                 Nome

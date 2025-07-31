@@ -1,4 +1,4 @@
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo } from './types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate } from './types';
 
 export const initialRoles: Role[] = [
   { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_leads'] },
@@ -34,6 +34,35 @@ export const initialLeads: Lead[] = [
     { id: 'lead-2', name: 'App de E-commerce', email: 'lead2@email.com', company: 'VarejoGlobal', description: 'Solicitou uma proposta para um app de e-commerce.', status: 'Proposta Enviada', createdAt: '2024-07-25T15:30:00Z', phone: '21 91234-5678', comments: [], attachments: [], value: 50000 },
     { id: 'lead-3', name: 'Campanha de Marketing', email: 'lead3@email.com', company: 'Consultoria XYZ', description: 'Buscando consultoria para campanha de marketing digital.', status: 'Em Contato', createdAt: '2024-08-05T11:00:00Z', phone: '31 99999-8888', comments: [], attachments: [], value: 5000 },
     { id: 'lead-4', name: 'Venda App de Frota', email: 'tony@starkindustries.com', company: 'Stark Industries', description: 'Prospectando a venda de um novo app de gestão de frota.', status: 'Novo', createdAt: '2024-08-10T09:00:00Z', phone: '21 91234-5678', comments: [], attachments: [], value: 80000, clientId: 'client-2' },
+];
+
+export const initialProjectTemplates: ProjectTemplate[] = [
+  {
+    id: 'template-1',
+    name: 'Desenvolvimento de Website',
+    description: 'Um template padrão para criar um novo website, desde o design até o lançamento.',
+    tasks: [
+      { title: 'Reunião de Kick-off', description: 'Alinhar escopo, objetivos e cronograma com o cliente.', priority: 'Alta', dueDayOffset: 1 },
+      { title: 'Criação de Wireframes', description: 'Desenhar a estrutura básica e layout das páginas principais.', priority: 'Alta', dueDayOffset: 7 },
+      { title: 'Design de UI/UX', description: 'Criar o design visual completo no Figma, incluindo sistema de design.', priority: 'Alta', dueDayOffset: 14 },
+      { title: 'Desenvolvimento Frontend', description: 'Implementar a interface do usuário com base no design aprovado.', priority: 'Média', dueDayOffset: 30 },
+      { title: 'Desenvolvimento Backend', description: 'Configurar o servidor, banco de dados e APIs necessárias.', priority: 'Média', dueDayOffset: 30 },
+      { title: 'Fase de Testes', description: 'Realizar testes de funcionalidade, usabilidade e compatibilidade.', priority: 'Média', dueDayOffset: 45 },
+      { title: 'Lançamento', description: 'Fazer o deploy do site para o ambiente de produção.', priority: 'Alta', dueDayOffset: 60 },
+    ],
+  },
+  {
+    id: 'template-2',
+    name: 'Campanha de Marketing Digital',
+    description: 'Template para planejar e executar uma campanha de marketing online.',
+    tasks: [
+      { title: 'Definição de Público-Alvo e KPIs', description: 'Pesquisar e definir o público e os indicadores de sucesso.', priority: 'Alta', dueDayOffset: 2 },
+      { title: 'Criação de Conteúdo', description: 'Produzir textos, imagens e vídeos para a campanha.', priority: 'Média', dueDayOffset: 10 },
+      { title: 'Configuração das Plataformas de Anúncio', description: 'Configurar contas e campanhas no Google Ads, Facebook Ads, etc.', priority: 'Média', dueDayOffset: 15 },
+      { title: 'Lançamento da Campanha', description: 'Ativar todos os anúncios e começar a veiculação.', priority: 'Alta', dueDayOffset: 20 },
+      { title: 'Monitoramento e Otimização', description: 'Analisar os resultados diariamente e fazer ajustes.', priority: 'Alta', dueDayOffset: 30 },
+    ],
+  },
 ];
 
 

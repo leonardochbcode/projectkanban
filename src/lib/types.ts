@@ -116,3 +116,19 @@ export interface Project {
   clientId?: string;
   leadId?: string;
 }
+
+// Tipos para Templates de Projeto
+export interface TemplateTask {
+  title: string;
+  description: string;
+  priority: 'Baixa' | 'Média' | 'Alta';
+  // A duração em dias a partir da data de início do projeto
+  dueDayOffset: number; 
+}
+
+export interface ProjectTemplate {
+  id: string;
+  name: string;
+  description: string;
+  tasks: TemplateTask[];
+}

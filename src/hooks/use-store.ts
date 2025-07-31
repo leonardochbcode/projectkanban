@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate, TemplateTask } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -19,7 +19,9 @@ import {
   initialClients,
   initialLeads,
   initialCompanyInfo,
+  initialProjectTemplates,
 } from '@/lib/data';
+import { format, addDays } from 'date-fns';
 
 interface Store {
   isLoaded: boolean;
@@ -31,6 +33,7 @@ interface Store {
   leads: Lead[];
   currentUser: Participant | null;
   companyInfo: CompanyInfo | null;
+  projectTemplates: ProjectTemplate[];
 }
 
 const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(
@@ -74,6 +77,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [leads, setLeads] = useLocalStorage<Lead[]>('leads', initialLeads);
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', initialCompanyInfo);
+  const [projectTemplates, setProjectTemplates] = useLocalStorage<ProjectTemplate[]>('projectTemplates', initialProjectTemplates);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -90,7 +94,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     leads,
     currentUser,
     companyInfo,
-  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo]);
+    projectTemplates,
+  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo, projectTemplates]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
@@ -101,6 +106,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.leads) setLeads(newState.leads);
     if (newState.hasOwnProperty('currentUser')) setCurrentUser(newState.currentUser ?? null);
     if (newState.companyInfo) setCompanyInfo(newState.companyInfo);
+    if (newState.projectTemplates) setProjectTemplates(newState.projectTemplates);
   };
   
   const value = useMemo(() => ({ ...store, dispatch }), [store]);
@@ -147,15 +153,40 @@ export const useStore = () => {
     [store.tasks]
   );
   
-  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds'>) => {
+  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds'>, templateId?: string) => {
     const newProject: Project = {
       id: `proj-${Date.now()}`,
       ...project,
       participantIds: [],
     };
-    dispatch({ projects: [...store.projects, newProject] });
+
+    let newTasks: Task[] = [];
+    if (templateId) {
+      const template = store.projectTemplates.find(t => t.id === templateId);
+      if (template) {
+        newTasks = template.tasks.map((templateTask: TemplateTask) => {
+          const dueDate = addDays(new Date(newProject.startDate), templateTask.dueDayOffset);
+          return {
+            id: `task-${Date.now()}-${Math.random()}`,
+            projectId: newProject.id,
+            title: templateTask.title,
+            description: templateTask.description,
+            status: 'A Fazer',
+            priority: templateTask.priority,
+            dueDate: format(dueDate, 'yyyy-MM-dd'),
+            comments: [],
+            attachments: [],
+          };
+        });
+      }
+    }
+    
+    dispatch({ 
+      projects: [...store.projects, newProject],
+      tasks: [...store.tasks, ...newTasks] 
+    });
     return newProject;
-  }, [store.projects, dispatch]);
+  }, [store.projects, store.tasks, store.projectTemplates, dispatch]);
 
   const updateProject = useCallback((updatedProject: Project) => {
     dispatch({
@@ -303,6 +334,26 @@ export const useStore = () => {
   const updateCompanyInfo = useCallback((info: CompanyInfo) => {
     dispatch({ companyInfo: info });
   }, [dispatch]);
+
+  const duplicateProject = useCallback((projectToDuplicate: Project) => {
+    const newProject: Project = {
+      ...projectToDuplicate,
+      id: `proj-${Date.now()}`,
+      name: `${projectToDuplicate.name} (Cópia)`,
+    };
+    const originalTasks = getProjectTasks(projectToDuplicate.id);
+    const newTasks: Task[] = originalTasks.map(task => ({
+      ...task,
+      id: `task-${Date.now()}-${Math.random()}`,
+      projectId: newProject.id,
+    }));
+
+    dispatch({ 
+      projects: [...store.projects, newProject],
+      tasks: [...store.tasks, ...newTasks] 
+    });
+    return newProject;
+  }, [store.projects, store.tasks, getProjectTasks, dispatch]);
   
   return {
     ...store,
@@ -332,5 +383,6 @@ export const useStore = () => {
     updateLead,
     deleteLead,
     updateCompanyInfo,
+    duplicateProject,
   };
 };
