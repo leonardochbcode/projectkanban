@@ -15,6 +15,7 @@ import { useStore } from '@/hooks/use-store';
 import { Skeleton } from './ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export function UserNav() {
   const { currentUser, isLoaded, logout } = useStore();
@@ -56,8 +57,12 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>Perfil</DropdownMenuItem>
-          <DropdownMenuItem>Configurações</DropdownMenuItem>
+          <DropdownMenuItem asChild>
+             <Link href="/team">Perfil</Link>
+          </DropdownMenuItem>
+           <DropdownMenuItem asChild>
+            <Link href="/settings">Configurações</Link>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>

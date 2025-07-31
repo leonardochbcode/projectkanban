@@ -123,25 +123,10 @@ export const useStore = () => {
 
   const login = useCallback(
     (email: string, password?: string) => {
-      // Temporary hardcoded superuser
-      if (email === 'admin@admin.com' && password === '#@hfjaskdfskdjh$#2124455') {
-        const adminUser = store.participants[0];
-        if (adminUser) {
-          dispatch({ currentUser: adminUser });
-          return true;
-        }
-      }
-      if (email === 'Admin' && password === '#@hfjaskdfskdjh$#2124455') {
-        const adminUser = store.participants[0];
-        if (adminUser) {
-          dispatch({ currentUser: adminUser });
-          return true;
-        }
-      }
-
       const user = store.participants.find(
-        (p) => p.email === email && (password === undefined || p.password === password)
+        (p) => p.email.toLowerCase() === email.toLowerCase() && p.password === password
       );
+
       if (user) {
         dispatch({ currentUser: user });
         return true;
