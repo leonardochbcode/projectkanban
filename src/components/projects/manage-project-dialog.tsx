@@ -29,10 +29,10 @@ interface ManageProjectDialogProps {
   project?: Project;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  workspaceId: string;
+  workspaceId?: string; // Tornando opcional, já que agora podemos editar de qualquer lugar
 }
 
-export function ManageProjectDialog({ children, project, open: openProp, onOpenChange: onOpenChangeProp, workspaceId }: ManageProjectDialogProps) {
+export function ManageProjectDialog({ children, project, open: openProp, onOpenChange: onOpenChangeProp, workspaceId: initialWorkspaceId }: ManageProjectDialogProps) {
   // Internal state for when the component is not controlled
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -41,7 +41,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates } = useStore();
+  const { addProject, updateProject, projectTemplates, workspaces, clients } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -49,6 +49,9 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [endDate, setEndDate] = useState('');
   const [status, setStatus] = useState<Project['status']>('Planejamento');
   const [templateId, setTemplateId] = useState<string | undefined>();
+  const [workspaceId, setWorkspaceId] = useState<string | undefined>();
+  const [clientId, setClientId] = useState<string | undefined>();
+
 
   useEffect(() => {
     // Populate form when dialog opens for an existing project
@@ -58,6 +61,8 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setStartDate(project.startDate);
         setEndDate(project.endDate);
         setStatus(project.status);
+        setWorkspaceId(project.workspaceId);
+        setClientId(project.clientId);
         setTemplateId(undefined); // Don't show template when editing
     } else if (!project && open) {
         // Reset form for "Add New" mode when dialog opens
@@ -66,14 +71,16 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setStartDate('');
         setEndDate('');
         setStatus('Planejamento');
+        setWorkspaceId(initialWorkspaceId);
+        setClientId(undefined);
         setTemplateId(undefined);
     }
-  }, [project, open]);
+  }, [project, open, initialWorkspaceId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !startDate || !endDate) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    if (!name || !startDate || !endDate || !workspaceId) {
+      alert('Por favor, preencha todos os campos obrigatórios, incluindo o espaço de trabalho.');
       return;
     }
     
@@ -84,6 +91,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         endDate,
         status,
         workspaceId,
+        clientId
     }
 
     if (project) {
@@ -129,6 +137,23 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                 </Select>
               </div>
             )}
+             <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="workspace" className="text-right">
+                  Espaço
+                </Label>
+                <Select value={workspaceId} onValueChange={setWorkspaceId} required>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione um espaço" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workspaces.map((ws) => (
+                      <SelectItem key={ws.id} value={ws.id}>
+                        {ws.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
                 Nome
@@ -151,6 +176,20 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                 onChange={(e) => setDescription(e.target.value)}
                 className="col-span-3"
               />
+            </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="client" className="text-right">
+                  Cliente
+                </Label>
+                <Select value={clientId} onValueChange={(v) => setClientId(v === 'none' ? undefined : v)}>
+                    <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Nenhum cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">Nenhum</SelectItem>
+                        {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="start-date" className="text-right">

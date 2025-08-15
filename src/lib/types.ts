@@ -121,7 +121,7 @@ export interface Project {
   endDate: string;
   status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído';
   participantIds: string[];
-  workspaceId: string; // Adicionado
+  workspaceId: string;
   clientId?: string;
   leadId?: string;
 }

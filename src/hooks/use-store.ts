@@ -165,17 +165,15 @@ export const useStore = () => {
     [store.tasks]
   );
   
-  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds' | 'clientId'>, templateId?: string) => {
-    const workspace = store.workspaces.find(w => w.id === project.workspaceId);
+  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds'>, templateId?: string) => {
     const newProject: Project = {
       id: `proj-${Date.now()}`,
       ...project,
       participantIds: [],
-      clientId: workspace?.clientId
     };
 
     let newTasks: Task[] = [];
-    if (templateId) {
+    if (templateId && templateId !== 'none') {
       const template = store.projectTemplates.find(t => t.id === templateId);
       if (template) {
         newTasks = template.tasks.map((templateTask: TemplateTask) => {
@@ -201,15 +199,13 @@ export const useStore = () => {
       tasks: [...store.tasks, ...newTasks] 
     });
     return newProject;
-  }, [store.projects, store.tasks, store.projectTemplates, store.workspaces, dispatch]);
+  }, [store.projects, store.tasks, store.projectTemplates, dispatch]);
 
   const updateProject = useCallback((updatedProject: Project) => {
-    const workspace = store.workspaces.find(w => w.id === updatedProject.workspaceId);
-    const projectWithClient = { ...updatedProject, clientId: workspace?.clientId };
     dispatch({
-      projects: store.projects.map(p => p.id === updatedProject.id ? projectWithClient : p)
+      projects: store.projects.map(p => p.id === updatedProject.id ? updatedProject : p)
     });
-  }, [store.projects, store.workspaces, dispatch]);
+  }, [store.projects, dispatch]);
 
   const deleteProject = useCallback((projectId: string) => {
     dispatch({
