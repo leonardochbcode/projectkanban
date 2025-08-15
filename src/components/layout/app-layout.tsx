@@ -24,11 +24,12 @@ import type { Permission } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { CompanyHeaderInfo } from './company-header-info';
 import Image from 'next/image';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoaded, currentUser, getRole, logout, companyInfo } = useStore();
+  const { isLoaded, currentUser, getRole, logout, companyInfo, workspaces } = useStore();
 
   useEffect(() => {
     if (isLoaded && !currentUser) {
@@ -58,21 +59,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const hasPermission = (permission: Permission) => userPermissions.includes(permission);
 
-  const navItems = [
+  const mainNavItems = [
     { href: '/', label: 'Painel', icon: LayoutDashboard, permission: 'view_dashboard' as Permission },
-    { href: '/workspaces', label: 'Espaços de Trabalho', icon: Folder, permission: 'manage_workspaces' as Permission },
+    // Workspaces will be handled separately
     { href: '/leads', label: 'Propostas', icon: ClipboardList, permission: 'manage_leads' as Permission },
     { href: '/clients', label: 'Clientes', icon: Briefcase, permission: 'manage_clients' as Permission },
     { href: '/team', label: 'Equipe', icon: Users, permission: 'manage_team' as Permission },
     { href: '/reports', label: 'Relatórios', icon: LineChart, permission: 'view_reports' as Permission },
     { href: '/settings', label: 'Configurações', icon: Settings, permission: 'manage_settings' as Permission },
   ];
-
-  const accessibleNavItems = navItems.filter(item => hasPermission(item.permission));
+  
+  const accessibleMainNavItems = mainNavItems.filter(item => hasPermission(item.permission));
+  const canManageWorkspaces = hasPermission('manage_workspaces');
 
   const NavLinks = () => (
-    <nav className="grid items-start gap-2 px-2 text-sm font-medium lg:px-4">
-      {accessibleNavItems.map(({ href, label, icon: Icon }) => (
+    <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
+      {accessibleMainNavItems.map(({ href, label, icon: Icon }) => (
         <Link
           key={label}
           href={href}
@@ -86,6 +88,48 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {label}
         </Link>
       ))}
+      
+      {canManageWorkspaces && (
+         <Accordion type="single" collapsible defaultValue={pathname.startsWith('/workspaces') ? "workspaces" : undefined} className="w-full">
+            <AccordionItem value="workspaces" className="border-b-0">
+                <AccordionTrigger className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline",
+                     pathname.startsWith('/workspaces') && "text-primary"
+                )}>
+                    <div className="flex items-center gap-3">
+                        <Folder className="h-4 w-4" />
+                        <span>Espaços de Trabalho</span>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="pl-8 pt-1 pb-0">
+                   <div className="flex flex-col space-y-1">
+                     <Link
+                        href="/workspaces"
+                        className={cn(
+                            'rounded-md px-3 py-1.5 text-muted-foreground hover:text-primary',
+                             pathname === '/workspaces' && 'bg-accent text-accent-foreground'
+                        )}
+                        >
+                        Ver Todos
+                     </Link>
+                    {workspaces.map(ws => (
+                        <Link
+                            key={ws.id}
+                            href={`/workspaces/${ws.id}/projects`}
+                            className={cn(
+                                'rounded-md px-3 py-1.5 text-muted-foreground hover:text-primary truncate',
+                                pathname === `/workspaces/${ws.id}/projects` && 'bg-accent text-accent-foreground'
+                            )}
+                            title={ws.name}
+                        >
+                        {ws.name}
+                        </Link>
+                    ))}
+                   </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+      )}
     </nav>
   );
   
@@ -105,7 +149,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="">CHBProject</span>
             </Link>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             <NavLinks />
           </div>
           <div className="mt-auto p-4">
@@ -138,7 +182,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <span className="">CHBProject</span>
                     </Link>
                 </div>
-              <NavLinks />
+              <div className="overflow-y-auto">
+                <NavLinks />
+              </div>
               <div className="mt-auto p-4 border-t">
                 <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
