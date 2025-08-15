@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Skeleton } from '../ui/skeleton';
 import { Progress } from '../ui/progress';
+import Link from 'next/link';
 
 interface ProjectsOverviewReportProps {
   projects: Project[];
@@ -23,13 +24,11 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
       'Em Andamento': 0,
       'Concluído': 0,
       'Pausado': 0,
-      'Total': 0,
     };
 
     const projectDetails = projects.map(project => {
       statusCounts[project.status]++;
-      statusCounts.Total++;
-
+      
       const projectTasks = tasks.filter(t => t.projectId === project.id);
       const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
       const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
@@ -44,11 +43,14 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
     });
 
     const pieData = Object.entries(statusCounts)
-      .filter(([key]) => key !== 'Total')
       .map(([name, value]) => ({ name, value }))
       .filter(item => item.value > 0);
 
-    return { statusCounts, projectDetails, pieData };
+    const totalProjects = projects.length;
+    const concludedProjects = statusCounts['Concluído'];
+    const planningProjects = statusCounts['Planejamento'];
+
+    return { totalProjects, concludedProjects, planningProjects, projectDetails, pieData };
   }, [projects, tasks, clients]);
 
   const COLORS = {
@@ -77,7 +79,7 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
             <CardTitle className="text-sm font-medium">Total de Projetos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportData.statusCounts.Total}</div>
+            <div className="text-2xl font-bold">{reportData.totalProjects}</div>
           </CardContent>
         </Card>
         <Card>
@@ -85,7 +87,7 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
             <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportData.statusCounts['Em Andamento']}</div>
+            <div className="text-2xl font-bold">{projects.filter(p => p.status === 'Em Andamento').length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -93,7 +95,7 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
             <CardTitle className="text-sm font-medium">Concluídos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportData.statusCounts['Concluído']}</div>
+            <div className="text-2xl font-bold">{reportData.concludedProjects}</div>
           </CardContent>
         </Card>
         <Card>
@@ -101,7 +103,7 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
             <CardTitle className="text-sm font-medium">Em Planejamento</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reportData.statusCounts['Planejamento']}</div>
+            <div className="text-2xl font-bold">{reportData.planningProjects}</div>
           </CardContent>
         </Card>
       </div>
@@ -125,7 +127,11 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
               <TableBody>
                 {reportData.projectDetails.map(project => (
                   <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.name}</TableCell>
+                    <TableCell className="font-medium">
+                       <Link href={`/projects/${project.id}`} className="hover:underline">
+                        {project.name}
+                       </Link>
+                    </TableCell>
                     <TableCell>{project.clientName}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={cn(statusColors[project.status])}>

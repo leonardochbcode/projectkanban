@@ -9,10 +9,10 @@ export const initialRoles: Role[] = [
 
 export const initialParticipants: (Omit<Participant, 'id'> & { id: string, password?: string })[] = [
   { id: 'user-0', name: 'Admin', email: 'admin@chb.com.br', roleId: 'role-1', avatar: '/avatars/05.png', password: 'chb123' },
-  { id: 'user-1', name: 'Tiago Rodrigues', email: 'alice@example.com', roleId: 'role-1', avatar: '/avatars/01.png', password: 'password123' },
-  { id: 'user-2', name: 'Leonardo Alves', email: 'bob@example.com', roleId: 'role-2', avatar: '/avatars/02.png', password: 'password123' },
-  { id: 'user-3', name: 'Fernando', email: 'charlie@example.com', roleId: 'role-3', avatar: '/avatars/03.png', password: 'password123' },
-  { id: 'user-4', name: 'Campos', email: 'diana@example.com', roleId: 'role-4', avatar: '/avatars/04.png', password: 'password123' },
+  { id: 'user-1', name: 'Tiago Rodrigues', email: 'tiago@example.com', roleId: 'role-1', avatar: '/avatars/01.png', password: 'password123' },
+  { id: 'user-2', name: 'Leonardo Alves', email: 'leonardo@example.com', roleId: 'role-2', avatar: '/avatars/02.png', password: 'password123' },
+  { id: 'user-3', name: 'Fernando', email: 'fernando@example.com', roleId: 'role-3', avatar: '/avatars/03.png', password: 'password123' },
+  { id: 'user-4', name: 'Campos', email: 'campos@example.com', roleId: 'role-4', avatar: '/avatars/04.png', password: 'password123' },
 ];
 
 export const initialCompanyInfo: CompanyInfo = {
@@ -24,12 +24,12 @@ export const initialCompanyInfo: CompanyInfo = {
 }
 
 export const initialClients: Client[] = [
-    { id: 'client-1', name: 'CARMEN STEFFENS', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-00', address: '123 Main St, Anytown, USA', suportewebCode: 'ACME001' },
-    { id: 'client-2', name: 'CALÇADOS FERRACINI', email: 'tony@starkindustries.com', company: 'Stark Industries', avatar: '/avatars/c02.png', cnpj: '11.111.111/0001-11', address: '10880 Malibu Point, 90265', suportewebCode: 'STARK002' },
-    { id: 'client-3', name: 'VIRALCOOL AÇUCAR E ALCOOL', email: 'bruce@wayne.com', company: 'Wayne Enterprises', avatar: '/avatars/c03.png', cnpj: '22.222.222/0001-22', address: '1007 Mountain Drive, Gotham', suportewebCode: 'WAYNE003' },
-    { id: 'client-4', name: 'LATICINIOS JUSSARA', email: 'contact@jussara.com', company: 'Jussara', avatar: '/avatars/c01.png', cnpj: '33.333.333/0001-33', address: 'Jussara Address', suportewebCode: 'JUSSARA004' },
-    { id: 'client-5', name: 'USINA BARRALCOOL', email: 'contact@barralcool.com', company: 'Barralcool', avatar: '/avatars/c02.png', cnpj: '44.444.444/0001-44', address: 'Barralcool Address', suportewebCode: 'BARRAL005' },
-    { id: 'client-6', name: 'CHB SISTEMAS LTDA', email: 'contact@chb.com.br', company: 'CHB', avatar: '/avatars/c03.png', cnpj: '55.555.555/0001-55', address: 'CHB Address', suportewebCode: 'CHB006' },
+    { id: 'client-1', name: 'CARMEN STEFFENS', email: 'contact@carmensteffens.com.br', company: 'CARMEN STEFFENS', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-01', address: 'CS Address', suportewebCode: 'CS001' },
+    { id: 'client-2', name: 'CALÇADOS FERRACINI', email: 'contact@ferracini.com.br', company: 'CALÇADOS FERRACINI', avatar: '/avatars/c02.png', cnpj: '11.111.111/0001-11', address: 'Ferracini Address', suportewebCode: 'FERRACINI002' },
+    { id: 'client-3', name: 'VIRALCOOL AÇUCAR E ALCOOL', email: 'contact@viralcool.com.br', company: 'VIRALCOOL', avatar: '/avatars/c03.png', cnpj: '22.222.222/0001-22', address: 'Viralcool Address', suportewebCode: 'VIRALCOOL003' },
+    { id: 'client-4', name: 'LATICINIOS JUSSARA', email: 'contact@jussara.com.br', company: 'LATICINIOS JUSSARA', avatar: '/avatars/c01.png', cnpj: '33.333.333/0001-33', address: 'Jussara Address', suportewebCode: 'JUSSARA004' },
+    { id: 'client-5', name: 'USINA BARRALCOOL', email: 'contact@barralcool.com.br', company: 'USINA BARRALCOOL', avatar: '/avatars/c02.png', cnpj: '44.444.444/0001-44', address: 'Barralcool Address', suportewebCode: 'BARRAL005' },
+    { id: 'client-6', name: 'CHB SISTEMAS LTDA', email: 'contact@chb.com.br', company: 'CHB SISTEMAS', avatar: '/avatars/c03.png', cnpj: '55.555.555/0001-55', address: 'CHB Address', suportewebCode: 'CHB006' },
 ];
 
 export const initialWorkspaces: Workspace[] = [
