@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate, TemplateTask, ChecklistItem } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate, TemplateTask, ChecklistItem, Workspace } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -20,6 +20,7 @@ import {
   initialLeads,
   initialCompanyInfo,
   initialProjectTemplates,
+  initialWorkspaces,
 } from '@/lib/data';
 import { format, addDays } from 'date-fns';
 
@@ -34,6 +35,7 @@ interface Store {
   currentUser: Participant | null;
   companyInfo: CompanyInfo | null;
   projectTemplates: ProjectTemplate[];
+  workspaces: Workspace[];
 }
 
 const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(
@@ -78,6 +80,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', initialCompanyInfo);
   const [projectTemplates, setProjectTemplates] = useLocalStorage<ProjectTemplate[]>('projectTemplates', initialProjectTemplates);
+  const [workspaces, setWorkspaces] = useLocalStorage<Workspace[]>('workspaces', initialWorkspaces);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -95,7 +98,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     currentUser,
     companyInfo,
     projectTemplates,
-  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo, projectTemplates]);
+    workspaces,
+  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo, projectTemplates, workspaces]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
@@ -107,6 +111,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.hasOwnProperty('currentUser')) setCurrentUser(newState.currentUser ?? null);
     if (newState.companyInfo) setCompanyInfo(newState.companyInfo);
     if (newState.projectTemplates) setProjectTemplates(newState.projectTemplates);
+    if (newState.workspaces) setWorkspaces(newState.workspaces);
   };
   
   const value = useMemo(() => ({ ...store, dispatch }), [store]);
@@ -146,6 +151,13 @@ export const useStore = () => {
     dispatch({ currentUser: null });
   }, [dispatch]);
 
+  const getWorkspaceProjects = useCallback(
+    (workspaceId: string) => {
+      return store.projects.filter((project) => project.workspaceId === workspaceId);
+    },
+    [store.projects]
+  );
+
   const getProjectTasks = useCallback(
     (projectId: string) => {
       return store.tasks.filter((task) => task.projectId === projectId);
@@ -153,11 +165,13 @@ export const useStore = () => {
     [store.tasks]
   );
   
-  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds'>, templateId?: string) => {
+  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds' | 'clientId'>, templateId?: string) => {
+    const workspace = store.workspaces.find(w => w.id === project.workspaceId);
     const newProject: Project = {
       id: `proj-${Date.now()}`,
       ...project,
       participantIds: [],
+      clientId: workspace?.clientId
     };
 
     let newTasks: Task[] = [];
@@ -187,13 +201,15 @@ export const useStore = () => {
       tasks: [...store.tasks, ...newTasks] 
     });
     return newProject;
-  }, [store.projects, store.tasks, store.projectTemplates, dispatch]);
+  }, [store.projects, store.tasks, store.projectTemplates, store.workspaces, dispatch]);
 
   const updateProject = useCallback((updatedProject: Project) => {
+    const workspace = store.workspaces.find(w => w.id === updatedProject.workspaceId);
+    const projectWithClient = { ...updatedProject, clientId: workspace?.clientId };
     dispatch({
-      projects: store.projects.map(p => p.id === updatedProject.id ? updatedProject : p)
+      projects: store.projects.map(p => p.id === updatedProject.id ? projectWithClient : p)
     });
-  }, [store.projects, dispatch]);
+  }, [store.projects, store.workspaces, dispatch]);
 
   const deleteProject = useCallback((projectId: string) => {
     dispatch({
@@ -377,10 +393,37 @@ export const useStore = () => {
     });
   }, [store.projectTemplates, dispatch]);
   
+  const addWorkspace = useCallback((workspace: Omit<Workspace, 'id'>) => {
+    const newWorkspace: Workspace = {
+      id: `ws-${Date.now()}`,
+      ...workspace,
+    };
+    dispatch({ workspaces: [...store.workspaces, newWorkspace] });
+  }, [store.workspaces, dispatch]);
+
+  const updateWorkspace = useCallback((updatedWorkspace: Workspace) => {
+    dispatch({
+      workspaces: store.workspaces.map(w => w.id === updatedWorkspace.id ? updatedWorkspace : w)
+    });
+  }, [store.workspaces, dispatch]);
+
+  const deleteWorkspace = useCallback((workspaceId: string) => {
+    const projectsInWorkspace = store.projects.filter(p => p.workspaceId === workspaceId);
+    if (projectsInWorkspace.length > 0) {
+      alert("Não é possível excluir um espaço de trabalho que contém projetos.");
+      return;
+    }
+    dispatch({
+      workspaces: store.workspaces.filter(w => w.id !== workspaceId)
+    });
+  }, [store.workspaces, store.projects, dispatch]);
+
+
   return {
     ...store,
     login,
     logout,
+    getWorkspaceProjects,
     getProjectTasks,
     addProject,
     updateProject,
@@ -409,5 +452,8 @@ export const useStore = () => {
     addProjectTemplate,
     updateProjectTemplate,
     deleteProjectTemplate,
+    addWorkspace,
+    updateWorkspace,
+    deleteWorkspace,
   };
 };

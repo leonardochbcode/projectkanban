@@ -1,9 +1,9 @@
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate } from './types';
+import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate, Workspace } from './types';
 
 export const initialRoles: Role[] = [
-  { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_leads'] },
-  { id: 'role-2', name: 'Desenvolvedor', permissions: ['view_dashboard', 'manage_projects', 'view_reports'] },
-  { id: 'role-3', name: 'Designer', permissions: ['view_dashboard', 'manage_projects'] },
+  { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_workspaces', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_leads'] },
+  { id: 'role-2', name: 'Desenvolvedor', permissions: ['view_dashboard', 'manage_workspaces', 'manage_projects', 'view_reports'] },
+  { id: 'role-3', name: 'Designer', permissions: ['view_dashboard', 'manage_workspaces', 'manage_projects'] },
   { id: 'role-4', name: 'Analista', permissions: ['view_dashboard', 'view_reports'] },
 ];
 
@@ -24,9 +24,18 @@ export const initialCompanyInfo: CompanyInfo = {
 }
 
 export const initialClients: Client[] = [
-    { id: 'client-1', name: 'Acme Corporation', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-00', address: '123 Main St, Anytown, USA', suportewebCode: 'ACME001' },
-    { id: 'client-2', name: 'Stark Industries', email: 'tony@starkindustries.com', company: 'Stark Industries', avatar: '/avatars/c02.png', cnpj: '11.111.111/0001-11', address: '10880 Malibu Point, 90265', suportewebCode: 'STARK002' },
-    { id: 'client-3', name: 'Wayne Enterprises', email: 'bruce@wayne.com', company: 'Wayne Enterprises', avatar: '/avatars/c03.png', cnpj: '22.222.222/0001-22', address: '1007 Mountain Drive, Gotham', suportewebCode: 'WAYNE003' },
+    { id: 'client-1', name: 'CARMEN STEFFENS', email: 'contact@acme.com', company: 'Acme Corp', avatar: '/avatars/c01.png', cnpj: '00.000.000/0001-00', address: '123 Main St, Anytown, USA', suportewebCode: 'ACME001' },
+    { id: 'client-2', name: 'CALÇADOS FERRACINI', email: 'tony@starkindustries.com', company: 'Stark Industries', avatar: '/avatars/c02.png', cnpj: '11.111.111/0001-11', address: '10880 Malibu Point, 90265', suportewebCode: 'STARK002' },
+    { id: 'client-3', name: 'VIRALCOOL AÇUCAR E ALCOOL', email: 'bruce@wayne.com', company: 'Wayne Enterprises', avatar: '/avatars/c03.png', cnpj: '22.222.222/0001-22', address: '1007 Mountain Drive, Gotham', suportewebCode: 'WAYNE003' },
+    { id: 'client-4', name: 'LATICINIOS JUSSARA', email: 'contact@jussara.com', company: 'Jussara', avatar: '/avatars/c01.png', cnpj: '33.333.333/0001-33', address: 'Jussara Address', suportewebCode: 'JUSSARA004' },
+    { id: 'client-5', name: 'USINA BARRALCOOL', email: 'contact@barralcool.com', company: 'Barralcool', avatar: '/avatars/c02.png', cnpj: '44.444.444/0001-44', address: 'Barralcool Address', suportewebCode: 'BARRAL005' },
+    { id: 'client-6', name: 'CHB SISTEMAS LTDA', email: 'contact@chb.com.br', company: 'CHB', avatar: '/avatars/c03.png', cnpj: '55.555.555/0001-55', address: 'CHB Address', suportewebCode: 'CHB006' },
+];
+
+export const initialWorkspaces: Workspace[] = [
+    { id: 'ws-1', name: 'Espaço de Trabalho - CARMEN STEFFENS', description: 'Todos os projetos relacionados à CARMEN STEFFENS', clientId: 'client-1' },
+    { id: 'ws-2', name: 'Espaço de Trabalho - CALÇADOS FERRACINI', description: 'Todos os projetos relacionados à CALÇADOS FERRACINI', clientId: 'client-2' },
+    { id: 'ws-3', name: 'Workspace Interno', description: 'Projetos internos sem cliente.' },
 ];
 
 export const initialLeads: Lead[] = [
@@ -75,6 +84,7 @@ export const initialProjects: Project[] = [
     endDate: '2024-10-31',
     status: 'Em Andamento',
     participantIds: ['user-1', 'user-2', 'user-3'],
+    workspaceId: 'ws-1',
     clientId: 'client-1',
   },
   {
@@ -85,6 +95,7 @@ export const initialProjects: Project[] = [
     endDate: '2025-01-15',
     status: 'Planejamento',
     participantIds: ['user-1', 'user-2', 'user-4'],
+    workspaceId: 'ws-2',
     clientId: 'client-2',
   },
   {
@@ -95,7 +106,8 @@ export const initialProjects: Project[] = [
     endDate: '2024-12-31',
     status: 'Pausado',
     participantIds: ['user-1', 'user-4'],
-    clientId: 'client-3',
+    workspaceId: 'ws-2',
+    clientId: 'client-2',
   },
   {
     id: 'proj-4',
@@ -105,6 +117,7 @@ export const initialProjects: Project[] = [
     endDate: '2024-09-20',
     status: 'Concluído',
     participantIds: ['user-2'],
+    workspaceId: 'ws-3',
   },
 ];
 

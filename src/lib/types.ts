@@ -1,5 +1,6 @@
 export const availablePermissions = {
     view_dashboard: 'Ver Painel',
+    manage_workspaces: 'Gerenciar Espaços de Trabalho',
     manage_projects: 'Gerenciar Projetos',
     manage_clients: 'Gerenciar Clientes',
     manage_leads: 'Gerenciar Leads',
@@ -120,9 +121,18 @@ export interface Project {
   endDate: string;
   status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído';
   participantIds: string[];
+  workspaceId: string; // Adicionado
   clientId?: string;
   leadId?: string;
 }
+
+export interface Workspace {
+  id: string;
+  name: string;
+  description: string;
+  clientId?: string;
+}
+
 
 // Tipos para Templates de Projeto
 export interface TemplateTask {

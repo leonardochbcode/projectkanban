@@ -10,6 +10,7 @@ import {
   Briefcase,
   LogOut,
   ClipboardList,
+  Folder,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -59,7 +60,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/', label: 'Painel', icon: LayoutDashboard, permission: 'view_dashboard' as Permission },
-    { href: '/projects', label: 'Projetos', icon: FolderKanban, permission: 'manage_projects' as Permission },
+    { href: '/workspaces', label: 'Espaços de Trabalho', icon: Folder, permission: 'manage_workspaces' as Permission },
     { href: '/leads', label: 'Propostas', icon: ClipboardList, permission: 'manage_leads' as Permission },
     { href: '/clients', label: 'Clientes', icon: Briefcase, permission: 'manage_clients' as Permission },
     { href: '/team', label: 'Equipe', icon: Users, permission: 'manage_team' as Permission },
@@ -77,7 +78,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           href={href}
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-            { 'bg-accent text-accent-foreground': pathname === href }
+            { 'bg-accent text-accent-foreground': pathname.startsWith(href) && href !== '/' },
+            { 'bg-accent text-accent-foreground': pathname === '/' && href === '/' }
           )}
         >
           <Icon className="h-4 w-4" />
