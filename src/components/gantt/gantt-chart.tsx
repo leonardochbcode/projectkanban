@@ -15,16 +15,15 @@ export function GanttChart() {
         const formattedTasks: any[] = [];
         
         projects.forEach(project => {
-            // Apenas incluir projetos com datas válidas
             if (!project.startDate || !project.endDate) return;
 
-            const projectTasks = getProjectTasks(project.id);
-            const totalTasks = projectTasks.length;
-            const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
-            const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-            
             try {
-                 formattedTasks.push({
+                const projectTasks = getProjectTasks(project.id);
+                const totalTasks = projectTasks.length;
+                const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
+                const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+                formattedTasks.push({
                     id: project.id,
                     name: project.name,
                     start: parseISO(project.startDate),
@@ -34,24 +33,24 @@ export function GanttChart() {
                 });
 
                 projectTasks.forEach(task => {
-                    // Apenas incluir tarefas com data de vencimento válida
                     if (!task.dueDate) return;
-                    const dueDate = parseISO(task.dueDate);
-                    
-                    // Tratar tarefas como marcos (milestones) para evitar erros de duração
-                    formattedTasks.push({
-                        id: task.id,
-                        name: task.title,
-                        start: dueDate,
-                        end: dueDate, 
-                        progress: task.status === 'Concluída' ? 100 : 0,
-                        dependencies: project.id,
-                        custom_class: 'gantt-task-bar'
-                    });
+                    try {
+                        const dueDate = parseISO(task.dueDate);
+                        formattedTasks.push({
+                            id: task.id,
+                            name: task.title,
+                            start: dueDate,
+                            end: dueDate, 
+                            progress: task.status === 'Concluída' ? 100 : 0,
+                            dependencies: project.id,
+                            custom_class: 'gantt-task-bar'
+                        });
+                    } catch (taskError) {
+                        console.error(`Erro ao processar data para a tarefa ID ${task.id}:`, taskError);
+                    }
                 });
-            } catch (error) {
-                console.error("Erro ao processar datas para o gráfico de Gantt:", error);
-                // Ignorar o projeto ou tarefa com data inválida
+            } catch (projectError) {
+                console.error(`Erro ao processar data para o projeto ID ${project.id}:`, projectError);
             }
         });
         
@@ -59,21 +58,17 @@ export function GanttChart() {
     }, [projects, getProjectTasks]);
 
     useEffect(() => {
-        // Se a instância já existe, destrua-a
         if (ganttInstance.current) {
             ganttInstance.current.destroy();
             ganttInstance.current = null;
         }
 
-        // Se o container existe, está carregado e temos tarefas para mostrar
         if (ganttContainerRef.current && ganttTasks.length > 0 && isLoaded) {
-            // Garanta que o container está vazio antes de renderizar
             ganttContainerRef.current.innerHTML = '';
             const ganttSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             ganttSvg.setAttribute('width', '100%');
             ganttSvg.setAttribute('height', '100%');
             ganttContainerRef.current.appendChild(ganttSvg);
-
 
             ganttInstance.current = new Gantt(ganttSvg, ganttTasks, {
                 header_height: 50,
@@ -85,7 +80,6 @@ export function GanttChart() {
                 arrow_curve: 5,
                 padding: 18,
                 view_mode: 'Week',
-                date_format: 'YYYY-MM-DD',
                 language: 'pt',
                 custom_popup_html: function(task) {
                   return `
@@ -98,10 +92,13 @@ export function GanttChart() {
             });
         }
         
-        // A função de cleanup é executada quando o componente é desmontado
         return () => {
             if (ganttInstance.current) {
-                ganttInstance.current.destroy();
+                try {
+                   ganttInstance.current.destroy();
+                } catch (e) {
+                   console.error("Erro ao destruir a instância do Gantt:", e);
+                }
                 ganttInstance.current = null;
             }
         };
