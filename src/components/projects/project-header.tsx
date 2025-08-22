@@ -6,10 +6,11 @@ import { ManageProjectDialog } from './manage-project-dialog';
 import type { Project } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 import { Progress } from '@/components/ui/progress';
-import { PlusCircle, Briefcase, Edit, ClipboardList, LayoutGrid, List } from 'lucide-react';
+import { PlusCircle, Briefcase, Edit, ClipboardList, LayoutGrid, List, ChevronsRight } from 'lucide-react';
 import { LeadDetailsSheet } from '../leads/lead-details-sheet';
 import { useState } from 'react';
 import type { Lead } from '@/lib/types';
+import Link from 'next/link';
 
 
 interface ProjectHeaderProps {
@@ -20,10 +21,11 @@ interface ProjectHeaderProps {
 
 
 export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderProps) {
-  const { getProjectTasks, getClient, getLead } = useStore();
+  const { getProjectTasks, getClient, getLead, workspaces } = useStore();
   const tasks = getProjectTasks(project.id);
   const client = project.clientId ? getClient(project.clientId) : null;
   const lead = project.leadId ? getLead(project.leadId) : null;
+  const workspace = workspaces.find(w => w.id === project.workspaceId);
   
   const [isLeadSheetOpen, setIsLeadSheetOpen] = useState(false);
 
@@ -43,6 +45,13 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
 
   return (
     <div className="p-4 sm:p-6 border-b">
+        {workspace && (
+             <div className="text-sm text-muted-foreground flex items-center gap-1.5 mb-2">
+                <Link href="/workspaces" className="hover:text-primary">Espaços de Trabalho</Link>
+                <ChevronsRight className="h-4 w-4" />
+                <Link href={`/workspaces/${workspace.id}/projects`} className="hover:text-primary">{workspace.name}</Link>
+             </div>
+        )}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight font-headline">{project.name}</h1>
