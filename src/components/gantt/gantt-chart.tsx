@@ -1,10 +1,10 @@
-
 'use client';
 import { useStore } from '@/hooks/use-store';
 import React, { useEffect, useRef, useMemo } from 'react';
 import Gantt from 'frappe-gantt';
 import { Skeleton } from '../ui/skeleton';
 import { Card, CardContent } from '../ui/card';
+import { parseISO } from 'date-fns';
 
 export function GanttChart() {
     const { projects, getProjectTasks, isLoaded } = useStore();
@@ -15,6 +15,8 @@ export function GanttChart() {
         const formattedTasks: any[] = [];
         
         projects.forEach(project => {
+            if (!project.startDate || !project.endDate) return;
+
             const projectTasks = getProjectTasks(project.id);
             const totalTasks = projectTasks.length;
             const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
@@ -24,19 +26,21 @@ export function GanttChart() {
             formattedTasks.push({
                 id: project.id,
                 name: project.name,
-                start: project.startDate,
-                end: project.endDate,
+                start: parseISO(project.startDate),
+                end: parseISO(project.endDate),
                 progress: progress,
                 custom_class: 'gantt-project-bar' // Classe para estilização
             });
 
             // Adiciona as tarefas reais do projeto
             projectTasks.forEach(task => {
+                if (!task.dueDate) return;
+                const dueDate = parseISO(task.dueDate);
                 formattedTasks.push({
                     id: task.id,
                     name: task.title,
-                    start: task.dueDate, // Gantt precisa de início e fim, vamos simplificar
-                    end: task.dueDate,
+                    start: dueDate,
+                    end: dueDate,
                     progress: task.status === 'Concluída' ? 100 : 0,
                     dependencies: project.id, // Vincula a tarefa ao projeto
                     custom_class: 'gantt-task-bar'
