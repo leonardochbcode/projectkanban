@@ -11,7 +11,7 @@ import { Button } from '../ui/button';
 import Link from 'next/link';
 import { useStore } from '@/hooks/use-store';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { TaskDetailsSheet } from '../tasks/task-details-sheet';
 
 interface ProjectsTableProps {
   projects: Project[];
@@ -60,22 +60,24 @@ function ProjectTasksRow({ project, tasks, isVisible }: { project: Project, task
                                 {tasks.map(task => {
                                     const assignee = task.assigneeId ? getParticipant(task.assigneeId) : null;
                                     return (
-                                        <TableRow key={task.id} className="bg-background">
-                                            <TableCell className="font-medium">{task.title}</TableCell>
-                                            <TableCell><Badge variant="outline" className={cn(taskStatusColors[task.status])}>{task.status}</Badge></TableCell>
-                                            <TableCell><Badge variant="outline" className={cn(taskPriorityColors[task.priority])}>{task.priority}</Badge></TableCell>
-                                            <TableCell>
-                                                {assignee ? (
-                                                     <div className="flex items-center gap-2">
-                                                        <Avatar className="h-6 w-6">
-                                                            <AvatarImage src={assignee.avatar} />
-                                                            <AvatarFallback>{assignee.name[0]}</AvatarFallback>
-                                                        </Avatar>
-                                                        <span className="text-xs">{assignee.name.split(' ')[0]}</span>
-                                                    </div>
-                                                ) : <span className="text-xs text-muted-foreground">N/A</span>}
-                                            </TableCell>
-                                        </TableRow>
+                                        <TaskDetailsSheet key={task.id} task={task}>
+                                            <TableRow className="bg-background cursor-pointer">
+                                                <TableCell className="font-medium">{task.title}</TableCell>
+                                                <TableCell><Badge variant="outline" className={cn(taskStatusColors[task.status])}>{task.status}</Badge></TableCell>
+                                                <TableCell><Badge variant="outline" className={cn(taskPriorityColors[task.priority])}>{task.priority}</Badge></TableCell>
+                                                <TableCell>
+                                                    {assignee ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <Avatar className="h-6 w-6">
+                                                                <AvatarImage src={assignee.avatar} />
+                                                                <AvatarFallback>{assignee.name[0]}</AvatarFallback>
+                                                            </Avatar>
+                                                            <span className="text-xs">{assignee.name.split(' ')[0]}</span>
+                                                        </div>
+                                                    ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                                                </TableCell>
+                                            </TableRow>
+                                        </TaskDetailsSheet>
                                     )
                                 })}
                             </TableBody>
