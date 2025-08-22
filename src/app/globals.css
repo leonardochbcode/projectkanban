@@ -4,8 +4,10 @@
 
 @import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-body {
-  font-family: 'Inter', sans-serif;
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
 }
 
 @layer base {
