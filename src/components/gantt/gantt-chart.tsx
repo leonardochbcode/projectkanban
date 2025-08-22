@@ -8,7 +8,7 @@ import { parseISO } from 'date-fns';
 
 export function GanttChart() {
     const { projects, getProjectTasks, isLoaded } = useStore();
-    const ganttContainerRef = useRef<HTMLDivElement | null>(null);
+    const svgRef = useRef<SVGSVGElement | null>(null);
     const ganttInstance = useRef<Gantt | null>(null);
 
     const ganttTasks = useMemo(() => {
@@ -63,14 +63,8 @@ export function GanttChart() {
             ganttInstance.current = null;
         }
 
-        if (ganttContainerRef.current && ganttTasks.length > 0 && isLoaded) {
-            ganttContainerRef.current.innerHTML = '';
-            const ganttSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            ganttSvg.setAttribute('width', '100%');
-            ganttSvg.setAttribute('height', '100%');
-            ganttContainerRef.current.appendChild(ganttSvg);
-
-            ganttInstance.current = new Gantt(ganttSvg, ganttTasks, {
+        if (svgRef.current && ganttTasks.length > 0 && isLoaded) {
+            ganttInstance.current = new Gantt(svgRef.current, ganttTasks, {
                 header_height: 50,
                 column_width: 30,
                 step: 24,
@@ -149,7 +143,9 @@ export function GanttChart() {
             `}</style>
             <Card>
                 <CardContent className="p-4">
-                     <div ref={ganttContainerRef} className="w-full h-[600px]"></div>
+                     <div className="w-full h-[600px]">
+                        <svg ref={svgRef} width="100%" height="100%"></svg>
+                     </div>
                 </CardContent>
             </Card>
         </>
