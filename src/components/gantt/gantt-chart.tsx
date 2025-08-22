@@ -8,7 +8,7 @@ import { parseISO } from 'date-fns';
 
 export function GanttChart() {
     const { projects, getProjectTasks, isLoaded } = useStore();
-    const ganttRef = useRef<SVGSVGElement | null>(null);
+    const ganttContainerRef = useRef<HTMLDivElement | null>(null);
     const ganttInstance = useRef<Gantt | null>(null);
 
     const ganttTasks = useMemo(() => {
@@ -22,17 +22,15 @@ export function GanttChart() {
             const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
             const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
             
-            // Adiciona o projeto como uma tarefa "pai"
             formattedTasks.push({
                 id: project.id,
                 name: project.name,
                 start: parseISO(project.startDate),
                 end: parseISO(project.endDate),
                 progress: progress,
-                custom_class: 'gantt-project-bar' // Classe para estilização
+                custom_class: 'gantt-project-bar'
             });
 
-            // Adiciona as tarefas reais do projeto
             projectTasks.forEach(task => {
                 if (!task.dueDate) return;
                 const dueDate = parseISO(task.dueDate);
@@ -42,7 +40,7 @@ export function GanttChart() {
                     start: dueDate,
                     end: dueDate,
                     progress: task.status === 'Concluída' ? 100 : 0,
-                    dependencies: project.id, // Vincula a tarefa ao projeto
+                    dependencies: project.id,
                     custom_class: 'gantt-task-bar'
                 });
             });
@@ -52,14 +50,23 @@ export function GanttChart() {
     }, [projects, getProjectTasks]);
 
     useEffect(() => {
-        if (ganttRef.current && ganttTasks.length > 0 && isLoaded) {
-            // Limpa a instância anterior para evitar renderizações múltiplas
-            if (ganttInstance.current) {
-                ganttInstance.current.destroy();
-            }
-            ganttRef.current.innerHTML = '';
+        // Se a instância já existe, destrua-a
+        if (ganttInstance.current) {
+            ganttInstance.current.destroy();
+            ganttInstance.current = null;
+        }
 
-            ganttInstance.current = new Gantt(ganttRef.current, ganttTasks, {
+        // Se o container existe e temos tarefas para mostrar
+        if (ganttContainerRef.current && ganttTasks.length > 0 && isLoaded) {
+            // Garanta que o container está vazio antes de renderizar
+            ganttContainerRef.current.innerHTML = '';
+            const ganttSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            ganttSvg.setAttribute('width', '100%');
+            ganttSvg.setAttribute('height', '100%');
+            ganttContainerRef.current.appendChild(ganttSvg);
+
+
+            ganttInstance.current = new Gantt(ganttSvg, ganttTasks, {
                 header_height: 50,
                 column_width: 30,
                 step: 24,
@@ -70,7 +77,7 @@ export function GanttChart() {
                 padding: 18,
                 view_mode: 'Week',
                 date_format: 'YYYY-MM-DD',
-                language: 'pt', // Assuming this is supported or for custom setup
+                language: 'pt',
                 custom_popup_html: function(task) {
                   return `
                     <div class="p-2 bg-popover text-popover-foreground rounded-md border shadow-md">
@@ -81,15 +88,15 @@ export function GanttChart() {
                 }
             });
         }
-
-        // Cleanup on unmount
+        
+        // A função de cleanup é executada quando o componente é desmontado
         return () => {
             if (ganttInstance.current) {
                 ganttInstance.current.destroy();
                 ganttInstance.current = null;
             }
         };
-    }, [ganttTasks, isLoaded]);
+    }, [ganttTasks, isLoaded]); // A dependência agora é apenas nas tarefas e no status de carregamento
 
     if (!isLoaded) {
         return <Skeleton className="h-[600px] w-full" />;
@@ -136,7 +143,7 @@ export function GanttChart() {
             `}</style>
             <Card>
                 <CardContent className="p-4">
-                     <svg ref={ganttRef} className="w-full h-[600px]"></svg>
+                     <div ref={ganttContainerRef} className="w-full h-[600px]"></div>
                 </CardContent>
             </Card>
         </>
