@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { StoreProvider } from '@/hooks/use-store';
