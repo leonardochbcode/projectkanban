@@ -124,6 +124,7 @@ export interface Project {
   workspaceId: string;
   clientId?: string;
   leadId?: string;
+  pmoId?: string;
 }
 
 export interface Workspace {

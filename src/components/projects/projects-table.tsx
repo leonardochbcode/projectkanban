@@ -1,82 +1,195 @@
 
 'use client';
+import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import type { Project } from '@/lib/types';
+import type { Project, Task } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { MoreVertical, Edit, Copy } from 'lucide-react';
+import { MoreVertical, Edit, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { useStore } from '@/hooks/use-store';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 interface ProjectsTableProps {
   projects: Project[];
   onEdit: (project: Project) => void;
 }
 
-export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
-  const { duplicateProject } = useStore();
-
-  const statusColors: { [key: string]: string } = {
+const statusColors: { [key: string]: string } = {
     'Em Andamento': 'bg-blue-500/20 text-blue-700',
     Planejamento: 'bg-yellow-500/20 text-yellow-700',
     Concluído: 'bg-green-500/20 text-green-700',
     Pausado: 'bg-gray-500/20 text-gray-700',
-  };
+};
+const taskStatusColors: { [key: string]: string } = {
+    'A Fazer': 'bg-yellow-500/20 text-yellow-700',
+    'Em Andamento': 'bg-blue-500/20 text-blue-700',
+    'Concluída': 'bg-green-500/20 text-green-700',
+};
+const taskPriorityColors: { [key: string]: string } = {
+    'Alta': 'bg-red-500/20 text-red-700',
+    'Média': 'bg-yellow-500/20 text-yellow-700',
+    'Baixa': 'bg-blue-500/20 text-blue-700',
+};
+
+
+function ProjectTasksRow({ tasks, isVisible }: { tasks: Task[], isVisible: boolean }) {
+    const { getParticipant } = useStore();
+    
+    if (!isVisible) return null;
+
+    return (
+        <TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableCell colSpan={6} className="p-0">
+                <div className="p-4">
+                    <h4 className="text-sm font-semibold mb-2">Tarefas do Projeto</h4>
+                    {tasks.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[40%]">Título</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Prioridade</TableHead>
+                                    <TableHead>Responsável</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {tasks.map(task => {
+                                    const assignee = task.assigneeId ? getParticipant(task.assigneeId) : null;
+                                    return (
+                                        <TableRow key={task.id} className="bg-background">
+                                            <TableCell className="font-medium">{task.title}</TableCell>
+                                            <TableCell><Badge variant="outline" className={cn(taskStatusColors[task.status])}>{task.status}</Badge></TableCell>
+                                            <TableCell><Badge variant="outline" className={cn(taskPriorityColors[task.priority])}>{task.priority}</Badge></TableCell>
+                                            <TableCell>
+                                                {assignee ? (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                                <Avatar className="h-6 w-6 inline-block">
+                                                                <AvatarImage src={assignee.avatar} />
+                                                                <AvatarFallback>{assignee.name[0]}</AvatarFallback>
+                                                            </Avatar>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{assignee.name}</p>
+                                                        </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <p className="text-sm text-muted-foreground px-4 py-2">Nenhuma tarefa neste projeto.</p>
+                    )}
+                </div>
+            </TableCell>
+        </TableRow>
+    )
+}
+
+export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
+  const { duplicateProject, getProjectTasks, getParticipant } = useStore();
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   const handleDuplicate = (project: Project) => {
     const newProject = duplicateProject(project);
     onEdit(newProject);
   };
 
+  const toggleRow = (projectId: string) => {
+    setExpandedRows(prev => ({ ...prev, [projectId]: !prev[projectId] }));
+  };
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-12"></TableHead>
           <TableHead>Nome</TableHead>
+          <TableHead>Responsável</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Data de Início</TableHead>
-          <TableHead>Data de Término</TableHead>
+          <TableHead>Datas</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {projects.map((project) => (
-          <TableRow key={project.id}>
-            <TableCell className="font-medium">
-              <Link href={`/projects/${project.id}`} className="hover:underline">
-                {project.name}
-              </Link>
-            </TableCell>
-            <TableCell>
-              <Badge variant="outline" className={cn(statusColors[project.status])}>
-                {project.status}
-              </Badge>
-            </TableCell>
-            <TableCell>{new Date(project.startDate).toLocaleDateString()}</TableCell>
-            <TableCell>{new Date(project.endDate).toLocaleDateString()}</TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onSelect={() => onEdit(project)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleDuplicate(project)}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Duplicar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        ))}
+        {projects.map((project) => {
+          const tasks = getProjectTasks(project.id);
+          const pmo = project.pmoId ? getParticipant(project.pmoId) : null;
+          const isExpanded = expandedRows[project.id];
+          return (
+            <React.Fragment key={project.id}>
+                <TableRow>
+                    <TableCell>
+                        <Button variant="ghost" size="icon" onClick={() => toggleRow(project.id)} className="h-8 w-8">
+                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </Button>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                    <Link href={`/projects/${project.id}`} className="hover:underline">
+                        {project.name}
+                    </Link>
+                    </TableCell>
+                    <TableCell>
+                        {pmo ? (
+                            <TooltipProvider>
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="h-6 w-6">
+                                                <AvatarImage src={pmo.avatar} />
+                                                <AvatarFallback>{pmo.name[0]}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-xs">{pmo.name}</span>
+                                        </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Resp. Técnico: {pmo.name}</p>
+                                </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                    </TableCell>
+                    <TableCell>
+                    <Badge variant="outline" className={cn(statusColors[project.status])}>
+                        {project.status}
+                    </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                        {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => onEdit(project)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleDuplicate(project)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Duplicar
+                        </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    </TableCell>
+                </TableRow>
+                <ProjectTasksRow tasks={tasks} isVisible={isExpanded} />
+            </React.Fragment>
+          )
+        })}
       </TableBody>
     </Table>
   );

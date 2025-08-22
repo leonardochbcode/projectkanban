@@ -41,7 +41,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates, workspaces, clients } = useStore();
+  const { addProject, updateProject, projectTemplates, workspaces, clients, participants } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -51,6 +51,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [templateId, setTemplateId] = useState<string | undefined>();
   const [workspaceId, setWorkspaceId] = useState<string | undefined>();
   const [clientId, setClientId] = useState<string | undefined>();
+  const [pmoId, setPmoId] = useState<string | undefined>();
 
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setStatus(project.status);
         setWorkspaceId(project.workspaceId);
         setClientId(project.clientId);
+        setPmoId(project.pmoId);
         setTemplateId(undefined); // Don't show template when editing
     } else if (!project && open) {
         // Reset form for "Add New" mode when dialog opens
@@ -73,6 +75,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setStatus('Planejamento');
         setWorkspaceId(initialWorkspaceId);
         setClientId(undefined);
+        setPmoId(undefined);
         setTemplateId(undefined);
     }
   }, [project, open, initialWorkspaceId]);
@@ -91,7 +94,8 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         endDate,
         status,
         workspaceId,
-        clientId
+        clientId,
+        pmoId
     }
 
     if (project) {
@@ -188,6 +192,20 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                     <SelectContent>
                         <SelectItem value="none">Nenhum</SelectItem>
                         {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="pmo" className="text-right">
+                    Resp. Técnico
+                </Label>
+                <Select value={pmoId} onValueChange={(v) => setPmoId(v === 'none' ? undefined : v)}>
+                    <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Nenhum responsável" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">Nenhum</SelectItem>
+                        {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
