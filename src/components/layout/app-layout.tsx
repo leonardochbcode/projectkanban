@@ -11,7 +11,7 @@ import {
   LogOut,
   ClipboardList,
   Folder,
-  Folders,
+  Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -62,6 +62,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const mainNavItems = [
     { href: '/', label: 'Painel', icon: LayoutDashboard, permission: 'view_dashboard' as Permission },
+    { href: '/schedule', label: 'Agenda', icon: Calendar, permission: 'view_dashboard' as Permission },
     { href: '/projects', label: 'Projetos', icon: FolderKanban, permission: 'manage_projects' as Permission },
     { href: '/leads', label: 'Propostas', icon: ClipboardList, permission: 'manage_leads' as Permission },
     { href: '/clients', label: 'Clientes', icon: Briefcase, permission: 'manage_clients' as Permission },
