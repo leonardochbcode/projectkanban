@@ -36,7 +36,7 @@ const taskPriorityColors: { [key: string]: string } = {
 };
 
 
-function ProjectTasksRow({ tasks, isVisible }: { tasks: Task[], isVisible: boolean }) {
+function ProjectTasksRow({ project, tasks, isVisible }: { project: Project, tasks: Task[], isVisible: boolean }) {
     const { getParticipant } = useStore();
     
     if (!isVisible) return null;
@@ -45,7 +45,7 @@ function ProjectTasksRow({ tasks, isVisible }: { tasks: Task[], isVisible: boole
         <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableCell colSpan={6} className="p-0">
                 <div className="p-4">
-                    <h4 className="text-sm font-semibold mb-2">Tarefas do Projeto</h4>
+                    <h4 className="text-sm font-semibold mb-2">Tarefas do Projeto: {project.name}</h4>
                     {tasks.length > 0 ? (
                         <Table>
                             <TableHeader>
@@ -66,19 +66,13 @@ function ProjectTasksRow({ tasks, isVisible }: { tasks: Task[], isVisible: boole
                                             <TableCell><Badge variant="outline" className={cn(taskPriorityColors[task.priority])}>{task.priority}</Badge></TableCell>
                                             <TableCell>
                                                 {assignee ? (
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                                <Avatar className="h-6 w-6 inline-block">
-                                                                <AvatarImage src={assignee.avatar} />
-                                                                <AvatarFallback>{assignee.name[0]}</AvatarFallback>
-                                                            </Avatar>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p>{assignee.name}</p>
-                                                        </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
+                                                     <div className="flex items-center gap-2">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={assignee.avatar} />
+                                                            <AvatarFallback>{assignee.name[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="text-xs">{assignee.name.split(' ')[0]}</span>
+                                                    </div>
                                                 ) : <span className="text-xs text-muted-foreground">N/A</span>}
                                             </TableCell>
                                         </TableRow>
@@ -140,22 +134,13 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
                     </TableCell>
                     <TableCell>
                         {pmo ? (
-                            <TooltipProvider>
-                                <Tooltip>
-                                <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarImage src={pmo.avatar} />
-                                                <AvatarFallback>{pmo.name[0]}</AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-xs">{pmo.name}</span>
-                                        </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Resp. Técnico: {pmo.name}</p>
-                                </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                    <AvatarImage src={pmo.avatar} />
+                                    <AvatarFallback>{pmo.name[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-xs">{pmo.name.split(' ')[0]}</span>
+                            </div>
                         ) : <span className="text-xs text-muted-foreground">N/A</span>}
                     </TableCell>
                     <TableCell>
@@ -186,7 +171,7 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
                     </DropdownMenu>
                     </TableCell>
                 </TableRow>
-                <ProjectTasksRow tasks={tasks} isVisible={isExpanded} />
+                <ProjectTasksRow project={project} tasks={tasks} isVisible={isExpanded} />
             </React.Fragment>
           )
         })}
