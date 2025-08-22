@@ -15,6 +15,7 @@ export function GanttChart() {
         const formattedTasks: any[] = [];
         
         projects.forEach(project => {
+            // Apenas incluir projetos com datas válidas
             if (!project.startDate || !project.endDate) return;
 
             const projectTasks = getProjectTasks(project.id);
@@ -22,28 +23,36 @@ export function GanttChart() {
             const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
             const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
             
-            formattedTasks.push({
-                id: project.id,
-                name: project.name,
-                start: parseISO(project.startDate),
-                end: parseISO(project.endDate),
-                progress: progress,
-                custom_class: 'gantt-project-bar'
-            });
-
-            projectTasks.forEach(task => {
-                if (!task.dueDate) return;
-                const dueDate = parseISO(task.dueDate);
-                formattedTasks.push({
-                    id: task.id,
-                    name: task.title,
-                    start: dueDate,
-                    end: dueDate,
-                    progress: task.status === 'Concluída' ? 100 : 0,
-                    dependencies: project.id,
-                    custom_class: 'gantt-task-bar'
+            try {
+                 formattedTasks.push({
+                    id: project.id,
+                    name: project.name,
+                    start: parseISO(project.startDate),
+                    end: parseISO(project.endDate),
+                    progress: progress,
+                    custom_class: 'gantt-project-bar'
                 });
-            });
+
+                projectTasks.forEach(task => {
+                    // Apenas incluir tarefas com data de vencimento válida
+                    if (!task.dueDate) return;
+                    const dueDate = parseISO(task.dueDate);
+                    
+                    // Tratar tarefas como marcos (milestones) para evitar erros de duração
+                    formattedTasks.push({
+                        id: task.id,
+                        name: task.title,
+                        start: dueDate,
+                        end: dueDate, 
+                        progress: task.status === 'Concluída' ? 100 : 0,
+                        dependencies: project.id,
+                        custom_class: 'gantt-task-bar'
+                    });
+                });
+            } catch (error) {
+                console.error("Erro ao processar datas para o gráfico de Gantt:", error);
+                // Ignorar o projeto ou tarefa com data inválida
+            }
         });
         
         return formattedTasks;
@@ -56,7 +65,7 @@ export function GanttChart() {
             ganttInstance.current = null;
         }
 
-        // Se o container existe e temos tarefas para mostrar
+        // Se o container existe, está carregado e temos tarefas para mostrar
         if (ganttContainerRef.current && ganttTasks.length > 0 && isLoaded) {
             // Garanta que o container está vazio antes de renderizar
             ganttContainerRef.current.innerHTML = '';
@@ -96,7 +105,7 @@ export function GanttChart() {
                 ganttInstance.current = null;
             }
         };
-    }, [ganttTasks, isLoaded]); // A dependência agora é apenas nas tarefas e no status de carregamento
+    }, [ganttTasks, isLoaded]);
 
     if (!isLoaded) {
         return <Skeleton className="h-[600px] w-full" />;
