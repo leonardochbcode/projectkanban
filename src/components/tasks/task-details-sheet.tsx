@@ -1,5 +1,5 @@
 'use client';
-import { type ReactNode } from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -26,10 +26,29 @@ import { Button } from '../ui/button';
 import { formatBytes } from '@/lib/utils';
 import { TaskChecklist } from './task-checklist';
 
+interface TaskDetailsSheetProps {
+  task: Task;
+  children?: ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
 
-export function TaskDetailsSheet({ task, children }: { task: Task; children: ReactNode }) {
+export function TaskDetailsSheet({ task, children, open: openProp, onOpenChange: onOpenChangeProp }: TaskDetailsSheetProps) {
   const { participants, updateTask } = useStore();
   const assignee = participants.find((p) => p.id === task.assigneeId);
+
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = openProp !== undefined && onOpenChangeProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = isControlled ? onOpenChangeProp : setInternalOpen;
+  
+  // Sincroniza o estado interno se o componente se tornar controlado
+  useEffect(() => {
+    if (isControlled) {
+      setInternalOpen(openProp);
+    }
+  }, [openProp, isControlled]);
+
 
   const handleStatusChange = (status: Task['status']) => {
     updateTask({ ...task, status });
@@ -45,10 +64,12 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
     const updatedAttachments = (task.attachments || []).filter(att => att.id !== attachmentId);
     updateTask({ ...task, attachments: updatedAttachments });
   };
+  
+  const Trigger = children ? <SheetTrigger asChild>{children}</SheetTrigger> : null;
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>{children}</SheetTrigger>
+    <Sheet open={open} onOpenChange={setOpen}>
+      {Trigger}
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
         <SheetHeader className="mb-4">
           <SheetTitle className="font-headline text-2xl">{task.title}</SheetTitle>

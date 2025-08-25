@@ -93,10 +93,11 @@ export function ScheduleView() {
         />
       </div>
       {selectedTask && (
-        <TaskDetailsSheet task={selectedTask}>
-          {/* This is a dummy trigger, the sheet is controlled by state */}
-          <div data-state={isSheetOpen ? 'open' : 'closed'} style={{display: 'none'}} onOpenChange={onSheetOpenChange}></div>
-        </TaskDetailsSheet>
+        <TaskDetailsSheet 
+            task={selectedTask}
+            open={isSheetOpen}
+            onOpenChange={onSheetOpenChange}
+        />
       )}
     </>
   );
