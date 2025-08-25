@@ -27,6 +27,7 @@ const localizer = dateFnsLocalizer({
 export function ScheduleView() {
   const { tasks, participants, projects } = useStore();
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const { events, resources } = useMemo(() => {
     const resources = participants.map((p) => ({
@@ -51,9 +52,11 @@ export function ScheduleView() {
 
   const handleSelectEvent = (event: any) => {
     setSelectedTask(event.data);
+    setIsSheetOpen(true);
   };
   
   const onSheetOpenChange = (isOpen: boolean) => {
+    setIsSheetOpen(isOpen);
     if(!isOpen) {
         setSelectedTask(undefined);
     }
@@ -91,8 +94,8 @@ export function ScheduleView() {
       </div>
       {selectedTask && (
         <TaskDetailsSheet task={selectedTask}>
-          {/* This is a dummy trigger, the sheet is controlled by the state */}
-          <div data-state={selectedTask ? 'open' : 'closed'} style={{display: 'none'}} onOpenChange={onSheetOpenChange}></div>
+          {/* This is a dummy trigger, the sheet is controlled by state */}
+          <div data-state={isSheetOpen ? 'open' : 'closed'} style={{display: 'none'}} onOpenChange={onSheetOpenChange}></div>
         </TaskDetailsSheet>
       )}
     </>

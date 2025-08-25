@@ -94,7 +94,7 @@ export function TaskDetailsSheet({ task, children }: { task: Task; children: Rea
                     <span>Responsável</span>
                 </div>
                  <div className="flex flex-col gap-2 w-48">
-                    <Select value={assignee?.id} onValueChange={handleAssigneeChange}>
+                    <Select value={assignee?.id || 'unassigned'} onValueChange={handleAssigneeChange}>
                         <SelectTrigger>
                             <SelectValue placeholder="Não atribuído" />
                         </SelectTrigger>
