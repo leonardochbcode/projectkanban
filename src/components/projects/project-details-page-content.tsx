@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 
 // Este componente agora recebe `projectId` como uma prop simples.
 export function ProjectDetailsPageContent({ projectId }: { projectId: string }) {
-  const { isLoaded, projects, getProjectTasks } = useStore();
+  const { isLoaded, projects: visibleProjects, getProjectTasks } = useStore();
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>(() => {
     if (typeof window !== 'undefined') {
       const savedMode = localStorage.getItem('projectTasksViewMode');
@@ -59,7 +59,7 @@ export function ProjectDetailsPageContent({ projectId }: { projectId: string }) 
     );
   }
 
-  const project = projects.find((p) => p.id === projectId);
+  const project = visibleProjects.find((p) => p.id === projectId);
 
   if (!project) {
     return notFound();

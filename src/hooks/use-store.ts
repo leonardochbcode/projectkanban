@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, TemplateTask, Workspace } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -151,11 +151,32 @@ export const useStore = () => {
     dispatch({ currentUser: null });
   }, [dispatch]);
 
+  const getRole = useCallback((roleId: string) => {
+    return store.roles.find(r => r.id === roleId);
+  }, [store.roles]);
+
+  const visibleProjects = useMemo(() => {
+    if (!store.currentUser || !store.isLoaded) return [];
+
+    const userRole = getRole(store.currentUser.roleId);
+    const isAdmin = userRole?.permissions.includes('manage_projects'); // Assuming 'manage_projects' is admin-like
+
+    if (isAdmin) {
+      return store.projects;
+    }
+
+    return store.projects.filter(project => 
+      project.pmoId === store.currentUser!.id || 
+      project.participantIds.includes(store.currentUser!.id)
+    );
+  }, [store.projects, store.currentUser, store.isLoaded, getRole]);
+
+
   const getWorkspaceProjects = useCallback(
     (workspaceId: string) => {
-      return store.projects.filter((project) => project.workspaceId === workspaceId);
+      return visibleProjects.filter((project) => project.workspaceId === workspaceId);
     },
-    [store.projects]
+    [visibleProjects]
   );
 
   const getProjectTasks = useCallback(
@@ -262,10 +283,6 @@ export const useStore = () => {
       participants: store.participants.filter(p => p.id !== participantId)
     });
   }, [store.participants, dispatch]);
-
-  const getRole = useCallback((roleId: string) => {
-    return store.roles.find(r => r.id === roleId);
-  }, [store.roles]);
 
   const addRole = useCallback((role: Omit<Role, 'id'>) => {
     const newRole: Role = {
@@ -418,6 +435,7 @@ export const useStore = () => {
 
   return {
     ...store,
+    projects: visibleProjects,
     login,
     logout,
     getWorkspaceProjects,
