@@ -1,7 +1,7 @@
 import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace } from './types';
 
 export const initialRoles: Role[] = [
-  { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_workspaces', 'manage_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_opportunities', 'view_opportunity_values'] },
+  { id: 'role-1', name: 'Gerente', permissions: ['view_dashboard', 'manage_workspaces', 'manage_projects', 'view_all_projects', 'manage_clients', 'manage_team', 'view_reports', 'manage_settings', 'manage_opportunities', 'view_opportunity_values'] },
   { id: 'role-2', name: 'Desenvolvedor', permissions: ['view_dashboard', 'manage_workspaces', 'manage_projects', 'view_reports'] },
   { id: 'role-3', name: 'Designer', permissions: ['view_dashboard', 'manage_workspaces', 'manage_projects'] },
   { id: 'role-4', name: 'Analista', permissions: ['view_dashboard', 'view_reports', 'manage_opportunities'] },
@@ -86,6 +86,7 @@ export const initialProjects: Project[] = [
     participantIds: ['user-1', 'user-2', 'user-3'],
     workspaceId: 'ws-1',
     clientId: 'client-1',
+    pmoId: 'user-1',
   },
   {
     id: 'proj-2',
@@ -94,9 +95,10 @@ export const initialProjects: Project[] = [
     startDate: '2024-09-15',
     endDate: '2025-01-15',
     status: 'Planejamento',
-    participantIds: ['user-1', 'user-2', 'user-4'],
+    participantIds: ['user-1', 'user-4'],
     workspaceId: 'ws-2',
     clientId: 'client-2',
+    pmoId: 'user-1',
   },
   {
     id: 'proj-3',
@@ -108,6 +110,7 @@ export const initialProjects: Project[] = [
     participantIds: ['user-1', 'user-4'],
     workspaceId: 'ws-2',
     clientId: 'client-2',
+    pmoId: 'user-4',
   },
   {
     id: 'proj-4',

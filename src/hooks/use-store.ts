@@ -10,7 +10,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace, TemplateTask } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
@@ -155,21 +155,42 @@ export const useStore = () => {
     return store.roles.find(r => r.id === roleId);
   }, [store.roles]);
 
+  const getProjectTasks = useCallback(
+    (projectId: string) => {
+      return store.tasks.filter((task) => task.projectId === projectId);
+    },
+    [store.tasks]
+  );
+
   const visibleProjects = useMemo(() => {
     if (!store.currentUser || !store.isLoaded) return [];
 
     const userRole = getRole(store.currentUser.roleId);
-    const isAdmin = userRole?.permissions.includes('manage_projects'); // Assuming 'manage_projects' is admin-like
+    const canViewAll = userRole?.permissions.includes('view_all_projects');
 
-    if (isAdmin) {
+    if (canViewAll) {
       return store.projects;
     }
 
-    return store.projects.filter(project => 
-      project.pmoId === store.currentUser!.id || 
-      project.participantIds.includes(store.currentUser!.id)
-    );
-  }, [store.projects, store.currentUser, store.isLoaded, getRole]);
+    const userProjectIds = new Set<string>();
+    
+    // Add projects where user is PMO or participant
+    store.projects.forEach(project => {
+        if (project.pmoId === store.currentUser!.id || project.participantIds.includes(store.currentUser!.id)) {
+            userProjectIds.add(project.id);
+        }
+    });
+
+    // Add projects where user has an assigned task
+    store.tasks.forEach(task => {
+        if (task.assigneeId === store.currentUser!.id) {
+            userProjectIds.add(task.projectId);
+        }
+    });
+
+    return store.projects.filter(project => userProjectIds.has(project.id));
+
+  }, [store.projects, store.tasks, store.currentUser, store.isLoaded, getRole]);
 
 
   const getWorkspaceProjects = useCallback(
@@ -177,13 +198,6 @@ export const useStore = () => {
       return visibleProjects.filter((project) => project.workspaceId === workspaceId);
     },
     [visibleProjects]
-  );
-
-  const getProjectTasks = useCallback(
-    (projectId: string) => {
-      return store.tasks.filter((task) => task.projectId === projectId);
-    },
-    [store.tasks]
   );
   
   const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds'>, templateId?: string) => {

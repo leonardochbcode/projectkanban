@@ -2,6 +2,7 @@ export const availablePermissions = {
     view_dashboard: 'Ver Painel',
     manage_workspaces: 'Gerenciar Espaços de Trabalho',
     manage_projects: 'Gerenciar Projetos',
+    view_all_projects: 'Ver Todos os Projetos',
     manage_clients: 'Gerenciar Clientes',
     manage_opportunities: 'Gerenciar Oportunidades',
     view_opportunity_values: 'Ver Valores das Oportunidades',
