@@ -13,6 +13,7 @@ import {
   Folder,
   Calendar,
   Lightbulb,
+  BarChartHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -66,6 +67,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/my-tasks', label: 'Minhas Tarefas', icon: ClipboardList, permission: 'view_dashboard' as Permission },
     { href: '/schedule', label: 'Agenda', icon: Calendar, permission: 'view_dashboard' as Permission },
     { href: '/projects', label: 'Projetos', icon: FolderKanban, permission: 'manage_projects' as Permission },
+    { href: '/gantt', label: 'Gantt', icon: BarChartHorizontal, permission: 'view_dashboard' as Permission },
     { href: '/opportunities', label: 'Oportunidades', icon: Lightbulb, permission: 'manage_opportunities' as Permission },
     { href: '/clients', label: 'Clientes', icon: Briefcase, permission: 'manage_clients' as Permission },
     { href: '/team', label: 'Equipe', icon: Users, permission: 'manage_team' as Permission },

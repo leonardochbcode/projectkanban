@@ -154,3 +154,13 @@ export interface ProjectTemplate {
   description: string;
   tasks: TemplateTask[];
 }
+
+export interface GanttTask {
+  id: string;
+  name: string;
+  start: Date;
+  end: Date;
+  progress: number;
+  project: string;
+  dependencies?: string;
+}
