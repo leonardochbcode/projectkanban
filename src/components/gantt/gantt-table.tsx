@@ -13,7 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { TaskDetailsSheet } from '../tasks/task-details-sheet';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { Task } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 
@@ -68,9 +68,8 @@ export function GanttTable({
                 const isSelected = project.id === selectedProjectId;
 
                 return (
-                  <>
+                  <React.Fragment key={project.id}>
                     <TableRow
-                      key={project.id}
                       onClick={() => onSelectProject(project.id)}
                       className={cn(
                         'cursor-pointer font-semibold',
@@ -111,7 +110,7 @@ export function GanttTable({
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </TableBody>
