@@ -441,6 +441,7 @@ export const useStore = () => {
   return {
     ...store,
     projects: visibleProjects,
+    allProjects: store.projects, // Expose all projects for lookups
     login,
     logout,
     getWorkspaceProjects,

@@ -1,11 +1,9 @@
-
 'use client';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useStore } from '@/hooks/use-store';
-import type { Task } from '@/lib/types';
 import { TaskDetailsSheet } from '@/components/tasks/task-details-sheet';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -25,7 +23,7 @@ const priorityColors: { [key: string]: string } = {
 
 
 function MyTasksPageContent() {
-    const { tasks, currentUser, projects } = useStore();
+    const { tasks, currentUser, allProjects } = useStore();
 
     const myTasks = useMemo(() => {
         if (!currentUser) return [];
@@ -43,20 +41,8 @@ function MyTasksPageContent() {
     const getProjectName = (projectId: string) => {
         // We need to use the raw projects from the store, not the visible ones,
         // so we can show the project name even if the user doesn't have direct access to it.
-        return store.projects.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
+        return allProjects.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
     }
-    
-    // We need the raw store here to find the project name
-    const store = useStoreRaw();
-     function useStoreRaw() {
-        const context = React.useContext(StoreContext);
-        if (!context) {
-          throw new Error('useStore must be used within a StoreProvider');
-        }
-        return context;
-      }
-    const StoreContext = React.createContext<any>(null);
-
 
     return (
         <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
