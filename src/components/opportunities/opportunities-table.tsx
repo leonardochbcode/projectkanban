@@ -46,7 +46,8 @@ export function OpportunitiesTable({ opportunities, onEdit, onViewDetails }: Opp
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
+                <TableHead>Oportunidade</TableHead>
+                <TableHead>Contato</TableHead>
                 <TableHead>Empresa</TableHead>
                 <TableHead>Status</TableHead>
                 {canViewValues && <TableHead>Valor</TableHead>}
@@ -61,6 +62,7 @@ export function OpportunitiesTable({ opportunities, onEdit, onViewDetails }: Opp
                 return (
                     <TableRow key={opportunity.id} className="cursor-pointer" onClick={() => onViewDetails(opportunity)}>
                     <TableCell className="font-medium">{opportunity.name}</TableCell>
+                    <TableCell>{opportunity.contactName}</TableCell>
                     <TableCell>{opportunity.company || 'N/A'}</TableCell>
                     <TableCell>
                         <Badge variant="outline" className={cn(statusColors[opportunity.status])}>

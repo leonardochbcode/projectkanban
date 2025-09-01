@@ -57,6 +57,7 @@ export interface OpportunityAttachment {
 export interface Opportunity {
     id: string;
     name: string;
+    contactName: string;
     email: string;
     company?: string;
     phone?: string;

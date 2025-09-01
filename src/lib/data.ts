@@ -39,10 +39,10 @@ export const initialWorkspaces: Workspace[] = [
 ];
 
 export const initialOpportunities: Opportunity[] = [
-    { id: 'lead-1', name: 'Novo site institucional', email: 'lead1@email.com', company: 'Inovatech', description: 'Interessado em um novo site institucional.', status: 'A Analisar', createdAt: '2024-08-01T10:00:00Z', phone: '11 98765-4321', comments: [], attachments: [], value: 15000, ownerId: 'user-1' },
-    { id: 'lead-2', name: 'App de E-commerce', email: 'lead2@email.com', company: 'VarejoGlobal', description: 'Solicitou uma proposta para um app de e-commerce.', status: 'Proposta Enviada', createdAt: '2024-07-25T15:30:00Z', phone: '21 91234-5678', comments: [], attachments: [], value: 50000, ownerId: 'user-1' },
-    { id: 'lead-3', name: 'Campanha de Marketing', email: 'lead3@email.com', company: 'Consultoria XYZ', description: 'Buscando consultoria para campanha de marketing digital.', status: 'Contato Realizado', createdAt: '2024-08-05T11:00:00Z', phone: '31 99999-8888', comments: [], attachments: [], value: 5000, ownerId: 'user-4' },
-    { id: 'lead-4', name: 'Venda App de Frota', email: 'tony@starkindustries.com', company: 'Stark Industries', description: 'Prospectando a venda de um novo app de gestão de frota.', status: 'A Analisar', createdAt: '2024-08-10T09:00:00Z', phone: '21 91234-5678', comments: [], attachments: [], value: 80000, clientId: 'client-2', ownerId: 'user-4' },
+    { id: 'lead-1', name: 'Novo site institucional', contactName: 'Ana Silva', email: 'lead1@email.com', company: 'Inovatech', description: 'Interessado em um novo site institucional.', status: 'A Analisar', createdAt: '2024-08-01T10:00:00Z', phone: '11 98765-4321', comments: [], attachments: [], value: 15000, ownerId: 'user-1' },
+    { id: 'lead-2', name: 'App de E-commerce', contactName: 'Carlos Souza', email: 'lead2@email.com', company: 'VarejoGlobal', description: 'Solicitou uma proposta para um app de e-commerce.', status: 'Proposta Enviada', createdAt: '2024-07-25T15:30:00Z', phone: '21 91234-5678', comments: [], attachments: [], value: 50000, ownerId: 'user-1' },
+    { id: 'lead-3', name: 'Campanha de Marketing', contactName: 'Juliana Lima', email: 'lead3@email.com', company: 'Consultoria XYZ', description: 'Buscando consultoria para campanha de marketing digital.', status: 'Contato Realizado', createdAt: '2024-08-05T11:00:00Z', phone: '31 99999-8888', comments: [], attachments: [], value: 5000, ownerId: 'user-4' },
+    { id: 'lead-4', name: 'Venda App de Frota', contactName: 'Tony Stark', email: 'tony@starkindustries.com', company: 'Stark Industries', description: 'Prospectando a venda de um novo app de gestão de frota.', status: 'A Analisar', createdAt: '2024-08-10T09:00:00Z', phone: '21 91234-5678', comments: [], attachments: [], value: 80000, clientId: 'client-2', ownerId: 'user-4' },
 ];
 
 export const initialProjectTemplates: ProjectTemplate[] = [

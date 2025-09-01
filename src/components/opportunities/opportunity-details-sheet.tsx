@@ -18,7 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Opportunity } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
-import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, DollarSign, Briefcase, Paperclip, X, Edit, Folder, User } from 'lucide-react';
+import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, DollarSign, Briefcase, Paperclip, X, Edit, Folder, User, UserSquare } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { OpportunityCommentForm } from './opportunity-comment-form';
 import { useRouter } from 'next/navigation';
@@ -211,6 +211,13 @@ export function OpportunityDetailsSheet({
                     <p className="font-semibold">{formattedValue}</p>
                 </div>
               )}
+              <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-muted-foreground w-32">
+                        <UserSquare className="h-4 w-4" />
+                        <span>Contato</span>
+                    </div>
+                    <p>{opportunity.contactName}</p>
+                </div>
                <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground w-32">
                       <Mail className="h-4 w-4" />
