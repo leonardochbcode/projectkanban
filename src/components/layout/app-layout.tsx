@@ -63,6 +63,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const mainNavItems = [
     { href: '/', label: 'Painel', icon: LayoutDashboard, permission: 'view_dashboard' as Permission },
+    { href: '/my-tasks', label: 'Minhas Tarefas', icon: ClipboardList, permission: 'view_dashboard' as Permission },
     { href: '/schedule', label: 'Agenda', icon: Calendar, permission: 'view_dashboard' as Permission },
     { href: '/projects', label: 'Projetos', icon: FolderKanban, permission: 'manage_projects' as Permission },
     { href: '/opportunities', label: 'Oportunidades', icon: Lightbulb, permission: 'manage_opportunities' as Permission },
@@ -86,6 +87,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             { 'bg-accent text-accent-foreground': pathname.startsWith(href) && href !== '/' },
             { 'bg-accent text-accent-foreground': pathname === '/' && href === '/' },
             { 'bg-accent text-accent-foreground': pathname.startsWith('/opportunities') && href.startsWith('/opportunities') },
+            { 'bg-accent text-accent-foreground': pathname.startsWith('/my-tasks') && href.startsWith('/my-tasks') },
           )}
         >
           <Icon className="h-4 w-4" />
