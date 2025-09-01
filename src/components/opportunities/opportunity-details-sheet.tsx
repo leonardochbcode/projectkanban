@@ -16,16 +16,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { Lead } from '@/lib/types';
+import type { Opportunity } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
-import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, DollarSign, Briefcase, Paperclip, X, Edit, Folder } from 'lucide-react';
+import { CalendarIcon, ChevronsUpDown, Mail, Phone, Building, DollarSign, Briefcase, Paperclip, X, Edit, Folder, User } from 'lucide-react';
 import { Separator } from '../ui/separator';
-import { LeadCommentForm } from './lead-comment-form';
+import { OpportunityCommentForm } from './opportunity-comment-form';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
-import { LeadAttachmentForm } from './lead-attachment-form';
+import { OpportunityAttachmentForm } from './opportunity-attachment-form';
 import { formatBytes } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -33,17 +33,17 @@ import { Label } from '../ui/label';
 function ConvertToProjectDialog({ 
     open, 
     onOpenChange, 
-    lead 
+    opportunity 
 }: { 
     open: boolean, 
     onOpenChange: (open: boolean) => void, 
-    lead: Lead 
+    opportunity: Opportunity 
 }) {
     const { addClient, addProject, getClient, workspaces } = useStore();
     const router = useRouter();
     const { toast } = useToast();
     const [workspaceId, setWorkspaceId] = useState<string | undefined>(workspaces[0]?.id);
-    const existingClient = lead.clientId ? getClient(lead.clientId) : null;
+    const existingClient = opportunity.clientId ? getClient(opportunity.clientId) : null;
 
     const handleConvert = () => {
         if (!workspaceId) {
@@ -59,30 +59,30 @@ function ConvertToProjectDialog({
         const endDate = new Date();
         endDate.setDate(today.getDate() + 30);
 
-        let finalClientId = lead.clientId;
+        let finalClientId = opportunity.clientId;
         if (!finalClientId) {
             const newClient = addClient({
-                name: lead.company || lead.name,
-                email: lead.email,
-                company: lead.company,
-                phone: lead.phone,
+                name: opportunity.company || opportunity.name,
+                email: opportunity.email,
+                company: opportunity.company,
+                phone: opportunity.phone,
             });
             finalClientId = newClient.id;
         }
         
         const newProject = addProject({
-            name: `Projeto: ${lead.name}`,
-            description: lead.description,
+            name: `Projeto: ${opportunity.name}`,
+            description: opportunity.description,
             clientId: finalClientId,
             startDate: format(today, 'yyyy-MM-dd'),
             endDate: format(endDate, 'yyyy-MM-dd'),
             status: 'Planejamento',
-            leadId: lead.id,
+            opportunityId: opportunity.id,
             workspaceId: workspaceId,
         });
 
         toast({
-            title: 'Proposta Convertida!',
+            title: 'Oportunidade Convertida!',
             description: `O projeto "${newProject.name}" foi criado com sucesso.`,
         });
 
@@ -94,7 +94,7 @@ function ConvertToProjectDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Converter Proposta em Projeto</DialogTitle>
+                    <DialogTitle>Converter Oportunidade em Projeto</DialogTitle>
                     <DialogDescription>
                         Selecione o espaço de trabalho para o novo projeto.
                     </DialogDescription>
@@ -121,21 +121,26 @@ function ConvertToProjectDialog({
     );
 }
 
-export function LeadDetailsSheet({ 
-    lead, 
+export function OpportunityDetailsSheet({ 
+    opportunity, 
     children, 
     onEdit,
     open,
     onOpenChange,
 }: { 
-    lead: Lead; 
+    opportunity: Opportunity; 
     children?: ReactNode, 
-    onEdit: (lead: Lead) => void;
+    onEdit: (opportunity: Opportunity) => void;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
 }) {
-  const { participants, updateLead, getClient } = useStore();
-  const existingClient = lead.clientId ? getClient(lead.clientId) : null;
+  const { participants, updateOpportunity, getClient, getParticipant, currentUser, getRole } = useStore();
+  const existingClient = opportunity.clientId ? getClient(opportunity.clientId) : null;
+  const owner = getParticipant(opportunity.ownerId);
+
+  const userRole = currentUser ? getRole(currentUser.roleId) : null;
+  const canViewValues = userRole?.permissions.includes('view_opportunity_values') ?? false;
+
   const [isSheetOpen, setIsSheetOpen] = useState(open ?? false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
 
@@ -144,18 +149,18 @@ export function LeadDetailsSheet({
     onOpenChange?.(isOpen);
   };
 
-  const handleStatusChange = (status: Lead['status']) => {
-    updateLead({ ...lead, status });
+  const handleStatusChange = (status: Opportunity['status']) => {
+    updateOpportunity({ ...opportunity, status });
   };
   
   const formattedValue = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-  }).format(lead.value);
+  }).format(opportunity.value);
   
   const handleRemoveAttachment = (attachmentId: string) => {
-    const updatedAttachments = lead.attachments.filter(att => att.id !== attachmentId);
-    updateLead({ ...lead, attachments: updatedAttachments });
+    const updatedAttachments = opportunity.attachments.filter(att => att.id !== attachmentId);
+    updateOpportunity({ ...opportunity, attachments: updatedAttachments });
   };
   
   const Trigger = children ? <SheetTrigger asChild onClick={() => handleOpenChange(true)}>{children}</SheetTrigger> : null;
@@ -168,10 +173,10 @@ export function LeadDetailsSheet({
           <SheetHeader className="mb-4 pr-12">
               <div className="flex justify-between items-start">
                   <div>
-                      <SheetTitle className="font-headline text-2xl">{lead.name}</SheetTitle>
-                      <SheetDescription>{lead.description}</SheetDescription>
+                      <SheetTitle className="font-headline text-2xl">{opportunity.name}</SheetTitle>
+                      <SheetDescription>{opportunity.description}</SheetDescription>
                   </div>
-                   <Button variant="outline" onClick={() => { handleOpenChange(false); onEdit(lead); }}>
+                   <Button variant="outline" onClick={() => { handleOpenChange(false); onEdit(opportunity); }}>
                       <Edit className="mr-2 h-4 w-4" />
                       Editar
                   </Button>
@@ -184,49 +189,51 @@ export function LeadDetailsSheet({
                   <ChevronsUpDown className="h-4 w-4" />
                   <span>Status</span>
                 </div>
-                <Select value={lead.status} onValueChange={handleStatusChange}>
+                <Select value={opportunity.status} onValueChange={handleStatusChange}>
                   <SelectTrigger className="w-48">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Novo">Novo</SelectItem>
-                    <SelectItem value="Em Contato">Em Contato</SelectItem>
+                    <SelectItem value="A Analisar">A Analisar</SelectItem>
+                    <SelectItem value="Contato Realizado">Contato Realizado</SelectItem>
                     <SelectItem value="Proposta Enviada">Proposta Enviada</SelectItem>
-                    <SelectItem value="Convertido">Convertido</SelectItem>
-                    <SelectItem value="Perdido">Perdido</SelectItem>
+                    <SelectItem value="Ganha">Ganha</SelectItem>
+                    <SelectItem value="Perdida">Perdida</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-muted-foreground w-32">
-                      <DollarSign className="h-4 w-4" />
-                      <span>Valor</span>
-                  </div>
-                  <p className="font-semibold">{formattedValue}</p>
-              </div>
+              {canViewValues && (
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-muted-foreground w-32">
+                        <DollarSign className="h-4 w-4" />
+                        <span>Valor</span>
+                    </div>
+                    <p className="font-semibold">{formattedValue}</p>
+                </div>
+              )}
                <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground w-32">
                       <Mail className="h-4 w-4" />
                       <span>Email</span>
                   </div>
-                  <p>{lead.email}</p>
+                  <p>{opportunity.email}</p>
               </div>
-               {lead.phone && (
+               {opportunity.phone && (
                    <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 text-muted-foreground w-32">
                           <Phone className="h-4 w-4" />
                           <span>Telefone</span>
                       </div>
-                      <p>{lead.phone}</p>
+                      <p>{opportunity.phone}</p>
                   </div>
               )}
-              {lead.company && (
+              {opportunity.company && (
                    <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 text-muted-foreground w-32">
                           <Building className="h-4 w-4" />
                           <span>Empresa</span>
                       </div>
-                      <p>{lead.company}</p>
+                      <p>{opportunity.company}</p>
                   </div>
               )}
               {existingClient && (
@@ -238,16 +245,25 @@ export function LeadDetailsSheet({
                       <p className="font-medium">{existingClient.name}</p>
                   </div>
               )}
+              {owner && (
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-muted-foreground w-32">
+                        <User className="h-4 w-4" />
+                        <span>Criado por</span>
+                    </div>
+                    <p>{owner.name}</p>
+                </div>
+              )}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-muted-foreground w-32">
                   <CalendarIcon className="h-4 w-4" />
                   <span>Data de Criação</span>
                 </div>
-                <p>{new Date(lead.createdAt).toLocaleString()}</p>
+                <p>{new Date(opportunity.createdAt).toLocaleString()}</p>
               </div>
             </div>
 
-            {lead.status !== 'Convertido' && (
+            {opportunity.status !== 'Ganha' && (
                <Button onClick={() => setIsConvertDialogOpen(true)} className="w-full">
                   Converter em Projeto
               </Button>
@@ -258,7 +274,7 @@ export function LeadDetailsSheet({
             <div>
               <h3 className="font-semibold mb-2 font-headline">Anexos</h3>
                <div className="space-y-2">
-                  {lead.attachments.map((attachment) => (
+                  {opportunity.attachments.map((attachment) => (
                       <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
                           <div className="flex items-center gap-2 overflow-hidden">
                              <Paperclip className="h-4 w-4 flex-shrink-0" />
@@ -272,11 +288,11 @@ export function LeadDetailsSheet({
                           </Button>
                       </div>
                   ))}
-                  {lead.attachments.length === 0 && (
+                  {opportunity.attachments.length === 0 && (
                       <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
                   )}
                </div>
-               <LeadAttachmentForm lead={lead} />
+               <OpportunityAttachmentForm opportunity={opportunity} />
             </div>
 
             <Separator />
@@ -284,7 +300,7 @@ export function LeadDetailsSheet({
             <div>
               <h3 className="font-semibold mb-4 font-headline">Comentários e Apontamentos</h3>
               <div className="space-y-4">
-                {lead.comments.map((comment) => {
+                {opportunity.comments.map((comment) => {
                   const author = participants.find(p => p.id === comment.authorId);
                   return (
                     <div key={comment.id} className="flex items-start gap-3">
@@ -302,17 +318,17 @@ export function LeadDetailsSheet({
                     </div>
                   )
                 })}
-                 {lead.comments.length === 0 && (
+                 {opportunity.comments.length === 0 && (
                   <p className="text-sm text-muted-foreground">Nenhum comentário ainda.</p>
                 )}
               </div>
               <Separator className="my-4" />
-              <LeadCommentForm lead={lead} />
+              <OpportunityCommentForm opportunity={opportunity} />
             </div>
           </div>
         </SheetContent>
       </Sheet>
-      <ConvertToProjectDialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen} lead={lead} />
+      <ConvertToProjectDialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen} opportunity={opportunity} />
     </>
   );
 }

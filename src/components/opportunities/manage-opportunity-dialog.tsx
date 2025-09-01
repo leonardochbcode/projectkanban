@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, type ReactNode, useEffect } from 'react';
@@ -15,50 +14,54 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useStore } from '@/hooks/use-store';
-import type { Lead } from '@/lib/types';
+import type { Opportunity } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-interface ManageLeadDialogProps {
+interface ManageOpportunityDialogProps {
   children?: ReactNode;
-  lead?: Lead;
+  opportunity?: Opportunity;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageLeadDialogProps) {
-  const { addLead, updateLead, clients } = useStore();
+export function ManageOpportunityDialog({ children, opportunity, open, onOpenChange }: ManageOpportunityDialogProps) {
+  const { addOpportunity, updateOpportunity, clients, currentUser, getRole } = useStore();
+  
+  const userRole = currentUser ? getRole(currentUser.roleId) : null;
+  const canEditValues = userRole?.permissions.includes('view_opportunity_values') ?? false;
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<Lead['status']>('Novo');
+  const [status, setStatus] = useState<Opportunity['status']>('A Analisar');
   const [value, setValue] = useState(0);
   const [clientId, setClientId] = useState<string | undefined>();
 
 
   useEffect(() => {
-    if (lead) {
-      setName(lead.name);
-      setEmail(lead.email);
-      setPhone(lead.phone || '');
-      setCompany(lead.company || '');
-      setDescription(lead.description);
-      setStatus(lead.status);
-      setValue(lead.value);
-      setClientId(lead.clientId);
+    if (opportunity) {
+      setName(opportunity.name);
+      setEmail(opportunity.email);
+      setPhone(opportunity.phone || '');
+      setCompany(opportunity.company || '');
+      setDescription(opportunity.description);
+      setStatus(opportunity.status);
+      setValue(opportunity.value);
+      setClientId(opportunity.clientId);
     } else {
       setName('');
       setEmail('');
       setPhone('');
       setCompany('');
       setDescription('');
-      setStatus('Novo');
+      setStatus('A Analisar');
       setValue(0);
       setClientId(undefined);
     }
-  }, [lead, open]);
+  }, [opportunity, open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +70,7 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
       return;
     }
 
-    const leadData = {
+    const opportunityData = {
         name,
         email,
         phone,
@@ -78,13 +81,13 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
         clientId,
     };
 
-    if (lead) {
-      updateLead({
-        ...lead,
-        ...leadData,
+    if (opportunity) {
+      updateOpportunity({
+        ...opportunity,
+        ...opportunityData,
       });
     } else {
-      addLead(leadData);
+      addOpportunity(opportunityData);
     }
     
     onOpenChange(false);
@@ -99,12 +102,12 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-headline">
-              {lead ? 'Editar Proposta' : 'Adicionar Nova Proposta'}
+              {opportunity ? 'Editar Oportunidade' : 'Adicionar Nova Oportunidade'}
             </DialogTitle>
             <DialogDescription>
-              {lead
-                ? 'Atualize os detalhes da proposta abaixo.'
-                : 'Preencha os detalhes para adicionar uma nova proposta.'}
+              {opportunity
+                ? 'Atualize os detalhes da oportunidade abaixo.'
+                : 'Preencha os detalhes para adicionar uma nova oportunidade.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -173,18 +176,20 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
                 className="col-span-3"
               />
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="value" className="text-right">
-                Valor (R$)
-              </Label>
-              <Input
-                id="value"
-                type="number"
-                value={value}
-                onChange={(e) => setValue(Number(e.target.value))}
-                className="col-span-3"
-              />
-            </div>
+             {canEditValues && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="value" className="text-right">
+                        Valor (R$)
+                    </Label>
+                    <Input
+                        id="value"
+                        type="number"
+                        value={value}
+                        onChange={(e) => setValue(Number(e.target.value))}
+                        className="col-span-3"
+                    />
+                </div>
+             )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
                 Descrição
@@ -200,23 +205,23 @@ export function ManageLeadDialog({ children, lead, open, onOpenChange }: ManageL
               <Label htmlFor="status" className="text-right">
                 Status
               </Label>
-              <Select value={status} onValueChange={(v: Lead['status']) => setStatus(v)}>
+              <Select value={status} onValueChange={(v: Opportunity['status']) => setStatus(v)}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Novo">Novo</SelectItem>
-                  <SelectItem value="Em Contato">Em Contato</SelectItem>
+                  <SelectItem value="A Analisar">A Analisar</SelectItem>
+                  <SelectItem value="Contato Realizado">Contato Realizado</SelectItem>
                   <SelectItem value="Proposta Enviada">Proposta Enviada</SelectItem>
-                  <SelectItem value="Convertido">Convertido</SelectItem>
-                  <SelectItem value="Perdido">Perdido</SelectItem>
+                  <SelectItem value="Ganha">Ganha</SelectItem>
+                  <SelectItem value="Perdida">Perdida</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit">{lead ? 'Salvar Alterações' : 'Adicionar Proposta'}</Button>
+            <Button type="submit">{opportunity ? 'Salvar Alterações' : 'Adicionar Oportunidade'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

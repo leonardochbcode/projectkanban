@@ -1,14 +1,14 @@
 'use client';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Lead, LeadAttachment } from '@/lib/types';
+import type { Opportunity, OpportunityAttachment } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 
-export function LeadAttachmentForm({ lead }: { lead: Lead }) {
+export function OpportunityAttachmentForm({ opportunity }: { opportunity: Opportunity }) {
   const [isLoading, setIsLoading] = useState(false);
-  const { updateLead } = useStore();
+  const { updateOpportunity } = useStore();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -21,7 +21,7 @@ export function LeadAttachmentForm({ lead }: { lead: Lead }) {
     // This is a mock upload. In a real app, you'd upload the file to a
     // service like Firebase Storage and get a URL back.
     const file = files[0];
-    const newAttachment: LeadAttachment = {
+    const newAttachment: OpportunityAttachment = {
       id: `attachment-${Date.now()}`,
       name: file.name,
       size: file.size,
@@ -30,12 +30,12 @@ export function LeadAttachmentForm({ lead }: { lead: Lead }) {
       createdAt: new Date().toISOString(),
     };
 
-    const updatedAttachments = [...(lead.attachments || []), newAttachment];
-    updateLead({ ...lead, attachments: updatedAttachments });
+    const updatedAttachments = [...(opportunity.attachments || []), newAttachment];
+    updateOpportunity({ ...opportunity, attachments: updatedAttachments });
 
     toast({
         title: 'Anexo adicionado',
-        description: `O arquivo "${file.name}" foi anexado à proposta.`,
+        description: `O arquivo "${file.name}" foi anexado à oportunidade.`,
     });
     
     setIsLoading(false);

@@ -6,10 +6,10 @@ import { ManageProjectDialog } from './manage-project-dialog';
 import type { Project } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 import { Progress } from '@/components/ui/progress';
-import { PlusCircle, Briefcase, Edit, ClipboardList, LayoutGrid, List, ChevronsRight } from 'lucide-react';
-import { LeadDetailsSheet } from '../leads/lead-details-sheet';
+import { PlusCircle, Briefcase, Edit, ClipboardList, LayoutGrid, List, ChevronsRight, Lightbulb } from 'lucide-react';
+import { OpportunityDetailsSheet } from '../opportunities/opportunity-details-sheet';
 import { useState } from 'react';
-import type { Lead } from '@/lib/types';
+import type { Opportunity } from '@/lib/types';
 import Link from 'next/link';
 
 
@@ -21,25 +21,25 @@ interface ProjectHeaderProps {
 
 
 export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderProps) {
-  const { getProjectTasks, getClient, getLead, workspaces } = useStore();
+  const { getProjectTasks, getClient, getOpportunity, workspaces } = useStore();
   const tasks = getProjectTasks(project.id);
   const client = project.clientId ? getClient(project.clientId) : null;
-  const lead = project.leadId ? getLead(project.leadId) : null;
+  const opportunity = project.opportunityId ? getOpportunity(project.opportunityId) : null;
   const workspace = workspaces.find(w => w.id === project.workspaceId);
   
-  const [isLeadSheetOpen, setIsLeadSheetOpen] = useState(false);
+  const [isOpportunitySheetOpen, setIsOpportunitySheetOpen] = useState(false);
 
   const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
   
-  const handleEditLead = (leadToEdit: Lead) => {
+  const handleEditOpportunity = (opportunityToEdit: Opportunity) => {
     // This is a dummy handler to satisfy the sheet component's prop requirement.
-    // In this context, we're just viewing the lead, not opening an edit dialog from here.
+    // In this context, we're just viewing the opportunity, not opening an edit dialog from here.
   };
 
-  const onLeadBadgeClick = () => {
-    if (lead) {
-      setIsLeadSheetOpen(true);
+  const onOpportunityBadgeClick = () => {
+    if (opportunity) {
+      setIsOpportunitySheetOpen(true);
     }
   }
 
@@ -63,13 +63,13 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
                 {client.name}
               </Badge>
             )}
-             {lead && (
-              <LeadDetailsSheet lead={lead} onEdit={handleEditLead} open={isLeadSheetOpen} onOpenChange={setIsLeadSheetOpen}>
-                <Badge variant="outline" className="gap-1.5 cursor-pointer hover:bg-muted" onClick={onLeadBadgeClick}>
-                    <ClipboardList className="h-3 w-3" />
-                    Originado da Proposta: {lead.name}
+             {opportunity && (
+              <OpportunityDetailsSheet opportunity={opportunity} onEdit={handleEditOpportunity} open={isOpportunitySheetOpen} onOpenChange={setIsOpportunitySheetOpen}>
+                <Badge variant="outline" className="gap-1.5 cursor-pointer hover:bg-muted" onClick={onOpportunityBadgeClick}>
+                    <Lightbulb className="h-3 w-3" />
+                    Originado da Oportunidade: {opportunity.name}
                 </Badge>
-              </LeadDetailsSheet>
+              </OpportunityDetailsSheet>
             )}
           </div>
         </div>

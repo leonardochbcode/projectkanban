@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { type Lead, type LeadComment } from '@/lib/types';
+import { type Opportunity, type OpportunityComment } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 
-export function LeadCommentForm({ lead }: { lead: Lead }) {
+export function OpportunityCommentForm({ opportunity }: { opportunity: Opportunity }) {
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { updateLead, currentUser } = useStore();
+  const { updateOpportunity, currentUser } = useStore();
   
   if(!currentUser) {
     return null;
@@ -20,13 +20,13 @@ export function LeadCommentForm({ lead }: { lead: Lead }) {
 
     setIsLoading(true);
     
-    const newComment: LeadComment = {
-        id: `lead-comment-${Date.now()}`,
+    const newComment: OpportunityComment = {
+        id: `opportunity-comment-${Date.now()}`,
         content: comment,
         authorId: currentUser.id,
         createdAt: new Date().toISOString(),
     }
-    updateLead({...lead, comments: [...lead.comments, newComment]})
+    updateOpportunity({...opportunity, comments: [...opportunity.comments, newComment]})
     setComment('');
 
     setIsLoading(false);

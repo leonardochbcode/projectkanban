@@ -6,21 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useStore } from '@/hooks/use-store';
 import { useState, useEffect, useMemo } from 'react';
-import type { Lead } from '@/lib/types';
+import type { Opportunity } from '@/lib/types';
 import { AppLayout } from '@/components/layout/app-layout';
-import { ManageLeadDialog } from '@/components/leads/manage-lead-dialog';
-import { LeadCard } from '@/components/leads/lead-card';
-import { LeadsTable } from '@/components/leads/leads-table';
-import { LeadDetailsSheet } from '@/components/leads/lead-details-sheet';
+import { ManageOpportunityDialog } from '@/components/opportunities/manage-opportunity-dialog';
+import { OpportunityCard } from '@/components/opportunities/opportunity-card';
+import { OpportunitiesTable } from '@/components/opportunities/opportunities-table';
+import { OpportunityDetailsSheet } from '@/components/opportunities/opportunity-details-sheet';
 
-const statuses: Lead['status'][] = ['Novo', 'Em Contato', 'Proposta Enviada', 'Convertido', 'Perdido'];
+const statuses: Opportunity['status'][] = ['A Analisar', 'Contato Realizado', 'Proposta Enviada', 'Ganha', 'Perdida'];
 
-function LeadsPageContent() {
-  const { leads, clients } = useStore();
-  const [editingLead, setEditingLead] = useState<Lead | undefined>(undefined);
-  const [isManageLeadDialogOpen, setIsManageLeadDialogOpen] = useState(false);
+function OpportunitiesPageContent() {
+  const { opportunities, clients, currentUser, getRole } = useStore();
+  const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | undefined>(undefined);
+  const [isManageOpportunityDialogOpen, setIsManageOpportunityDialogOpen] = useState(false);
   
-  const [viewingLead, setViewingLead] = useState<Lead | undefined>(undefined);
+  const [viewingOpportunity, setViewingOpportunity] = useState<Opportunity | undefined>(undefined);
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
 
   const [nameFilter, setNameFilter] = useState('');
@@ -29,20 +29,23 @@ function LeadsPageContent() {
 
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>(() => {
     if (typeof window !== 'undefined') {
-      const savedMode = localStorage.getItem('leadsViewMode');
+      const savedMode = localStorage.getItem('opportunitiesViewMode');
       return (savedMode as 'kanban' | 'list') || 'kanban';
     }
     return 'kanban';
   });
+
+  const userRole = currentUser ? getRole(currentUser.roleId) : null;
+  const canViewValues = userRole?.permissions.includes('view_opportunity_values') ?? false;
   
   useEffect(() => {
      if (typeof window !== 'undefined') {
-      localStorage.setItem('leadsViewMode', viewMode);
+      localStorage.setItem('opportunitiesViewMode', viewMode);
     }
   }, [viewMode]);
   
-  const filteredLeads = useMemo(() => {
-    let filtered = leads;
+  const filteredOpportunities = useMemo(() => {
+    let filtered = opportunities;
     if (nameFilter) {
       filtered = filtered.filter(p => p.name.toLowerCase().includes(nameFilter.toLowerCase()));
     }
@@ -53,20 +56,20 @@ function LeadsPageContent() {
       filtered = filtered.filter(p => p.clientId === clientFilter);
     }
     return filtered;
-  }, [leads, nameFilter, statusFilter, clientFilter]);
+  }, [opportunities, nameFilter, statusFilter, clientFilter]);
 
   const summaryData = useMemo(() => {
-    const openLeads = leads.filter(l => l.status !== 'Convertido' && l.status !== 'Perdido');
-    const totalOpenValue = openLeads.reduce((sum, l) => sum + l.value, 0);
-    const convertedCount = leads.filter(l => l.status === 'Convertido').length;
-    const conversionRate = leads.length > 0 ? (convertedCount / leads.length) * 100 : 0;
+    const openOpportunities = opportunities.filter(l => l.status !== 'Ganha' && l.status !== 'Perdida');
+    const totalOpenValue = openOpportunities.reduce((sum, l) => sum + l.value, 0);
+    const convertedCount = opportunities.filter(l => l.status === 'Ganha').length;
+    const conversionRate = opportunities.length > 0 ? (convertedCount / opportunities.length) * 100 : 0;
     
     return {
-        openLeadsCount: openLeads.length,
+        openOpportunitiesCount: openOpportunities.length,
         totalOpenValue,
         conversionRate,
     }
-  }, [leads]);
+  }, [opportunities]);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -74,27 +77,27 @@ function LeadsPageContent() {
   }).format(value);
 
   const handleAdd = () => {
-    setEditingLead(undefined);
-    setIsManageLeadDialogOpen(true);
+    setEditingOpportunity(undefined);
+    setIsManageOpportunityDialogOpen(true);
   };
   
-  const handleEdit = (lead: Lead) => {
+  const handleEdit = (opportunity: Opportunity) => {
     setIsDetailsSheetOpen(false);
-    setViewingLead(undefined);
-    setEditingLead(lead);
-    setIsManageLeadDialogOpen(true);
+    setViewingOpportunity(undefined);
+    setEditingOpportunity(opportunity);
+    setIsManageOpportunityDialogOpen(true);
   }
 
-  const handleViewDetails = (lead: Lead) => {
-    setViewingLead(lead);
+  const handleViewDetails = (opportunity: Opportunity) => {
+    setViewingOpportunity(opportunity);
     setIsDetailsSheetOpen(true);
   }
 
   const handleManageDialogClose = (open: boolean) => {
     if (!open) {
-      setEditingLead(undefined);
+      setEditingOpportunity(undefined);
     }
-    setIsManageLeadDialogOpen(open);
+    setIsManageOpportunityDialogOpen(open);
   }
   
   const KanbanView = () => (
@@ -104,10 +107,10 @@ function LeadsPageContent() {
                 <div key={status} className="bg-muted/50 rounded-lg p-4">
                 <h2 className="text-lg font-semibold mb-4 font-headline">{status}</h2>
                 <div className="space-y-4">
-                    {filteredLeads
-                    .filter((lead) => lead.status === status)
-                    .map((lead) => (
-                        <LeadCard key={lead.id} lead={lead} onEdit={handleEdit}/>
+                    {filteredOpportunities
+                    .filter((opportunity) => opportunity.status === status)
+                    .map((opportunity) => (
+                        <OpportunityCard key={opportunity.id} opportunity={opportunity} onEdit={handleEdit}/>
                     ))}
                 </div>
                 </div>
@@ -120,27 +123,27 @@ function LeadsPageContent() {
     <div className="flex flex-col h-full">
         <div className="p-4 sm:p-8 pb-4 pt-6 border-b space-y-4">
             <div className="flex items-center justify-between space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Funil de Propostas</h1>
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Funil de Oportunidades</h1>
                  <div className="flex items-center space-x-2">
-                    <ManageLeadDialog
-                            lead={editingLead}
-                            open={isManageLeadDialogOpen}
+                    <ManageOpportunityDialog
+                            opportunity={editingOpportunity}
+                            open={isManageOpportunityDialogOpen}
                             onOpenChange={handleManageDialogClose}
                         >
                             <Button onClick={handleAdd} size="sm">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Adicionar Proposta
+                            Adicionar Oportunidade
                             </Button>
-                    </ManageLeadDialog>
+                    </ManageOpportunityDialog>
                 </div>
             </div>
              <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Propostas em Aberto</CardTitle>
+                        <CardTitle className="text-sm font-medium">Oportunidades em Aberto</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{summaryData.openLeadsCount}</div>
+                        <div className="text-2xl font-bold">{summaryData.openOpportunitiesCount}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -148,7 +151,11 @@ function LeadsPageContent() {
                         <CardTitle className="text-sm font-medium">Valor em Aberto</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(summaryData.totalOpenValue)}</div>
+                        {canViewValues ? (
+                            <div className="text-2xl font-bold">{formatCurrency(summaryData.totalOpenValue)}</div>
+                        ) : (
+                            <div className="text-2xl font-bold">-</div>
+                        )}
                     </CardContent>
                 </Card>
                 <Card>
@@ -202,11 +209,11 @@ function LeadsPageContent() {
             </div>
         </div>
       
-        {viewMode === 'kanban' ? <KanbanView /> : <LeadsTable leads={filteredLeads} onEdit={handleEdit} onViewDetails={handleViewDetails} />}
+        {viewMode === 'kanban' ? <KanbanView /> : <OpportunitiesTable opportunities={filteredOpportunities} onEdit={handleEdit} onViewDetails={handleViewDetails} />}
        
-        {viewingLead && (
-            <LeadDetailsSheet
-                lead={viewingLead}
+        {viewingOpportunity && (
+            <OpportunityDetailsSheet
+                opportunity={viewingOpportunity}
                 onEdit={handleEdit}
                 open={isDetailsSheetOpen}
                 onOpenChange={setIsDetailsSheetOpen}
@@ -216,10 +223,10 @@ function LeadsPageContent() {
   );
 }
 
-export default function LeadsPage() {
+export default function OpportunitiesPage() {
     return (
         <AppLayout>
-            <LeadsPageContent />
+            <OpportunitiesPageContent />
         </AppLayout>
     )
 }

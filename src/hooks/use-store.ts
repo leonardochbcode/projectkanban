@@ -10,14 +10,14 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Lead, CompanyInfo, ProjectTemplate, TemplateTask, ChecklistItem, Workspace } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, TemplateTask, Workspace } from '@/lib/types';
 import {
   initialProjects,
   initialTasks,
   initialParticipants,
   initialRoles,
   initialClients,
-  initialLeads,
+  initialOpportunities,
   initialCompanyInfo,
   initialProjectTemplates,
   initialWorkspaces,
@@ -31,7 +31,7 @@ interface Store {
   participants: Participant[];
   roles: Role[];
   clients: Client[];
-  leads: Lead[];
+  opportunities: Opportunity[];
   currentUser: Participant | null;
   companyInfo: CompanyInfo | null;
   projectTemplates: ProjectTemplate[];
@@ -76,7 +76,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [participants, setParticipants] = useLocalStorage<Participant[]>('participants', initialParticipants);
   const [roles, setRoles] = useLocalStorage<Role[]>('roles', initialRoles);
   const [clients, setClients] = useLocalStorage<Client[]>('clients', initialClients);
-  const [leads, setLeads] = useLocalStorage<Lead[]>('leads', initialLeads);
+  const [opportunities, setOpportunities] = useLocalStorage<Opportunity[]>('opportunities', initialOpportunities);
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', initialCompanyInfo);
   const [projectTemplates, setProjectTemplates] = useLocalStorage<ProjectTemplate[]>('projectTemplates', initialProjectTemplates);
@@ -94,12 +94,12 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     participants,
     roles,
     clients,
-    leads,
+    opportunities,
     currentUser,
     companyInfo,
     projectTemplates,
     workspaces,
-  }), [isLoaded, projects, tasks, participants, roles, clients, leads, currentUser, companyInfo, projectTemplates, workspaces]);
+  }), [isLoaded, projects, tasks, participants, roles, clients, opportunities, currentUser, companyInfo, projectTemplates, workspaces]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
@@ -107,7 +107,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.participants) setParticipants(newState.participants);
     if (newState.roles) setRoles(newState.roles);
     if (newState.clients) setClients(newState.clients);
-    if (newState.leads) setLeads(newState.leads);
+    if (newState.opportunities) setOpportunities(newState.opportunities);
     if (newState.hasOwnProperty('currentUser')) setCurrentUser(newState.currentUser ?? null);
     if (newState.companyInfo) setCompanyInfo(newState.companyInfo);
     if (newState.projectTemplates) setProjectTemplates(newState.projectTemplates);
@@ -318,32 +318,33 @@ export const useStore = () => {
     });
   }, [store.clients, dispatch]);
     
-  const getLead = useCallback((leadId: string) => {
-      return store.leads.find(l => l.id === leadId);
-  }, [store.leads]);
+  const getOpportunity = useCallback((opportunityId: string) => {
+      return store.opportunities.find(l => l.id === opportunityId);
+  }, [store.opportunities]);
 
-  const addLead = useCallback((lead: Omit<Lead, 'id' | 'createdAt' | 'comments' | 'attachments'>) => {
-      const newLead: Lead = {
+  const addOpportunity = useCallback((opportunity: Omit<Opportunity, 'id' | 'createdAt' | 'comments' | 'attachments' | 'ownerId'>) => {
+      const newOpportunity: Opportunity = {
           id: `lead-${Date.now()}`,
           createdAt: new Date().toISOString(),
-          ...lead,
+          ...opportunity,
+          ownerId: store.currentUser!.id,
           comments: [],
           attachments: [],
       };
-      dispatch({ leads: [...store.leads, newLead]});
-  }, [store.leads, dispatch]);
+      dispatch({ opportunities: [...store.opportunities, newOpportunity]});
+  }, [store.opportunities, store.currentUser, dispatch]);
 
-  const updateLead = useCallback((updatedLead: Lead) => {
+  const updateOpportunity = useCallback((updatedOpportunity: Opportunity) => {
       dispatch({
-          leads: store.leads.map(l => l.id === updatedLead.id ? updatedLead : l)
+          opportunities: store.opportunities.map(l => l.id === updatedOpportunity.id ? updatedOpportunity : l)
       });
-  }, [store.leads, dispatch]);
+  }, [store.opportunities, dispatch]);
 
-  const deleteLead = useCallback((leadId: string) => {
+  const deleteOpportunity = useCallback((opportunityId: string) => {
       dispatch({
-          leads: store.leads.filter(l => l.id !== leadId)
+          opportunities: store.opportunities.filter(l => l.id !== opportunityId)
       });
-  }, [store.leads, dispatch]);
+  }, [store.opportunities, dispatch]);
 
   const updateCompanyInfo = useCallback((info: CompanyInfo) => {
     dispatch({ companyInfo: info });
@@ -439,10 +440,10 @@ export const useStore = () => {
     addClient,
     updateClient,
     deleteClient,
-    getLead,
-    addLead,
-    updateLead,
-    deleteLead,
+    getOpportunity,
+    addOpportunity,
+    updateOpportunity,
+    deleteOpportunity,
     updateCompanyInfo,
     duplicateProject,
     addProjectTemplate,

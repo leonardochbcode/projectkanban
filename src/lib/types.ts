@@ -3,7 +3,8 @@ export const availablePermissions = {
     manage_workspaces: 'Gerenciar Espaços de Trabalho',
     manage_projects: 'Gerenciar Projetos',
     manage_clients: 'Gerenciar Clientes',
-    manage_leads: 'Gerenciar Leads',
+    manage_opportunities: 'Gerenciar Oportunidades',
+    view_opportunity_values: 'Ver Valores das Oportunidades',
     manage_team: 'Gerenciar Equipe',
     view_reports: 'Ver Relatórios',
     manage_settings: 'Gerenciar Configurações'
@@ -37,14 +38,14 @@ export interface Client {
   suportewebCode?: string;
 }
 
-export interface LeadComment {
+export interface OpportunityComment {
   id: string;
   content: string;
   authorId: string;
   createdAt: string;
 }
 
-export interface LeadAttachment {
+export interface OpportunityAttachment {
     id: string;
     name: string;
     size: number;
@@ -53,19 +54,20 @@ export interface LeadAttachment {
     createdAt: string;
 }
 
-export interface Lead {
+export interface Opportunity {
     id: string;
     name: string;
     email: string;
     company?: string;
     phone?: string;
     description: string;
-    status: 'Novo' | 'Em Contato' | 'Proposta Enviada' | 'Convertido' | 'Perdido';
+    status: 'A Analisar' | 'Contato Realizado' | 'Proposta Enviada' | 'Ganha' | 'Perdida';
     createdAt: string;
-    comments: LeadComment[];
-    attachments: LeadAttachment[];
+    comments: OpportunityComment[];
+    attachments: OpportunityAttachment[];
     value: number;
     clientId?: string;
+    ownerId: string;
 }
 
 export interface Participant {
@@ -123,7 +125,7 @@ export interface Project {
   participantIds: string[];
   workspaceId: string;
   clientId?: string;
-  leadId?: string;
+  opportunityId?: string;
   pmoId?: string;
 }
 
