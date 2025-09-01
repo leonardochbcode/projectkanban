@@ -160,12 +160,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex-1 overflow-y-auto">
             <NavLinks />
           </div>
-          <div className="mt-auto p-4">
-             <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sair
-             </Button>
-          </div>
         </div>
       </div>
       <div className="flex flex-col">
@@ -192,12 +186,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               <div className="overflow-y-auto">
                 <NavLinks />
-              </div>
-              <div className="mt-auto p-4 border-t">
-                <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                </Button>
               </div>
             </SheetContent>
           </Sheet>
