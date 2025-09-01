@@ -12,11 +12,11 @@ import {
   Cell,
   LabelList,
 } from 'recharts';
-import { differenceInDays, parseISO, startOfDay } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay, isBefore } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { TaskDetailsSheet } from '../tasks/task-details-sheet';
 import { useState } from 'react';
-import type { Task } from '@/lib/types';
+import type { Task, Project } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const statusColors: { [key: string]: string } = {
@@ -45,44 +45,54 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 
-export function GanttChartComponent() {
-  const { projects, tasks } = useStore();
+export function GanttChartComponent({ selectedProjectId }: { selectedProjectId: string | null }) {
+  const { projects, getProjectTasks } = useStore();
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
- const processedData = useMemo(() => {
-    if (projects.length === 0 || tasks.length === 0) return [];
+  const processedData = useMemo(() => {
+    const project = projects.find(p => p.id === selectedProjectId);
+    if (!project) return { data: [], domain: [0, 30] };
+
+    const tasks = getProjectTasks(project.id);
+    if (tasks.length === 0) return { data: [], domain: [0, 30] };
+
+    const projectStartDate = parseISO(project.startDate);
+    const projectEndDate = parseISO(project.endDate);
+
+    let overallStartDate = projectStartDate;
+    let overallEndDate = projectEndDate;
     
-    // Find the earliest start date across all projects
-    const overallStartDate = projects.reduce((earliest, p) => {
-      const pDate = parseISO(p.startDate);
-      return pDate < earliest ? pDate : earliest;
-    }, parseISO(projects[0].startDate));
+    tasks.forEach(task => {
+        const taskDate = parseISO(task.dueDate);
+        if(isBefore(taskDate, overallStartDate)) overallStartDate = taskDate;
+    })
 
-    // Map tasks to a flat structure for the chart
-    return tasks.map(task => {
-      const project = projects.find(p => p.id === task.projectId);
-      if (!project) return null; // Should not happen if data is consistent
 
-      const taskDate = parseISO(task.dueDate);
-      // Offset is the number of days from the overall start date
-      const offset = differenceInDays(taskDate, overallStartDate);
+    const data = tasks
+      .sort((a, b) => parseISO(a.dueDate).getTime() - parseISO(b.dueDate).getTime())
+      .map(task => {
+          const taskDate = parseISO(task.dueDate);
+          const offset = differenceInDays(startOfDay(taskDate), startOfDay(overallStartDate));
 
-      return {
-        name: project.name, // Project name for the Y-axis
-        offset: offset, // Where the task bar starts
-        duration: 1, // All tasks are 1 day long as we only have due dates
-        taskName: task.title,
-        status: task.status,
-        originalTask: task // Attach the full task object
-      };
-    }).filter(Boolean); // Filter out any nulls
+          return {
+              name: task.title, 
+              offset: offset,
+              duration: 1, 
+              taskName: task.title,
+              status: task.status,
+              originalTask: task
+          };
+      });
 
-  }, [projects, tasks]);
+      const maxOffset = differenceInDays(startOfDay(overallEndDate), startOfDay(overallStartDate)) + 5;
+      const domain = [0, maxOffset];
+
+    return { data, domain };
+  }, [selectedProjectId, projects, getProjectTasks]);
 
 
   const handleBarClick = (data: any) => {
-    // `data` here is the payload of the item of data from the clicked bar
     if(data && data.originalTask) {
         setSelectedTask(data.originalTask);
         setIsSheetOpen(true);
@@ -96,42 +106,55 @@ export function GanttChartComponent() {
     }
   };
 
+  if (!selectedProjectId) {
+    return (
+        <Card className="h-full flex items-center justify-center">
+            <p className="text-muted-foreground">Selecione um projeto para ver o gráfico de Gantt.</p>
+        </Card>
+    );
+  }
+
   return (
     <>
-      <Card>
+      <Card className="h-full">
         <CardHeader>
-          <CardTitle>Linha do Tempo dos Projetos</CardTitle>
+          <CardTitle>Linha do Tempo das Tarefas</CardTitle>
         </CardHeader>
-        <CardContent className="h-[75vh] pr-10">
+        <CardContent className="h-[90%] pr-4">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={processedData}
-              layout="vertical"
-              margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
-              barCategoryGap="30%"
-              stackOffset="expand"
-            >
-              <XAxis type="number" dataKey="offset" domain={['dataMin', 'dataMax + 5']} unit="d" />
-              <YAxis type="category" dataKey="name" width={150} tick={{ width: 150 }} scale="point" />
-              <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(240, 240, 240, 0.5)'}} />
-              
-              <Bar 
-                dataKey="duration" 
-                stackId={(d: any) => d.name} // Stack by project name
-                layout="vertical"
-                onClick={handleBarClick}
-                className="cursor-pointer"
-              >
-                  <LabelList dataKey="taskName" position="insideRight" fill="#fff" fontSize={10} />
-                  {processedData.map((entry, entryIndex) => (
-                      <Cell 
-                        key={`cell-${entryIndex}`} 
-                        fill={statusColors[entry.status as keyof typeof statusColors] || '#ccc'}
-                      />
-                  ))}
-              </Bar>
+            {processedData.data.length > 0 ? (
+                <BarChart
+                    data={processedData.data}
+                    layout="vertical"
+                    margin={{ top: 5, right: 20, left: 100, bottom: 5 }}
+                    barCategoryGap="40%"
+                >
+                <XAxis type="number" dataKey="offset" domain={processedData.domain} unit=" dias" />
+                <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12, width: 120 }} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(240, 240, 240, 0.5)'}} />
+                
+                <Bar 
+                    dataKey="duration" 
+                    stackId="a"
+                    layout="vertical"
+                    onClick={handleBarClick}
+                    className="cursor-pointer"
+                    minPointSize={10}
+                >
+                    {processedData.data.map((entry, entryIndex) => (
+                        <Cell 
+                            key={`cell-${entryIndex}`} 
+                            fill={statusColors[entry.status as keyof typeof statusColors] || '#ccc'}
+                        />
+                    ))}
+                </Bar>
 
-            </BarChart>
+                </BarChart>
+            ) : (
+                 <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">Nenhuma tarefa para exibir neste projeto.</p>
+                </div>
+            )}
           </ResponsiveContainer>
         </CardContent>
       </Card>
