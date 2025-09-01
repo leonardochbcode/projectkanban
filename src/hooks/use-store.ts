@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -172,25 +173,15 @@ export const useStore = () => {
       return store.projects;
     }
 
-    const userProjectIds = new Set<string>();
-    
-    // Add projects where user is PMO or participant
-    store.projects.forEach(project => {
-        if (project.pmoId === store.currentUser!.id || project.participantIds.includes(store.currentUser!.id)) {
-            userProjectIds.add(project.id);
-        }
+    return store.projects.filter(project => {
+        const userTasksInProject = store.tasks.filter(t => t.projectId === project.id && t.assigneeId === store.currentUser!.id);
+        
+        return project.participantIds.includes(store.currentUser!.id) ||
+               project.pmoId === store.currentUser!.id ||
+               userTasksInProject.length > 0;
     });
 
-    // Add projects where user has an assigned task
-    store.tasks.forEach(task => {
-        if (task.assigneeId === store.currentUser!.id) {
-            userProjectIds.add(task.projectId);
-        }
-    });
-
-    return store.projects.filter(project => userProjectIds.has(project.id));
-
-  }, [store.projects, store.tasks, store.currentUser, store.isLoaded, getRole]);
+  }, [store.projects, store.currentUser, store.isLoaded, getRole, store.tasks]);
 
 
   const getWorkspaceProjects = useCallback(
@@ -200,11 +191,10 @@ export const useStore = () => {
     [visibleProjects]
   );
   
-  const addProject = useCallback((project: Omit<Project, 'id' | 'participantIds'>, templateId?: string) => {
+  const addProject = useCallback((project: Omit<Project, 'id'>, templateId?: string) => {
     const newProject: Project = {
       id: `proj-${Date.now()}`,
       ...project,
-      participantIds: [],
     };
 
     let newTasks: Task[] = [];
@@ -273,7 +263,8 @@ export const useStore = () => {
     });
   }, [store.tasks, dispatch]);
   
-  const getParticipant = useCallback((participantId: string) => {
+  const getParticipant = useCallback((participantId?: string) => {
+      if(!participantId) return undefined;
       return store.participants.find(p => p.id === participantId);
   }, [store.participants]);
 

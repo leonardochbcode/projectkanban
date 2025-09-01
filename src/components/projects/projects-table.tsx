@@ -5,13 +5,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import type { Project, Task } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { MoreVertical, Edit, Copy, ChevronDown, ChevronRight } from 'lucide-react';
+import { MoreVertical, Edit, Copy, ChevronDown, ChevronRight, User } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { useStore } from '@/hooks/use-store';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { TaskDetailsSheet } from '../tasks/task-details-sheet';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 interface ProjectsTableProps {
   projects: Project[];
@@ -92,7 +93,7 @@ function ProjectTasksRow({ project, tasks, isVisible }: { project: Project, task
 }
 
 export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
-  const { duplicateProject, getProjectTasks, getParticipant } = useStore();
+  const { duplicateProject, getProjectTasks, getParticipant, participants } = useStore();
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   const handleDuplicate = (project: Project) => {
@@ -104,13 +105,19 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
     setExpandedRows(prev => ({ ...prev, [projectId]: !prev[projectId] }));
   };
 
+  const getParticipantsForProject = (project: Project) => {
+    return project.participantIds
+      .map(id => participants.find(p => p.id === id))
+      .filter(Boolean) as typeof participants[0][];
+  };
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="w-12"></TableHead>
           <TableHead>Nome</TableHead>
-          <TableHead>Responsável</TableHead>
+          <TableHead>Participantes</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Datas</TableHead>
           <TableHead className="text-right">Ações</TableHead>
@@ -119,7 +126,7 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
       <TableBody>
         {projects.map((project) => {
           const tasks = getProjectTasks(project.id);
-          const pmo = project.pmoId ? getParticipant(project.pmoId) : null;
+          const projectParticipants = getParticipantsForProject(project);
           const isExpanded = expandedRows[project.id];
           return (
             <React.Fragment key={project.id}>
@@ -135,15 +142,23 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
                     </Link>
                     </TableCell>
                     <TableCell>
-                        {pmo ? (
-                            <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6">
-                                    <AvatarImage src={pmo.avatar} />
-                                    <AvatarFallback>{pmo.name[0]}</AvatarFallback>
-                                </Avatar>
-                                <span className="text-xs">{pmo.name.split(' ')[0]}</span>
-                            </div>
-                        ) : <span className="text-xs text-muted-foreground">N/A</span>}
+                        <div className="flex -space-x-2 overflow-hidden">
+                            <TooltipProvider>
+                                {projectParticipants.length > 0 ? projectParticipants.map((p) => (
+                                <Tooltip key={p.id}>
+                                    <TooltipTrigger asChild>
+                                    <Avatar className="inline-block h-7 w-7 rounded-full ring-2 ring-background">
+                                        <AvatarImage src={p.avatar} />
+                                        <AvatarFallback>{p.name[0]}</AvatarFallback>
+                                    </Avatar>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                    <p>{p.name}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                )) : <span className="text-xs text-muted-foreground pl-2">Ninguém</span>}
+                            </TooltipProvider>
+                        </div>
                     </TableCell>
                     <TableCell>
                     <Badge variant="outline" className={cn(statusColors[project.status])}>

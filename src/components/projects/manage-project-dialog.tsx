@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type ReactNode, useEffect } from 'react';
@@ -23,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Project } from '@/lib/types';
+import { MultiSelect } from '../ui/multi-select';
 
 interface ManageProjectDialogProps {
   children?: ReactNode; // Tornando children opcional
@@ -41,7 +43,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates, workspaces, clients, participants } = useStore();
+  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -51,6 +53,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [templateId, setTemplateId] = useState<string | undefined>();
   const [workspaceId, setWorkspaceId] = useState<string | undefined>();
   const [clientId, setClientId] = useState<string | undefined>();
+  const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [pmoId, setPmoId] = useState<string | undefined>();
 
 
@@ -64,6 +67,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setStatus(project.status);
         setWorkspaceId(project.workspaceId);
         setClientId(project.clientId);
+        setParticipantIds(project.participantIds || []);
         setPmoId(project.pmoId);
         setTemplateId(undefined); // Don't show template when editing
     } else if (!project && open) {
@@ -75,10 +79,11 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setStatus('Planejamento');
         setWorkspaceId(initialWorkspaceId);
         setClientId(undefined);
-        setPmoId(undefined);
+        setParticipantIds(currentUser ? [currentUser.id] : []);
+        setPmoId(currentUser?.id);
         setTemplateId(undefined);
     }
-  }, [project, open, initialWorkspaceId]);
+  }, [project, open, initialWorkspaceId, currentUser]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +100,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         status,
         workspaceId,
         clientId,
+        participantIds,
         pmoId
     }
 
@@ -109,6 +115,8 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   
   const Trigger = children ? <DialogTrigger asChild>{children}</DialogTrigger> : null;
 
+  const participantOptions = participants.map(p => ({ label: p.name, value: p.id }));
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {Trigger}
@@ -122,12 +130,10 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {!project && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="template" className="text-right">
-                  Template
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="template">Template</Label>
                 <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger>
                     <SelectValue placeholder="Começar do zero" />
                   </SelectTrigger>
                   <SelectContent>
@@ -141,12 +147,10 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                 </Select>
               </div>
             )}
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="workspace" className="text-right">
-                  Espaço
-                </Label>
+             <div className="space-y-2">
+                <Label htmlFor="workspace">Espaço</Label>
                 <Select value={workspaceId} onValueChange={setWorkspaceId} required>
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger>
                     <SelectValue placeholder="Selecione um espaço" />
                   </SelectTrigger>
                   <SelectContent>
@@ -158,35 +162,27 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                   </SelectContent>
                 </Select>
               </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Nome
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
                 required
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Descrição
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3"
               />
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="client" className="text-right">
-                  Cliente
-                </Label>
+             <div className="space-y-2">
+                <Label htmlFor="client">Cliente</Label>
                 <Select value={clientId} onValueChange={(v) => setClientId(v === 'none' ? undefined : v)}>
-                    <SelectTrigger className="col-span-3">
+                    <SelectTrigger>
                         <SelectValue placeholder="Nenhum cliente" />
                     </SelectTrigger>
                     <SelectContent>
@@ -195,57 +191,55 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                     </SelectContent>
                 </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="pmo" className="text-right">
-                    Resp. Técnico
-                </Label>
-                <Select value={pmoId} onValueChange={(v) => setPmoId(v === 'none' ? undefined : v)}>
-                    <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Nenhum responsável" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">Nenhum</SelectItem>
-                        {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+             <div className="space-y-2">
+              <Label htmlFor="pmoId">Responsável Técnico</Label>
+              <Select value={pmoId} onValueChange={setPmoId}>
+                  <SelectTrigger>
+                      <SelectValue placeholder="Selecione um responsável" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  </SelectContent>
+              </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="start-date" className="text-right">
-                Data de Início
-              </Label>
+            <div className="space-y-2">
+                <Label htmlFor="participants">Participantes</Label>
+                <MultiSelect
+                    options={participantOptions}
+                    value={participantIds}
+                    onValueChange={setParticipantIds}
+                    placeholder="Adicionar participantes..."
+                />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="start-date">Data de Início</Label>
               <Input
                 id="start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="col-span-3"
                 required
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="end-date" className="text-right">
-                Data de Término
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="end-date">Data de Término</Label>
               <Input
                 id="end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="col-span-3"
                 required
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
               <Select
                 value={status}
                 onValueChange={(
                   value: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído'
                 ) => setStatus(value)}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger>
                   <SelectValue placeholder="Selecione o status" />
                 </SelectTrigger>
                 <SelectContent>

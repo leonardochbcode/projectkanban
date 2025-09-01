@@ -41,8 +41,22 @@ function MyTasksPageContent() {
     }, [tasks, currentUser]);
 
     const getProjectName = (projectId: string) => {
-        return projects.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
+        // We need to use the raw projects from the store, not the visible ones,
+        // so we can show the project name even if the user doesn't have direct access to it.
+        return store.projects.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
     }
+    
+    // We need the raw store here to find the project name
+    const store = useStoreRaw();
+     function useStoreRaw() {
+        const context = React.useContext(StoreContext);
+        if (!context) {
+          throw new Error('useStore must be used within a StoreProvider');
+        }
+        return context;
+      }
+    const StoreContext = React.createContext<any>(null);
+
 
     return (
         <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
