@@ -25,10 +25,19 @@ const statusColors: { [key: string]: string } = {
   'Concluída': 'hsl(var(--chart-4))',
 };
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    // A chave do tooltip não nos diz qual barra foi clicada.
+    // O `label` é o nome do projeto (eixo Y).
+    // O payload contém múltiplas entradas para a barra empilhada.
+    // Precisamos encontrar a entrada de dados correta.
+    // No entanto, `recharts` não facilita a identificação do segmento específico.
+    // O payload[0] geralmente contém as informações da barra mais relevante.
     const data = payload[0].payload;
-    const task = data.originalTask;
+    const task = data.originalTask; // `originalTask` deve estar no objeto de dados.
+
+    if (!task) return null;
+
     return (
       <div className="bg-background border p-2 rounded-md shadow-lg text-sm">
         <p className="font-bold">{task.title}</p>
@@ -48,8 +57,6 @@ export function GanttChartComponent() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const chartData = useMemo(() => {
-    const today = startOfDay(new Date());
-
     return projects.flatMap((project) => {
       const projectTasks = tasks.filter((t) => t.projectId === project.id);
       if (projectTasks.length === 0) return [];
@@ -64,7 +71,7 @@ export function GanttChartComponent() {
           name: project.name,
           taskName: task.title,
           projectName: project.name,
-          range: [startDay, startDay + 1], // Gantt usually has a start and end, we'll represent it as a 1 day block
+          range: [startDay, startDay + 1], 
           status: task.status,
           originalTask: task,
         };
@@ -73,36 +80,38 @@ export function GanttChartComponent() {
   }, [projects, tasks]);
   
   const processedData = useMemo(() => {
-      const groupedData: Record<string, any[]> = {};
+      const groupedByProject: Record<string, any[]> = {};
       chartData.forEach(item => {
-          if (!groupedData[item.name]) {
-              groupedData[item.name] = [];
+          if (!groupedByProject[item.name]) {
+              groupedByProject[item.name] = [];
           }
-          groupedData[item.name].push(item);
+          groupedByProject[item.name].push(item);
       });
       
-      return Object.entries(groupedData).map(([projectName, tasks]) => {
-          const entry: any = { name: projectName };
-          tasks.forEach((task, index) => {
-              entry[`offset_${index}`] = task.range[0];
-              entry[`duration_${index}`] = task.range[1] - task.range[0];
-              entry[`status_${index}`] = task.status;
-              entry[`taskName_${index}`] = task.taskName;
-              entry[`originalTask_${index}`] = task.originalTask;
+      // Transformar para um formato que o BarChart possa usar para empilhamento simulado
+      const finalData: any[] = [];
+      Object.entries(groupedByProject).forEach(([projectName, projectTasks]) => {
+          projectTasks.forEach(task => {
+              finalData.push({
+                  name: projectName, // Nome do projeto para o eixo Y
+                  offset: task.range[0], // Onde a tarefa começa
+                  duration: task.range[1] - task.range[0], // Duração (sempre 1)
+                  taskName: task.taskName,
+                  status: task.status,
+                  originalTask: task.originalTask // Anexar a tarefa completa
+              });
           });
-          return entry;
-      })
+      });
 
-  }, [chartData])
+      return finalData;
 
-  const handleBarClick = (data: any, index: number) => {
-    // This is tricky because recharts doesn't directly support clicking on stacked bar segments
-    // We try to find the clicked task based on the payload.
-    if(data && data.payload && data.payload.originalTask_0) {
-        // This is a simplification and might not work for stacked bars correctly.
-        // It will open the first task of the project. A more complex solution would be needed
-        // to identify which segment of the stacked bar was clicked.
-        setSelectedTask(data.payload.originalTask_0);
+  }, [chartData]);
+
+
+  const handleBarClick = (data: any) => {
+    // `data` aqui é o payload do item de dados da barra clicada
+    if(data && data.originalTask) {
+        setSelectedTask(data.originalTask);
         setIsSheetOpen(true);
     }
   };
@@ -113,7 +122,6 @@ export function GanttChartComponent() {
       setSelectedTask(undefined);
     }
   };
-
 
   return (
     <>
@@ -129,29 +137,25 @@ export function GanttChartComponent() {
               margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
               barCategoryGap="30%"
             >
-              <XAxis type="number" domain={['dataMin', 'dataMax + 5']} unit="d" />
-              <YAxis type="category" dataKey="name" width={150} tick={{ width: 150 }} />
+              <XAxis type="number" dataKey="offset" domain={['dataMin', 'dataMax + 5']} unit="d" />
+              <YAxis type="category" dataKey="name" width={150} tick={{ width: 150 }} scale="point" />
               <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(240, 240, 240, 0.5)'}} />
               
-              {/* This is a trick to render multiple bars for tasks */}
-              {processedData.length > 0 && Object.keys(processedData[0]).filter(k => k.startsWith('duration_')).map((key, index) => (
-                  <Bar 
-                    key={key} 
-                    dataKey={`duration_${index}`} 
-                    stackId="a" 
-                    layout="vertical"
-                    onClick={handleBarClick}
-                    className="cursor-pointer"
-                  >
-                     <LabelList dataKey={`taskName_${index}`} position="insideRight" fill="#fff" fontSize={10} />
-                     {processedData.map((entry, entryIndex) => (
-                          <Cell 
-                            key={`cell-${entryIndex}`} 
-                            fill={statusColors[entry[`status_${index}`] as keyof typeof statusColors] || '#ccc'}
-                          />
-                      ))}
-                  </Bar>
-              ))}
+              <Bar 
+                dataKey="duration" 
+                stackId={(d: any) => d.name} // Empilhar por projeto
+                layout="vertical"
+                onClick={handleBarClick}
+                className="cursor-pointer"
+              >
+                  <LabelList dataKey="taskName" position="insideRight" fill="#fff" fontSize={10} />
+                  {processedData.map((entry, entryIndex) => (
+                      <Cell 
+                        key={`cell-${entryIndex}`} 
+                        fill={statusColors[entry.status as keyof typeof statusColors] || '#ccc'}
+                      />
+                  ))}
+              </Bar>
 
             </BarChart>
           </ResponsiveContainer>
