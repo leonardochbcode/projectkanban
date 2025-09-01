@@ -27,14 +27,8 @@ const statusColors: { [key: string]: string } = {
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    // A chave do tooltip não nos diz qual barra foi clicada.
-    // O `label` é o nome do projeto (eixo Y).
-    // O payload contém múltiplas entradas para a barra empilhada.
-    // Precisamos encontrar a entrada de dados correta.
-    // No entanto, `recharts` não facilita a identificação do segmento específico.
-    // O payload[0] geralmente contém as informações da barra mais relevante.
     const data = payload[0].payload;
-    const task = data.originalTask; // `originalTask` deve estar no objeto de dados.
+    const task = data.originalTask;
 
     if (!task) return null;
 
@@ -43,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p className="font-bold">{task.title}</p>
         <p>Status: {task.status}</p>
         <p>Prazo: {new Date(task.dueDate).toLocaleDateString()}</p>
-        <p>Projeto: {data.projectName}</p>
+        <p>Projeto: {data.name}</p>
       </div>
     );
   }
@@ -56,60 +50,39 @@ export function GanttChartComponent() {
   const [selectedTask, setSelectedTask] = useState<Task | undefined>(undefined);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const chartData = useMemo(() => {
-    return projects.flatMap((project) => {
-      const projectTasks = tasks.filter((t) => t.projectId === project.id);
-      if (projectTasks.length === 0) return [];
-      
-      const projectStartDate = parseISO(project.startDate);
+ const processedData = useMemo(() => {
+    if (projects.length === 0 || tasks.length === 0) return [];
+    
+    // Find the earliest start date across all projects
+    const overallStartDate = projects.reduce((earliest, p) => {
+      const pDate = parseISO(p.startDate);
+      return pDate < earliest ? pDate : earliest;
+    }, parseISO(projects[0].startDate));
 
-      return projectTasks.map((task) => {
-        const taskDueDate = parseISO(task.dueDate);
-        const startDay = differenceInDays(taskDueDate, projectStartDate);
-        
-        return {
-          name: project.name,
-          taskName: task.title,
-          projectName: project.name,
-          range: [startDay, startDay + 1], 
-          status: task.status,
-          originalTask: task,
-        };
-      });
-    });
+    // Map tasks to a flat structure for the chart
+    return tasks.map(task => {
+      const project = projects.find(p => p.id === task.projectId);
+      if (!project) return null; // Should not happen if data is consistent
+
+      const taskDate = parseISO(task.dueDate);
+      // Offset is the number of days from the overall start date
+      const offset = differenceInDays(taskDate, overallStartDate);
+
+      return {
+        name: project.name, // Project name for the Y-axis
+        offset: offset, // Where the task bar starts
+        duration: 1, // All tasks are 1 day long as we only have due dates
+        taskName: task.title,
+        status: task.status,
+        originalTask: task // Attach the full task object
+      };
+    }).filter(Boolean); // Filter out any nulls
+
   }, [projects, tasks]);
-  
-  const processedData = useMemo(() => {
-      const groupedByProject: Record<string, any[]> = {};
-      chartData.forEach(item => {
-          if (!groupedByProject[item.name]) {
-              groupedByProject[item.name] = [];
-          }
-          groupedByProject[item.name].push(item);
-      });
-      
-      // Transformar para um formato que o BarChart possa usar para empilhamento simulado
-      const finalData: any[] = [];
-      Object.entries(groupedByProject).forEach(([projectName, projectTasks]) => {
-          projectTasks.forEach(task => {
-              finalData.push({
-                  name: projectName, // Nome do projeto para o eixo Y
-                  offset: task.range[0], // Onde a tarefa começa
-                  duration: task.range[1] - task.range[0], // Duração (sempre 1)
-                  taskName: task.taskName,
-                  status: task.status,
-                  originalTask: task.originalTask // Anexar a tarefa completa
-              });
-          });
-      });
-
-      return finalData;
-
-  }, [chartData]);
 
 
   const handleBarClick = (data: any) => {
-    // `data` aqui é o payload do item de dados da barra clicada
+    // `data` here is the payload of the item of data from the clicked bar
     if(data && data.originalTask) {
         setSelectedTask(data.originalTask);
         setIsSheetOpen(true);
@@ -136,6 +109,7 @@ export function GanttChartComponent() {
               layout="vertical"
               margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
               barCategoryGap="30%"
+              stackOffset="expand"
             >
               <XAxis type="number" dataKey="offset" domain={['dataMin', 'dataMax + 5']} unit="d" />
               <YAxis type="category" dataKey="name" width={150} tick={{ width: 150 }} scale="point" />
@@ -143,7 +117,7 @@ export function GanttChartComponent() {
               
               <Bar 
                 dataKey="duration" 
-                stackId={(d: any) => d.name} // Empilhar por projeto
+                stackId={(d: any) => d.name} // Stack by project name
                 layout="vertical"
                 onClick={handleBarClick}
                 className="cursor-pointer"
