@@ -77,22 +77,65 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const initializeApp = async () => {
       try {
         const dataPromise = (async () => {
-          const firstProject = window.localStorage.getItem('projects');
-           if (firstProject && JSON.parse(firstProject).length > 0) {
-            return; // Data already hydrated
+          // Do not re-fetch if data is already in localStorage.
+          // This is a temporary measure; proper state management would use a library like SWR or React Query.
+          if (window.localStorage.getItem('projects')) {
+            return;
           }
-          const response = await fetch('/api/data');
-          if (!response.ok) throw new Error('Failed to fetch data');
-          const data = await response.json();
-          setProjects(data.projects || []);
-          setTasks(data.tasks || []);
-          setParticipants(data.participants || []);
-          setRoles(data.roles || []);
-          setClients(data.clients || []);
-          setOpportunities(data.opportunities || []);
-          setCompanyInfo(data.companyInfo || null);
-          setProjectTemplates(data.projectTemplates || []);
-          setWorkspaces(data.workspaces || []);
+
+          const [
+            projectsRes,
+            tasksRes,
+            workspacesRes,
+            participantsRes,
+            rolesRes,
+            clientsRes,
+            opportunitiesRes,
+            templatesRes,
+            companyInfoRes,
+          ] = await Promise.all([
+            fetch('/api/projects'),
+            fetch('/api/tasks'),
+            fetch('/api/workspaces'),
+            fetch('/api/participants'), // Assuming these will be created
+            fetch('/api/roles'),         // Assuming these will be created
+            fetch('/api/clients'),       // Assuming these will be created
+            fetch('/api/opportunities'), // Assuming these will be created
+            fetch('/api/project-templates'), // Assuming this will be created
+            fetch('/api/company-info'),    // Assuming this will be created
+          ]);
+
+          const [
+            projects,
+            tasks,
+            workspaces,
+            participants,
+            roles,
+            clients,
+            opportunities,
+            projectTemplates,
+            companyInfo,
+          ] = await Promise.all([
+            projectsRes.ok ? projectsRes.json() : [],
+            tasksRes.ok ? tasksRes.json() : [],
+            workspacesRes.ok ? workspacesRes.json() : [],
+            participantsRes.ok ? participantsRes.json() : [],
+            rolesRes.ok ? rolesRes.json() : [],
+            clientsRes.ok ? clientsRes.json() : [],
+            opportunitiesRes.ok ? opportunitiesRes.json() : [],
+            templatesRes.ok ? templatesRes.json() : [],
+            companyInfoRes.ok ? companyInfoRes.json() : null,
+          ]);
+
+          setProjects(projects);
+          setTasks(tasks);
+          setWorkspaces(workspaces);
+          setParticipants(participants);
+          setRoles(roles);
+          setClients(clients);
+          setOpportunities(opportunities);
+          setProjectTemplates(projectTemplates);
+          setCompanyInfo(companyInfo);
         })();
 
         const authPromise = (async () => {
@@ -240,76 +283,135 @@ export const useStore = () => {
     [visibleProjects]
   );
   
-  const addProject = useCallback((project: Omit<Project, 'id'>, templateId?: string) => {
-    const newProject: Project = {
-      id: `proj-${Date.now()}`,
-      ...project,
-    };
+  const addProject = useCallback(async (project: Omit<Project, 'id'>, templateId?: string) => {
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(project),
+      });
+      if (!response.ok) throw new Error('Failed to create project');
+      const newProject = await response.json();
 
-    let newTasks: Task[] = [];
-    if (templateId && templateId !== 'none') {
-      const template = store.projectTemplates.find(t => t.id === templateId);
-      if (template) {
-        newTasks = template.tasks.map((templateTask: TemplateTask) => {
-          const dueDate = addDays(new Date(newProject.startDate), templateTask.dueDayOffset);
-          return {
-            id: `task-${Date.now()}-${Math.random()}`,
-            projectId: newProject.id,
-            title: templateTask.title,
-            description: templateTask.description,
-            status: 'A Fazer',
-            priority: templateTask.priority,
-            dueDate: format(dueDate, 'yyyy-MM-dd'),
-            comments: [],
-            attachments: [],
-            checklist: [],
-          };
-        });
+      if (templateId && templateId !== 'none') {
+        const template = store.projectTemplates.find(t => t.id === templateId);
+        if (template) {
+          const taskPromises = template.tasks.map(templateTask => {
+            const dueDate = addDays(new Date(newProject.startDate), templateTask.dueDayOffset);
+            const taskData = {
+              projectId: newProject.id,
+              title: templateTask.title,
+              description: templateTask.description,
+              status: 'A Fazer',
+              priority: templateTask.priority,
+              dueDate: format(dueDate, 'yyyy-MM-dd'),
+            };
+            return fetch('/api/tasks', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(taskData),
+            }).then(res => {
+              if (!res.ok) throw new Error(`Failed to create task: ${templateTask.title}`);
+              return res.json();
+            });
+          });
+
+          const newTasks = await Promise.all(taskPromises);
+          dispatch({ tasks: [...store.tasks, ...newTasks] });
+        }
       }
+
+      dispatch({
+        projects: [...store.projects, newProject],
+      });
+      return newProject;
+    } catch (error) {
+      console.error("Failed to add project:", error);
+      // Optionally re-throw or handle the error (e.g., show a toast)
+      return null;
     }
-    
-    dispatch({ 
-      projects: [...store.projects, newProject],
-      tasks: [...store.tasks, ...newTasks] 
-    });
-    return newProject;
   }, [store.projects, store.tasks, store.projectTemplates, dispatch]);
 
-  const updateProject = useCallback((updatedProject: Project) => {
-    dispatch({
-      projects: store.projects.map(p => p.id === updatedProject.id ? updatedProject : p)
-    });
+  const updateProject = useCallback(async (updatedProject: Partial<Project> & { id: string }) => {
+    try {
+      const response = await fetch(`/api/projects/${updatedProject.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProject),
+      });
+      if (!response.ok) throw new Error('Failed to update project');
+      const returnedProject = await response.json();
+      dispatch({
+        projects: store.projects.map(p => p.id === returnedProject.id ? returnedProject : p)
+      });
+    } catch(error) {
+      console.error("Failed to update project:", error);
+    }
   }, [store.projects, dispatch]);
 
-  const deleteProject = useCallback((projectId: string) => {
-    dispatch({
-      projects: store.projects.filter(p => p.id !== projectId),
-      tasks: store.tasks.filter(t => t.projectId !== projectId)
-    });
+  const deleteProject = useCallback(async (projectId: string) => {
+    try {
+       const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete project');
+
+      dispatch({
+        projects: store.projects.filter(p => p.id !== projectId),
+        tasks: store.tasks.filter(t => t.projectId !== projectId) // Also remove tasks locally
+      });
+
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+    }
   }, [store.projects, store.tasks, dispatch]);
 
-  const addTask = useCallback((task: Omit<Task, 'id' | 'comments' | 'attachments' | 'checklist'>) => {
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
-      ...task,
-      comments: [],
-      attachments: [],
-      checklist: [],
-    };
-    dispatch({ tasks: [...store.tasks, newTask] });
-    return newTask;
+  const addTask = useCallback(async (task: Omit<Task, 'id' | 'comments' | 'attachments' | 'checklist'>) => {
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+      });
+      if (!response.ok) throw new Error('Failed to create task');
+      const newTask = await response.json();
+      dispatch({ tasks: [...store.tasks, newTask] });
+      return newTask;
+    } catch(error) {
+      console.error("Failed to add task:", error);
+      return null;
+    }
   }, [store.tasks, dispatch]);
 
-  const updateTask = useCallback((updatedTask: Task) => {
-    dispatch({
-      tasks: store.tasks.map(t => t.id === updatedTask.id ? updatedTask : t)
-    });
+  const updateTask = useCallback(async (updatedTask: Partial<Task> & {id: string}) => {
+    try {
+      const response = await fetch(`/api/tasks/${updatedTask.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTask),
+      });
+      if (!response.ok) throw new Error('Failed to update task');
+      const returnedTask = await response.json();
+      dispatch({
+        tasks: store.tasks.map(t => t.id === returnedTask.id ? returnedTask : t)
+      });
+    } catch (error) {
+      console.error("Failed to update task:", error);
+    }
   }, [store.tasks, dispatch]);
   
-  const deleteTask = useCallback((taskId: string) => {
-    dispatch({
-        tasks: store.tasks.filter(t => t.id !== taskId)
-    });
+  const deleteTask = useCallback(async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete task');
+      dispatch({
+          tasks: store.tasks.filter(t => t.id !== taskId)
+      });
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    }
   }, [store.tasks, dispatch]);
   
   const getParticipant = useCallback((participantId?: string) => {
@@ -317,104 +419,232 @@ export const useStore = () => {
       return store.participants.find(p => p.id === participantId);
   }, [store.participants]);
 
-  const addParticipant = useCallback((participant: Omit<Participant, 'id' | 'avatar'>) => {
-    const newParticipant: Participant = {
-      id: `user-${Date.now()}`,
-      ...participant,
-      avatar: `/avatars/0${(store.participants.length % 5) + 1}.png`,
-    };
-    dispatch({ participants: [...store.participants, newParticipant]});
+  const addParticipant = useCallback(async (participant: Omit<Participant, 'id' | 'avatar'> & { password?: string }) => {
+    try {
+      const payload = {
+        ...participant,
+        avatar: `/avatars/0${(store.participants.length % 5) + 1}.png`,
+      };
+      const response = await fetch('/api/participants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create participant');
+      }
+      const newParticipant = await response.json();
+      dispatch({ participants: [...store.participants, newParticipant] });
+      return newParticipant;
+    } catch(error) {
+      console.error("Failed to add participant:", error);
+      // Re-throw the error so the form can catch it
+      throw error;
+    }
   }, [store.participants, dispatch]);
 
-  const updateParticipant = useCallback((updatedParticipant: Participant) => {
-    dispatch({
-      participants: store.participants.map(p => p.id === updatedParticipant.id ? updatedParticipant : p)
-    });
+  const updateParticipant = useCallback(async (updatedParticipant: Partial<Participant> & { id: string, password?: string }) => {
+    try {
+      const response = await fetch(`/api/participants/${updatedParticipant.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedParticipant),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update participant');
+      }
+      const returnedParticipant = await response.json();
+      dispatch({
+        participants: store.participants.map(p => p.id === returnedParticipant.id ? returnedParticipant : p)
+      });
+    } catch(error) {
+      console.error("Failed to update participant:", error);
+      throw error;
+    }
   }, [store.participants, dispatch]);
 
-  const deleteParticipant = useCallback((participantId: string) => {
-    dispatch({
-      participants: store.participants.filter(p => p.id !== participantId)
-    });
+  const deleteParticipant = useCallback(async (participantId: string) => {
+    try {
+      const response = await fetch(`/api/participants/${participantId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete participant');
+      dispatch({
+        participants: store.participants.filter(p => p.id !== participantId)
+      });
+    } catch(error) {
+      console.error("Failed to delete participant:", error);
+    }
   }, [store.participants, dispatch]);
 
-  const addRole = useCallback((role: Omit<Role, 'id'>) => {
-    const newRole: Role = {
-      id: `role-${Date.now()}`,
-      ...role,
-    };
-    dispatch({ roles: [...store.roles, newRole]});
+  const addRole = useCallback(async (role: Omit<Role, 'id'>) => {
+    try {
+      const response = await fetch('/api/roles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(role),
+      });
+      if (!response.ok) {
+         const error = await response.json();
+        throw new Error(error.message || 'Failed to create role');
+      }
+      const newRole = await response.json();
+      dispatch({ roles: [...store.roles, newRole] });
+      return newRole;
+    } catch(error) {
+      console.error("Failed to add role:", error);
+      throw error;
+    }
   }, [store.roles, dispatch]);
 
-  const updateRole = useCallback((updatedRole: Role) => {
-    dispatch({
-      roles: store.roles.map(r => r.id === updatedRole.id ? updatedRole : r)
-    });
+  const updateRole = useCallback(async (updatedRole: Partial<Role> & {id: string}) => {
+    try {
+      const response = await fetch(`/api/roles/${updatedRole.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRole),
+      });
+      if (!response.ok) throw new Error('Failed to update role');
+      const returnedRole = await response.json();
+      dispatch({
+        roles: store.roles.map(r => r.id === returnedRole.id ? returnedRole : r)
+      });
+    } catch(error) {
+      console.error("Failed to update role:", error);
+    }
   }, [store.roles, dispatch]);
   
-  const deleteRole = useCallback((roleId: string) => {
-    const isRoleInUse = store.participants.some(p => p.roleId === roleId);
-    if(isRoleInUse) {
-        alert("Esta função está em uso e não pode ser excluída.");
-        return;
+  const deleteRole = useCallback(async (roleId: string) => {
+    try {
+      const response = await fetch(`/api/roles/${roleId}`, {
+        method: 'DELETE',
+      });
+       if (!response.ok) {
+        const error = await response.json();
+        // The alert is now handled by the component catching the error
+        throw new Error(error.message || 'Failed to delete role');
+      }
+      dispatch({
+          roles: store.roles.filter(r => r.id !== roleId)
+      });
+    } catch(error) {
+       console.error("Failed to delete role:", error);
+       throw error;
     }
-    dispatch({
-        roles: store.roles.filter(r => r.id !== roleId)
-    });
   }, [store.roles, store.participants, dispatch]);
 
   const getClient = useCallback((clientId: string) => {
     return store.clients.find(c => c.id === clientId);
   }, [store.clients]);
 
-  const addClient = useCallback((client: Omit<Client, 'id' | 'avatar'>) => {
-    const newClient: Client = {
-      id: `client-${Date.now()}`,
-      ...client,
-      avatar: `/avatars/c0${(store.clients.length % 3) + 1}.png`,
-    };
-    dispatch({ clients: [...store.clients, newClient]});
-    return newClient;
+  const addClient = useCallback(async (client: Omit<Client, 'id' | 'avatar'>) => {
+    try {
+      const payload = {
+        ...client,
+        avatar: `/avatars/c0${(store.clients.length % 3) + 1}.png`,
+      };
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to create client');
+      const newClient = await response.json();
+      dispatch({ clients: [...store.clients, newClient] });
+      return newClient;
+    } catch(error) {
+      console.error("Failed to add client:", error);
+      return null;
+    }
   }, [store.clients, dispatch]);
 
-  const updateClient = useCallback((updatedClient: Client) => {
-    dispatch({
-      clients: store.clients.map(c => c.id === updatedClient.id ? updatedClient : c)
-    });
+  const updateClient = useCallback(async (updatedClient: Partial<Client> & {id: string}) => {
+    try {
+      const response = await fetch(`/api/clients/${updatedClient.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedClient),
+      });
+      if (!response.ok) throw new Error('Failed to update client');
+      const returnedClient = await response.json();
+      dispatch({
+        clients: store.clients.map(c => c.id === returnedClient.id ? returnedClient : c)
+      });
+    } catch(error) {
+      console.error("Failed to update client:", error);
+    }
   }, [store.clients, dispatch]);
 
-  const deleteClient = useCallback((clientId: string) => {
-    dispatch({
-      clients: store.clients.filter(c => c.id !== clientId)
-    });
+  const deleteClient = useCallback(async (clientId: string) => {
+    try {
+      const response = await fetch(`/api/clients/${clientId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete client');
+      dispatch({
+        clients: store.clients.filter(c => c.id !== clientId)
+      });
+    } catch(error) {
+      console.error("Failed to delete client:", error);
+    }
   }, [store.clients, dispatch]);
     
   const getOpportunity = useCallback((opportunityId: string) => {
       return store.opportunities.find(l => l.id === opportunityId);
   }, [store.opportunities]);
 
-  const addOpportunity = useCallback((opportunity: Omit<Opportunity, 'id' | 'createdAt' | 'comments' | 'attachments' | 'ownerId'>) => {
-      const newOpportunity: Opportunity = {
-          id: `lead-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          ...opportunity,
-          ownerId: store.currentUser!.id,
-          comments: [],
-          attachments: [],
+  const addOpportunity = useCallback(async (opportunity: Omit<Opportunity, 'id' | 'createdAt' | 'comments' | 'attachments' | 'ownerId'>) => {
+    try {
+      const payload = {
+        ...opportunity,
+        ownerId: store.currentUser!.id,
       };
-      dispatch({ opportunities: [...store.opportunities, newOpportunity]});
+      const response = await fetch('/api/opportunities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Failed to create opportunity');
+      const newOpportunity = await response.json();
+      dispatch({ opportunities: [...store.opportunities, newOpportunity] });
+      return newOpportunity;
+    } catch(error) {
+      console.error("Failed to add opportunity:", error);
+      return null;
+    }
   }, [store.opportunities, store.currentUser, dispatch]);
 
-  const updateOpportunity = useCallback((updatedOpportunity: Opportunity) => {
-      dispatch({
-          opportunities: store.opportunities.map(l => l.id === updatedOpportunity.id ? updatedOpportunity : l)
+  const updateOpportunity = useCallback(async (updatedOpportunity: Partial<Opportunity> & {id: string}) => {
+    try {
+      const response = await fetch(`/api/opportunities/${updatedOpportunity.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedOpportunity),
       });
+      if (!response.ok) throw new Error('Failed to update opportunity');
+      const returnedOpportunity = await response.json();
+      dispatch({
+        opportunities: store.opportunities.map(l => l.id === returnedOpportunity.id ? returnedOpportunity : l)
+      });
+    } catch(error) {
+      console.error("Failed to update opportunity:", error);
+    }
   }, [store.opportunities, dispatch]);
 
-  const deleteOpportunity = useCallback((opportunityId: string) => {
-      dispatch({
-          opportunities: store.opportunities.filter(l => l.id !== opportunityId)
+  const deleteOpportunity = useCallback(async (opportunityId: string) => {
+    try {
+      const response = await fetch(`/api/opportunities/${opportunityId}`, {
+        method: 'DELETE',
       });
+      if (!response.ok) throw new Error('Failed to delete opportunity');
+      dispatch({
+        opportunities: store.opportunities.filter(l => l.id !== opportunityId)
+      });
+    } catch(error) {
+      console.error("Failed to delete opportunity:", error);
+    }
   }, [store.opportunities, dispatch]);
 
   const updateCompanyInfo = useCallback((info: CompanyInfo) => {
@@ -461,29 +691,57 @@ export const useStore = () => {
     });
   }, [store.projectTemplates, dispatch]);
   
-  const addWorkspace = useCallback((workspace: Omit<Workspace, 'id'>) => {
-    const newWorkspace: Workspace = {
-      id: `ws-${Date.now()}`,
-      ...workspace,
-    };
-    dispatch({ workspaces: [...store.workspaces, newWorkspace] });
+  const addWorkspace = useCallback(async (workspace: Omit<Workspace, 'id'>) => {
+    try {
+      const response = await fetch('/api/workspaces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(workspace),
+      });
+      if (!response.ok) throw new Error('Failed to create workspace');
+      const newWorkspace = await response.json();
+      dispatch({ workspaces: [...store.workspaces, newWorkspace] });
+      return newWorkspace;
+    } catch(error) {
+      console.error("Failed to add workspace:", error);
+      return null;
+    }
   }, [store.workspaces, dispatch]);
 
-  const updateWorkspace = useCallback((updatedWorkspace: Workspace) => {
-    dispatch({
-      workspaces: store.workspaces.map(w => w.id === updatedWorkspace.id ? updatedWorkspace : w)
-    });
+  const updateWorkspace = useCallback(async (updatedWorkspace: Partial<Workspace> & {id: string}) => {
+    try {
+      const response = await fetch(`/api/workspaces/${updatedWorkspace.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedWorkspace),
+      });
+      if (!response.ok) throw new Error('Failed to update workspace');
+      const returnedWorkspace = await response.json();
+      dispatch({
+        workspaces: store.workspaces.map(w => w.id === returnedWorkspace.id ? returnedWorkspace : w)
+      });
+    } catch(error) {
+      console.error("Failed to update workspace:", error);
+    }
   }, [store.workspaces, dispatch]);
 
-  const deleteWorkspace = useCallback((workspaceId: string) => {
+  const deleteWorkspace = useCallback(async (workspaceId: string) => {
     const projectsInWorkspace = store.projects.filter(p => p.workspaceId === workspaceId);
     if (projectsInWorkspace.length > 0) {
       alert("Não é possível excluir um espaço de trabalho que contém projetos.");
       return;
     }
-    dispatch({
-      workspaces: store.workspaces.filter(w => w.id !== workspaceId)
-    });
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete workspace');
+      dispatch({
+        workspaces: store.workspaces.filter(w => w.id !== workspaceId)
+      });
+    } catch(error) {
+      console.error("Failed to delete workspace:", error);
+    }
   }, [store.workspaces, store.projects, dispatch]);
 
 
