@@ -77,12 +77,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     const initializeApp = async () => {
       try {
         const dataPromise = (async () => {
-          // Do not re-fetch if data is already in localStorage.
-          // This is a temporary measure; proper state management would use a library like SWR or React Query.
-          if (window.localStorage.getItem('projects')) {
-            return;
-          }
-
           const [
             projectsRes,
             tasksRes,
