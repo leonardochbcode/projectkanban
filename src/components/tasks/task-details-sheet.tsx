@@ -90,6 +90,7 @@ export function TaskDetailsSheet({ task, children, open: openProp, onOpenChange:
                   <SelectItem value="A Fazer">A Fazer</SelectItem>
                   <SelectItem value="Em Andamento">Em Andamento</SelectItem>
                   <SelectItem value="Concluída">Concluída</SelectItem>
+                  <SelectItem value="Cancelado">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
             </div>

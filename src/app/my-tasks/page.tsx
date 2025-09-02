@@ -13,6 +13,7 @@ const statusColors: { [key: string]: string } = {
     'A Fazer': 'bg-yellow-500/20 text-yellow-700',
     'Em Andamento': 'bg-blue-500/20 text-blue-700',
     'Concluída': 'bg-green-500/20 text-green-700',
+    'Cancelado': 'bg-gray-500/20 text-gray-700',
 };
 
 const priorityColors: { [key: string]: string } = {

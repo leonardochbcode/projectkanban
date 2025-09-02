@@ -72,7 +72,7 @@ interface KanbanBoardProps {
   projectId: string;
 }
 
-const statuses: Task['status'][] = ['A Fazer', 'Em Andamento', 'Concluída'];
+const statuses: Task['status'][] = ['A Fazer', 'Em Andamento', 'Concluída', 'Cancelado'];
 
 export function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
   const { updateTask } = useStore();
@@ -92,7 +92,7 @@ export function KanbanBoard({ tasks, projectId }: KanbanBoardProps) {
 
   return (
     <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-w-max">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 min-w-max">
         {statuses.map((status) => (
           <KanbanColumn
             key={status}
