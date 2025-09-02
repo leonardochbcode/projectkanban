@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import type { Participant } from '@/lib/types';
 
 export async function GET(request: Request) {
   const cookieStore = cookies();
@@ -12,9 +11,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as Participant;
-    return NextResponse.json(decoded);
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+    const { payload } = await jwtVerify(token, secret);
+    return NextResponse.json(payload);
   } catch (error) {
+    // This will catch invalid tokens (e.g., expired, malformed)
     return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
   }
 }

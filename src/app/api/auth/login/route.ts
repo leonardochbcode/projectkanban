@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getParticipantByEmail } from '@/lib/queries';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
@@ -25,10 +25,13 @@ export async function POST(request: Request) {
     }
 
     const { password_hash, ...userPayload } = user;
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-    const token = jwt.sign(userPayload, process.env.JWT_SECRET!, {
-      expiresIn: '1h',
-    });
+    const token = await new SignJWT(userPayload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(secret);
 
     const cookieStore = cookies();
     cookieStore.set('auth_token', token, {
