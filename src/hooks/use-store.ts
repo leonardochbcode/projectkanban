@@ -12,17 +12,6 @@ import {
 } from 'react';
 import React from 'react';
 import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace, TemplateTask } from '@/lib/types';
-import {
-  initialProjects,
-  initialTasks,
-  initialParticipants,
-  initialRoles,
-  initialClients,
-  initialOpportunities,
-  initialCompanyInfo,
-  initialProjectTemplates,
-  initialWorkspaces,
-} from '@/lib/data';
 import { format, addDays } from 'date-fns';
 
 interface Store {
@@ -72,21 +61,61 @@ const useLocalStorage = <T,>(key: string, initialValue: T) => {
 };
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
-  const [projects, setProjects] = useLocalStorage<Project[]>('projects', initialProjects);
-  const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', initialTasks);
-  const [participants, setParticipants] = useLocalStorage<Participant[]>('participants', initialParticipants);
-  const [roles, setRoles] = useLocalStorage<Role[]>('roles', initialRoles);
-  const [clients, setClients] = useLocalStorage<Client[]>('clients', initialClients);
-  const [opportunities, setOpportunities] = useLocalStorage<Opportunity[]>('opportunities', initialOpportunities);
+  const [projects, setProjects] = useLocalStorage<Project[]>('projects', []);
+  const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
+  const [participants, setParticipants] = useLocalStorage<Participant[]>('participants', []);
+  const [roles, setRoles] = useLocalStorage<Role[]>('roles', []);
+  const [clients, setClients] = useLocalStorage<Client[]>('clients', []);
+  const [opportunities, setOpportunities] = useLocalStorage<Opportunity[]>('opportunities', []);
   const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
-  const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', initialCompanyInfo);
-  const [projectTemplates, setProjectTemplates] = useLocalStorage<ProjectTemplate[]>('projectTemplates', initialProjectTemplates);
-  const [workspaces, setWorkspaces] = useLocalStorage<Workspace[]>('workspaces', initialWorkspaces);
+  const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', null);
+  const [projectTemplates, setProjectTemplates] = useLocalStorage<ProjectTemplate[]>('projectTemplates', []);
+  const [workspaces, setWorkspaces] = useLocalStorage<Workspace[]>('workspaces', []);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    setIsLoaded(true);
-  }, []);
+    const initializeApp = async () => {
+      try {
+        const dataPromise = (async () => {
+          const firstProject = window.localStorage.getItem('projects');
+           if (firstProject && JSON.parse(firstProject).length > 0) {
+            return; // Data already hydrated
+          }
+          const response = await fetch('/api/data');
+          if (!response.ok) throw new Error('Failed to fetch data');
+          const data = await response.json();
+          setProjects(data.projects || []);
+          setTasks(data.tasks || []);
+          setParticipants(data.participants || []);
+          setRoles(data.roles || []);
+          setClients(data.clients || []);
+          setOpportunities(data.opportunities || []);
+          setCompanyInfo(data.companyInfo || null);
+          setProjectTemplates(data.projectTemplates || []);
+          setWorkspaces(data.workspaces || []);
+        })();
+
+        const authPromise = (async () => {
+          if (!currentUser) {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+              const user = await res.json();
+              setCurrentUser(user);
+            }
+          }
+        })();
+
+        await Promise.all([dataPromise, authPromise]);
+
+      } catch (error) {
+        console.error("Could not initialize the app:", error);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    initializeApp();
+  }, []); // This effect runs only once on mount
 
   const store: Store = useMemo(() => ({
     isLoaded,
@@ -134,22 +163,42 @@ export const useStore = () => {
   const { dispatch } = store;
 
   const login = useCallback(
-    (email: string, password?: string) => {
-      const user = store.participants.find(
-        (p) => p.email.toLowerCase() === email.toLowerCase() && p.password === password
-      );
+    async (email: string, password?: string) => {
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
 
-      if (user) {
-        dispatch({ currentUser: user });
-        return true;
+        if (!response.ok) {
+          // You might want to parse the error message from the response
+          return false;
+        }
+
+        const userResponse = await fetch('/api/auth/me');
+        if(userResponse.ok) {
+            const user = await userResponse.json();
+            dispatch({ currentUser: user });
+            return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('Login failed:', error);
+        return false;
       }
-      return false;
     },
-    [store.participants, dispatch]
+    [dispatch]
   );
 
-  const logout = useCallback(() => {
-    dispatch({ currentUser: null });
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      dispatch({ currentUser: null });
+    }
   }, [dispatch]);
 
   const getRole = useCallback((roleId: string) => {
