@@ -9,7 +9,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:schema": "node -e \"(async () => { const { readFileSync } = require('fs'); const { Pool } = require('pg'); const pool = new Pool({ connectionString: process.env.POSTGRES_URL }); const client = await pool.connect(); try { const sql = readFileSync('./scripts/schema.sql', 'utf8'); await client.query(sql); console.log('Schema applied successfully.'); } catch (err) { console.error('Error applying schema:', err); } finally { client.release(); await pool.end(); } })()\" dotenv/config",
+    "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -38,17 +40,23 @@
     "@radix-ui/react-tabs": "^1.1.3",
     "@radix-ui/react-toast": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.1.8",
-    "@supabase/supabase-js": "^2.45.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/pg": "^8.15.5",
+    "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.1",
     "embla-carousel-react": "^8.6.0",
     "genkit": "^1.14.1",
+    "jose": "^6.1.0",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.475.0",
     "next": "15.3.3",
     "next-themes": "^0.3.0",
     "patch-package": "^8.0.0",
+    "pg": "^8.16.3",
     "react": "^18.3.1",
     "react-big-calendar": "^1.13.1",
     "react-day-picker": "^8.10.1",
@@ -60,6 +68,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-big-calendar": "^1.8.9",
@@ -67,6 +76,7 @@
     "genkit-cli": "^1.14.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }
