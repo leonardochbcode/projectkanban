@@ -28,6 +28,7 @@ import { Skeleton } from '../ui/skeleton';
 import { CompanyHeaderInfo } from './company-header-info';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { ThemeSwitcher } from '../theme-switcher';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -192,6 +193,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="w-full flex-1">
             <CompanyHeaderInfo />
           </div>
+          <ThemeSwitcher />
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 bg-background">

@@ -149,6 +149,34 @@
     --chart-5: 220 5% 55%;
     --menu-foreground: 220 10% 10%;
   }
+
+  .theme-orange {
+    --background: 24 9.8% 98%;
+    --foreground: 24 9.8% 10%;
+    --card: 24 9.8% 100%;
+    --card-foreground: 24 9.8% 10%;
+    --popover: 24 9.8% 100%;
+    --popover-foreground: 24 9.8% 10%;
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 35.5 91.7% 91.4%;
+    --secondary-foreground: 24 9.8% 10%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 60 5.9% 90%;
+    --input: 60 5.9% 90%;
+    --ring: 24.6 95% 53.1%;
+    --chart-1: 24.6 95% 53.1%;
+    --chart-2: 35.5 91.7% 91.4%;
+    --chart-3: 60 4.8% 95.9%;
+    --chart-4: 25 5.3% 44.7%;
+    --chart-5: 60 9.1% 97.8%;
+    --menu-foreground: 24 9.8% 10%;
+  }
 }
 
 @layer base {
