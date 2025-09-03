@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { StoreProvider } from '@/hooks/use-store';
 import { ThemeProvider } from '@/components/theme-provider';
+import NextAuthSessionProvider from '@/components/session-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -35,10 +36,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <StoreProvider>
-              {children}
-              <Toaster />
-          </StoreProvider>
+          <NextAuthSessionProvider>
+            <StoreProvider>
+                {children}
+                <Toaster />
+            </StoreProvider>
+          </NextAuthSessionProvider>
         </ThemeProvider>
       </body>
     </html>
