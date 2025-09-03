@@ -88,7 +88,7 @@ export function TaskChecklist({ task, onUpdate }: TaskChecklistProps) {
             <Checkbox
               id={item.id}
               checked={item.completed}
-              onCheckedChange={() => handleToggleItem(item.id)}
+              onCheckedChange={() => handleToggleItem(item)}
             />
             <label
               htmlFor={item.id}
