@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/hooks/use-store';
 import Image from 'next/image';
 
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,7 +20,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('1234');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
   const { companyInfo } = useStore();
+
 
   useEffect(() => {
     const error = searchParams.get('error');

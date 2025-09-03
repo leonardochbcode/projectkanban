@@ -33,15 +33,47 @@ interface TaskDetailsSheetProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function TaskDetailsSheet({ task, children, open: openProp, onOpenChange: onOpenChangeProp }: TaskDetailsSheetProps) {
-  const { participants, updateTask } = useStore();
+export function TaskDetailsSheet({ task: initialTask, children, open: openProp, onOpenChange: onOpenChangeProp }: TaskDetailsSheetProps) {
+  const { participants, updateTask: updateTaskInStore } = useStore();
+  const [task, setTask] = useState<Task>(initialTask);
+  const [isLoading, setIsLoading] = useState(false);
+
   const assignee = participants.find((p) => p.id === task.assigneeId);
 
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = openProp !== undefined && onOpenChangeProp !== undefined;
   const open = isControlled ? openProp : internalOpen;
-  const setOpen = isControlled ? onOpenChangeProp : setInternalOpen;
   
+  const setOpen = (newOpen: boolean) => {
+    if (isControlled) {
+      onOpenChangeProp(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
+
+  const fetchTask = async () => {
+    if (!task.id) return;
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`);
+      if (!response.ok) throw new Error('Failed to fetch task');
+      const freshTask = await response.json();
+      setTask(freshTask);
+    } catch (error) {
+      console.error("Error fetching task details:", error);
+      // Optionally, show a toast to the user
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchTask();
+    }
+  }, [open, initialTask.id]);
+
   // Sincroniza o estado interno se o componente se tornar controlado
   useEffect(() => {
     if (isControlled) {
@@ -49,20 +81,33 @@ export function TaskDetailsSheet({ task, children, open: openProp, onOpenChange:
     }
   }, [openProp, isControlled]);
 
+  const updateTask = async (updatedFields: Partial<Task>) => {
+    const optimisticTask = { ...task, ...updatedFields };
+    setTask(optimisticTask); // Optimistic update
+
+    try {
+      await updateTaskInStore({ id: task.id, ...updatedFields });
+      // No need to fetch again, as the store update will trigger a re-render if needed,
+      // and for local state, we already updated it.
+    } catch (error) {
+      console.error("Failed to update task:", error);
+      setTask(task); // Revert on failure
+    }
+  };
 
   const handleStatusChange = (status: Task['status']) => {
-    updateTask({ ...task, status });
+    updateTask({ status });
   };
   const handlePriorityChange = (priority: Task['priority']) => {
-    updateTask({ ...task, priority });
+    updateTask({ priority });
   };
   const handleAssigneeChange = (assigneeId: string) => {
-    updateTask({ ...task, assigneeId });
+    updateTask({ assigneeId });
   };
   
   const handleRemoveAttachment = (attachmentId: string) => {
     const updatedAttachments = (task.attachments || []).filter(att => att.id !== attachmentId);
-    updateTask({ ...task, attachments: updatedAttachments });
+    updateTask({ attachments: updatedAttachments });
   };
   
   const Trigger = children ? <SheetTrigger asChild>{children}</SheetTrigger> : null;
@@ -143,7 +188,7 @@ export function TaskDetailsSheet({ task, children, open: openProp, onOpenChange:
 
           <div>
             <h3 className="font-semibold mb-4 font-headline">Checklist de Ações</h3>
-            <TaskChecklist task={task} />
+            <TaskChecklist task={task} onUpdate={fetchTask} />
           </div>
 
           <Separator />
@@ -169,7 +214,7 @@ export function TaskDetailsSheet({ task, children, open: openProp, onOpenChange:
                     <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
                 )}
              </div>
-             <TaskAttachmentForm task={task} />
+             <TaskAttachmentForm task={task} onAttachmentAdded={fetchTask} />
           </div>
 
           <Separator />
@@ -200,7 +245,7 @@ export function TaskDetailsSheet({ task, children, open: openProp, onOpenChange:
               )}
             </div>
             <Separator className="my-4" />
-            <TaskCommentForm task={task} />
+            <TaskCommentForm task={task} onCommentAdded={fetchTask} />
           </div>
         </div>
       </SheetContent>

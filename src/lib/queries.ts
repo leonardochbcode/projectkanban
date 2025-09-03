@@ -470,10 +470,9 @@ export async function getTaskById(id: string): Promise<Task | null> {
     `, [id]);
     if (!task) return null;
 
-    // In a real app, you'd fetch these properly. For now, returning empty arrays.
-    task.comments = [];
-    task.checklist = [];
-    task.attachments = [];
+    task.comments = await queryMany<TaskComment>('SELECT id, content, author_id as "authorId", created_at as "createdAt" FROM task_comments WHERE task_id = $1', [id]);
+    task.checklist = await queryMany<ChecklistItem>('SELECT id, text, completed FROM checklist_items WHERE task_id = $1', [id]);
+    task.attachments = await queryMany<any>('SELECT id, name, size, type, url, created_at as "createdAt" FROM task_attachments WHERE task_id = $1', [id]);
 
     return {
         ...task,
@@ -522,4 +521,56 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
 export async function deleteTask(id: string): Promise<{ success: boolean }> {
     const result = await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
     return { success: result.rowCount > 0 };
+}
+
+// Checklist Items
+export async function createChecklistItem(taskId: string, text: string): Promise<ChecklistItem> {
+    const newId = `cl_item_${randomBytes(8).toString('hex')}`;
+    const result = await queryOne<ChecklistItem>(
+        'INSERT INTO checklist_items (id, text, completed, task_id) VALUES ($1, $2, $3, $4) RETURNING *',
+        [newId, text, false, taskId]
+    );
+    // The queryOne utility already returns the object in the desired shape, but if it returned raw snake_case,
+    // you would need to map it like this:
+    // return { id: result.id, text: result.text, completed: result.completed, taskId: result.task_id };
+    return result!; // We are sure it's not null because of RETURNING *
+}
+
+export async function updateChecklistItem(id: string, completed: boolean): Promise<ChecklistItem | null> {
+    const result = await queryOne<ChecklistItem>(
+        'UPDATE checklist_items SET completed = $1 WHERE id = $2 RETURNING *',
+        [completed, id]
+    );
+    return result;
+}
+
+export async function deleteChecklistItem(id: string): Promise<{ success: boolean }> {
+    const result = await pool.query('DELETE FROM checklist_items WHERE id = $1', [id]);
+    return { success: result.rowCount > 0 };
+}
+
+// Task Comments
+export async function createTaskComment(taskId: string, authorId: string, content: string): Promise<TaskComment> {
+    const newId = `comm_${randomBytes(8).toString('hex')}`;
+    const result = await queryOne<any>(
+        'INSERT INTO task_comments (id, content, task_id, author_id) VALUES ($1, $2, $3, $4) RETURNING id, content, author_id, created_at',
+        [newId, content, taskId, authorId]
+    );
+    return {
+        id: result.id,
+        content: result.content,
+        authorId: result.author_id,
+        createdAt: result.created_at,
+    };
+}
+
+// Task Attachments
+export async function createTaskAttachment(taskId: string, attachment: Omit<TaskAttachment, 'id' | 'createdAt'>): Promise<TaskAttachment> {
+    const newId = `attach_${randomBytes(8).toString('hex')}`;
+    const { name, size, type, url } = attachment;
+    const result = await queryOne<any>(
+        'INSERT INTO task_attachments (id, name, size, type, url, task_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [newId, name, size, type, url, taskId]
+    );
+    return { ...result, createdAt: result.created_at };
 }

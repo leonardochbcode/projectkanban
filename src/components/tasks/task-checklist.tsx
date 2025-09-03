@@ -1,43 +1,72 @@
 'use client';
 import { useState, useMemo } from 'react';
 import type { Task, ChecklistItem } from '@/lib/types';
-import { useStore } from '@/hooks/use-store';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-export function TaskChecklist({ task }: { task: Task }) {
-  const { updateTask } = useStore();
+interface TaskChecklistProps {
+  task: Task;
+  onUpdate: () => void;
+}
+
+export function TaskChecklist({ task, onUpdate }: TaskChecklistProps) {
   const [newItemText, setNewItemText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const checklist = useMemo(() => task.checklist || [], [task.checklist]);
 
-  const handleToggleItem = (itemId: string) => {
-    const newChecklist = checklist.map((item) =>
-      item.id === itemId ? { ...item, completed: !item.completed } : item
-    );
-    updateTask({ ...task, checklist: newChecklist });
+  const handleToggleItem = async (item: ChecklistItem) => {
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/checklist/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !item.completed }),
+      });
+      if (!response.ok) throw new Error('Failed to update item');
+      onUpdate();
+    } catch (error) {
+      console.error("Error toggling checklist item:", error);
+      toast({ title: "Erro", description: "Falha ao atualizar o item.", variant: "destructive" });
+    }
   };
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newItemText.trim()) return;
-
-    const newItem: ChecklistItem = {
-      id: `checklist-item-${Date.now()}`,
-      text: newItemText.trim(),
-      completed: false,
-    };
-    const newChecklist = [...checklist, newItem];
-    updateTask({ ...task, checklist: newChecklist });
-    setNewItemText('');
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/checklist`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: newItemText.trim() }),
+      });
+      if (!response.ok) throw new Error('Failed to add item');
+      setNewItemText('');
+      onUpdate();
+    } catch (error) {
+      console.error("Error adding checklist item:", error);
+      toast({ title: "Erro", description: "Falha ao adicionar o item.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    const newChecklist = checklist.filter((item) => item.id !== itemId);
-    updateTask({ ...task, checklist: newChecklist });
+  const handleRemoveItem = async (itemId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/checklist/${itemId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to remove item');
+      onUpdate();
+    } catch (error) {
+      console.error("Error removing checklist item:", error);
+      toast({ title: "Erro", description: "Falha ao remover o item.", variant: "destructive" });
+    }
   };
   
   const completedCount = useMemo(() => checklist.filter(item => item.completed).length, [checklist]);
