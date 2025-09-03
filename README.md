@@ -28,13 +28,36 @@ POSTGRES_URL="postgresql://jules:password@localhost:5432/chb-systems"
 # JWT Secret for authentication
 # Use a long, random string for security
 JWT_SECRET="your-super-secret-and-long-jwt-secret"
+
+# --- Google OAuth Credentials ---
+# Follow the guide below to create these credentials
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# A secret for NextAuth.js. You can generate one with: openssl rand -base64 32
+NEXTAUTH_SECRET="your-nextauth-secret"
+
+# The base URL of your application for NextAuth callbacks
+NEXTAUTH_URL="http://localhost:9002"
 ```
+
+#### Setting up Google OAuth
+
+To enable login with Google, you need to create OAuth 2.0 credentials in the Google Cloud Console.
+
+1.  Go to the [Google Cloud Console Credentials page](https://console.cloud.google.com/apis/credentials).
+2.  Click **Create credentials** > **OAuth client ID**.
+3.  Select **Web application** as the application type.
+4.  Give it a name (e.g., "CHBProject Dev").
+5.  Under **Authorized redirect URIs**, add the following URL:
+    `http://localhost:9002/api/auth/callback/google`
+6.  Click **Create**. You will be shown your Client ID and Client Secret. Copy these values into the `.env.local` file.
 
 ### 3. Set up the database
 
 You need to create a PostgreSQL database with the name you specified in the `POSTGRES_URL`. Once the database is created, you can create the schema and populate it with initial data by running the following npm scripts:
 
-First, apply the schema:
+First, apply the schema. If you had a previous version of the app, you need to run this again to add the fields required for Google Authentication.
 ```bash
 npm run db:schema
 ```
