@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'placehold.co',
+        protocol: 'http',
+        hostname: '**',
         port: '',
         pathname: '/**',
       },

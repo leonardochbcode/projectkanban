@@ -8,15 +8,21 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { signIn } from 'next-auth/react';
 import { Separator } from '@/components/ui/separator';
+import { useStore } from '@/hooks/use-store';
+import Image from 'next/image';
+
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin@chb.com.br');
-  const [password, setPassword] = useState('chb123');
+  const [email, setEmail] = useState('exemplo@chb.com.br');
+  const [password, setPassword] = useState('1234');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const { companyInfo } = useStore();
+
 
   useEffect(() => {
     const error = searchParams.get('error');
@@ -60,6 +66,7 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-full max-w-sm">
+        <Image src="/avatars/LOGO_CHB.svg" alt="Company Logo" width={30} height={30} className="h-32 w-32" />
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
           <CardDescription>

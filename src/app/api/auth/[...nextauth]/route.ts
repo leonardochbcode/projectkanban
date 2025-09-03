@@ -1,7 +1,7 @@
 import NextAuth, { AuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getParticipantByEmail } from '@/lib/queries';
+import { getParticipantByEmail, linkGoogleAccount } from '@/lib/queries';
 import bcrypt from 'bcrypt';
 import { CustomAdapter } from '@/lib/next-auth-adapter';
 import pool from '@/lib/db';
