@@ -1,0 +1,165 @@
+-- Drop tables if they exist to ensure a clean slate
+DROP TABLE IF EXISTS template_tasks, project_templates, checklist_items, task_attachments, task_comments, tasks, project_participants, projects, opportunity_attachments, opportunity_comments, opportunities, workspaces, clients, participants, roles, company_info CASCADE;
+
+-- Company Information
+CREATE TABLE company_info (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    cnpj VARCHAR(20) NOT NULL,
+    address TEXT,
+    suporteweb_code VARCHAR(50),
+    logo_url TEXT
+);
+
+-- Roles and Permissions
+CREATE TABLE roles (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    permissions TEXT[]
+);
+
+-- Participants (Users)
+CREATE TABLE participants (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role_id VARCHAR(50) REFERENCES roles(id),
+    avatar VARCHAR(255)
+);
+
+-- Clients
+CREATE TABLE clients (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(20),
+    company VARCHAR(255),
+    avatar VARCHAR(255),
+    cnpj VARCHAR(20),
+    address TEXT,
+    suporteweb_code VARCHAR(50)
+);
+
+-- Workspaces
+CREATE TABLE workspaces (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL
+);
+
+-- Opportunities
+CREATE TABLE opportunities (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(255),
+    email VARCHAR(255),
+    company VARCHAR(255),
+    phone VARCHAR(20),
+    description TEXT,
+    status VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    value NUMERIC(12, 2),
+    client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL,
+    owner_id VARCHAR(50) REFERENCES participants(id)
+);
+
+-- Opportunity Comments
+CREATE TABLE opportunity_comments (
+    id VARCHAR(50) PRIMARY KEY,
+    content TEXT NOT NULL,
+    opportunity_id VARCHAR(50) REFERENCES opportunities(id) ON DELETE CASCADE,
+    author_id VARCHAR(50) REFERENCES participants(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Opportunity Attachments
+CREATE TABLE opportunity_attachments (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    size INTEGER,
+    type VARCHAR(100),
+    url TEXT,
+    opportunity_id VARCHAR(50) REFERENCES opportunities(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+
+-- Projects
+CREATE TABLE projects (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_date DATE,
+    end_date DATE,
+    status VARCHAR(50),
+    workspace_id VARCHAR(50) REFERENCES workspaces(id) ON DELETE CASCADE,
+    client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL,
+    opportunity_id VARCHAR(50) REFERENCES opportunities(id) ON DELETE SET NULL,
+    pmo_id VARCHAR(50) REFERENCES participants(id)
+);
+
+-- Project Participants (Many-to-Many)
+CREATE TABLE project_participants (
+    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE,
+    participant_id VARCHAR(50) REFERENCES participants(id) ON DELETE CASCADE,
+    PRIMARY KEY (project_id, participant_id)
+);
+
+-- Tasks
+CREATE TABLE tasks (
+    id VARCHAR(50) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(50),
+    priority VARCHAR(50),
+    due_date DATE,
+    assignee_id VARCHAR(50) REFERENCES participants(id) ON DELETE SET NULL,
+    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+-- Task Comments
+CREATE TABLE task_comments (
+    id VARCHAR(50) PRIMARY KEY,
+    content TEXT NOT NULL,
+    task_id VARCHAR(50) REFERENCES tasks(id) ON DELETE CASCADE,
+    author_id VARCHAR(50) REFERENCES participants(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Task Attachments
+CREATE TABLE task_attachments (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    size INTEGER,
+    type VARCHAR(100),
+    url TEXT,
+    task_id VARCHAR(50) REFERENCES tasks(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Checklist Items
+CREATE TABLE checklist_items (
+    id VARCHAR(50) PRIMARY KEY,
+    text TEXT NOT NULL,
+    completed BOOLEAN DEFAULT FALSE,
+    task_id VARCHAR(50) REFERENCES tasks(id) ON DELETE CASCADE
+);
+
+-- Project Templates
+CREATE TABLE project_templates (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT
+);
+
+-- Template Tasks
+CREATE TABLE template_tasks (
+    id SERIAL PRIMARY KEY,
+    template_id VARCHAR(50) REFERENCES project_templates(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    priority VARCHAR(50),
+    due_day_offset INTEGER
+);
