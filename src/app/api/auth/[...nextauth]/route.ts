@@ -57,23 +57,37 @@ export const authOptions: AuthOptions = {
   // Callbacks are used to control what happens when an action is performed
   callbacks: {
     async signIn({ user, account }) {
-      // Allow sign in for credentials provider
+      // For credentials provider, the authorization is handled in the provider's `authorize` function.
       if (account?.provider === 'credentials') {
         return true;
       }
 
-      // For OAuth providers, check for existing user and link accounts
-      if (user.email) {
+      // For Google OAuth provider
+      if (account?.provider === 'google') {
+        if (!user.email) {
+          // Google authentication should always return an email.
+          // If not, something is wrong, so we deny access.
+          return false;
+        }
+
         const existingUser = await getParticipantByEmail(user.email);
-        if (existingUser && !existingUser.google_id) {
-          // This is a user who signed up with email/password before.
-          // Link their new Google account.
-          if (account?.provider === 'google' && account.providerAccountId) {
+
+        if (existingUser) {
+          // If the user exists, we allow the sign-in.
+          // If they don't have a google_id yet, we link the account.
+          if (!existingUser.google_id && account.providerAccountId) {
             await linkGoogleAccount(existingUser.id, account.providerAccountId);
           }
+          return true;
+        } else {
+          // If the user does not exist in our database, we block the sign-in.
+          // This prevents new users from registering via Google.
+          return '/login?error=AccessDenied';
         }
       }
-      return true; // Continue the sign-in process
+
+      // Deny sign-in for any other unhandled providers.
+      return false;
     },
     async jwt({ token, user, account }) {
       // Persist the user's id, role, and provider to the token

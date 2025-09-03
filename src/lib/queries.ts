@@ -100,7 +100,8 @@ export async function createParticipant(
     participant: Omit<Participant, 'id'> & { password?: string, googleId?: string }
 ): Promise<Participant> {
     const newId = `user_${randomBytes(8).toString('hex')}`;
-    const { name, email, password, roleId, avatar, provider, googleId } = participant;
+    // Default provider to 'local' if not specified. This fixes manual user creation from the UI.
+    const { name, email, password, roleId, avatar, provider = 'local', googleId } = participant;
 
     let passwordHash: string | null = null;
     if (provider === 'local' || password) {
