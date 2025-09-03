@@ -13,6 +13,7 @@ import {
 import React from 'react';
 import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace, TemplateTask } from '@/lib/types';
 import { format, addDays } from 'date-fns';
+import { useSession } from 'next-auth/react';
 
 interface Store {
   isLoaded: boolean;
@@ -61,22 +62,31 @@ const useLocalStorage = <T,>(key: string, initialValue: T) => {
 };
 
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
+  const { data: session, status } = useSession();
+
   const [projects, setProjects] = useLocalStorage<Project[]>('projects', []);
   const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
   const [participants, setParticipants] = useLocalStorage<Participant[]>('participants', []);
   const [roles, setRoles] = useLocalStorage<Role[]>('roles', []);
   const [clients, setClients] = useLocalStorage<Client[]>('clients', []);
   const [opportunities, setOpportunities] = useLocalStorage<Opportunity[]>('opportunities', []);
-  const [currentUser, setCurrentUser] = useLocalStorage<Participant | null>('currentUser', null);
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', null);
   const [projectTemplates, setProjectTemplates] = useLocalStorage<ProjectTemplate[]>('projectTemplates', []);
   const [workspaces, setWorkspaces] = useLocalStorage<Workspace[]>('workspaces', []);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  const currentUser = useMemo(() => {
+    if (status === 'authenticated' && session?.user?.id && participants.length > 0) {
+      return participants.find(p => p.id === session.user.id) || null;
+    }
+    return null;
+  }, [status, session, participants]);
 
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        const dataPromise = (async () => {
+    const initializeAppData = async () => {
+      // Only fetch data if the user is authenticated and data hasn't been loaded yet.
+      if (status === 'authenticated' && !isDataLoaded) {
+        try {
           const [
             projectsRes,
             tasksRes,
@@ -91,12 +101,12 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             fetch('/api/projects'),
             fetch('/api/tasks'),
             fetch('/api/workspaces'),
-            fetch('/api/participants'), // Assuming these will be created
-            fetch('/api/roles'),         // Assuming these will be created
-            fetch('/api/clients'),       // Assuming these will be created
-            fetch('/api/opportunities'), // Assuming these will be created
-            fetch('/api/project-templates'), // Assuming this will be created
-            fetch('/api/company-info'),    // Assuming this will be created
+            fetch('/api/participants'),
+            fetch('/api/roles'),
+            fetch('/api/clients'),
+            fetch('/api/opportunities'),
+            fetch('/api/project-templates'),
+            fetch('/api/company-info'),
           ]);
 
           const [
@@ -130,29 +140,31 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
           setOpportunities(opportunities);
           setProjectTemplates(projectTemplates);
           setCompanyInfo(companyInfo);
-        })();
-
-        const authPromise = (async () => {
-          if (!currentUser) {
-            const res = await fetch('/api/auth/me');
-            if (res.ok) {
-              const user = await res.json();
-              setCurrentUser(user);
-            }
-          }
-        })();
-
-        await Promise.all([dataPromise, authPromise]);
-
-      } catch (error) {
-        console.error("Could not initialize the app:", error);
-      } finally {
-        setIsLoaded(true);
+        } catch (error) {
+          console.error("Could not initialize app data:", error);
+        } finally {
+          setIsDataLoaded(true);
+        }
+      } else if (status === 'unauthenticated') {
+        // If user is not authenticated, clear the data from local storage
+        // to prevent showing stale data on re-login.
+        setProjects([]);
+        setTasks([]);
+        setWorkspaces([]);
+        setParticipants([]);
+        setRoles([]);
+        setClients([]);
+        setOpportunities([]);
+        setProjectTemplates([]);
+        setCompanyInfo(null);
+        setIsDataLoaded(false); // Reset data loaded status
       }
     };
 
-    initializeApp();
-  }, []); // This effect runs only once on mount
+    initializeAppData();
+  }, [status, isDataLoaded]); // Rerun when auth status changes
+
+  const isLoaded = status !== 'loading' && (status === 'unauthenticated' || isDataLoaded);
 
   const store: Store = useMemo(() => ({
     isLoaded,
@@ -175,7 +187,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.roles) setRoles(newState.roles);
     if (newState.clients) setClients(newState.clients);
     if (newState.opportunities) setOpportunities(newState.opportunities);
-    if (newState.hasOwnProperty('currentUser')) setCurrentUser(newState.currentUser ?? null);
+    // currentUser is now derived, so we don't set it via dispatch
     if (newState.companyInfo) setCompanyInfo(newState.companyInfo);
     if (newState.projectTemplates) setProjectTemplates(newState.projectTemplates);
     if (newState.workspaces) setWorkspaces(newState.workspaces);
@@ -185,7 +197,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
   return React.createElement(StoreContext.Provider, { value }, children);
 };
-
 
 const useStoreRaw = () => {
   const context = useContext(StoreContext);
@@ -198,45 +209,6 @@ const useStoreRaw = () => {
 export const useStore = () => {
   const store = useStoreRaw();
   const { dispatch } = store;
-
-  const login = useCallback(
-    async (email: string, password?: string) => {
-      try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!response.ok) {
-          // You might want to parse the error message from the response
-          return false;
-        }
-
-        const userResponse = await fetch('/api/auth/me');
-        if(userResponse.ok) {
-            const user = await userResponse.json();
-            dispatch({ currentUser: user });
-            return true;
-        }
-        return false;
-      } catch (error) {
-        console.error('Login failed:', error);
-        return false;
-      }
-    },
-    [dispatch]
-  );
-
-  const logout = useCallback(async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      dispatch({ currentUser: null });
-    }
-  }, [dispatch]);
 
   const getRole = useCallback((roleId: string) => {
     return store.roles.find(r => r.id === roleId);
@@ -743,8 +715,6 @@ export const useStore = () => {
     ...store,
     projects: visibleProjects,
     allProjects: store.projects, // Expose all projects for lookups
-    login,
-    logout,
     getWorkspaceProjects,
     getProjectTasks,
     addProject,

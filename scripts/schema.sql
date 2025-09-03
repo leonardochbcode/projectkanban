@@ -23,9 +23,12 @@ CREATE TABLE participants (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255), -- Can be null for OAuth users
     role_id VARCHAR(50) REFERENCES roles(id),
-    avatar VARCHAR(255)
+    avatar VARCHAR(255),
+    google_id VARCHAR(255) UNIQUE,
+    provider VARCHAR(50) NOT NULL DEFAULT 'local',
+    email_verified TIMESTAMPTZ
 );
 
 -- Clients

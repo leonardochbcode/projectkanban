@@ -65,40 +65,64 @@ export async function deleteRole(id: string): Promise<{ success: boolean }> {
 
 // Participants
 export async function getParticipants(): Promise<Participant[]> {
-    const users = await queryMany<any>('SELECT id, name, email, role_id, avatar FROM participants');
+    const users = await queryMany<any>('SELECT id, name, email, role_id, avatar, provider FROM participants');
     return users.map(u => ({ ...u, roleId: u.role_id }));
 }
 
-export async function getParticipantByEmail(email: string): Promise<(Participant & { password_hash: string }) | null> {
-    return queryOne<(Participant & { password_hash: string })>('SELECT id, name, email, password_hash, role_id as "roleId", avatar FROM participants WHERE email = $1', [email]);
+export async function getParticipantByEmail(email: string): Promise<(Participant & { password_hash: string | null, google_id: string | null, provider: string, email_verified: Date | null }) | null> {
+    const sql = `
+        SELECT id, name, email, password_hash, role_id as "roleId", avatar, google_id, provider, email_verified
+        FROM participants WHERE email = $1
+    `;
+    const user = await queryOne<any>(sql, [email]);
+    if (!user) return null;
+    return {
+        ...user,
+        password_hash: user.password_hash,
+        google_id: user.google_id,
+        email_verified: user.email_verified,
+    };
 }
 
 export async function getParticipantById(id: string): Promise<Participant | null> {
-    const user = await queryOne<any>('SELECT id, name, email, role_id, avatar FROM participants WHERE id = $1', [id]);
+    const user = await queryOne<any>('SELECT id, name, email, role_id, avatar, provider FROM participants WHERE id = $1', [id]);
     if (!user) return null;
     return { ...user, roleId: user.role_id };
 }
 
-export async function createParticipant(participant: Omit<Participant, 'id'> & { password?: string }): Promise<Participant> {
-    const newId = `user_${randomBytes(8).toString('hex')}`;
-    const { name, email, password, roleId, avatar } = participant;
+export async function getParticipantByGoogleId(googleId: string): Promise<Participant | null> {
+    const user = await queryOne<any>('SELECT id, name, email, role_id, avatar, provider FROM participants WHERE google_id = $1', [googleId]);
+    if (!user) return null;
+    return { ...user, roleId: user.role_id };
+}
 
-    if (!password) {
-        throw new Error('Password is required for new participants.');
+export async function createParticipant(
+    participant: Omit<Participant, 'id'> & { password?: string, googleId?: string }
+): Promise<Participant> {
+    const newId = `user_${randomBytes(8).toString('hex')}`;
+    const { name, email, password, roleId, avatar, provider, googleId } = participant;
+
+    let passwordHash: string | null = null;
+    if (provider === 'local' || password) {
+        if (!password) {
+            throw new Error('Password is required for local participants.');
+        }
+        const saltRounds = 10;
+        passwordHash = await bcrypt.hash(password, saltRounds);
     }
 
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
+    // For Google users, we mark email as verified immediately.
+    const emailVerified = provider === 'google' ? new Date() : null;
 
     const result = await queryOne<any>(
-        'INSERT INTO participants (id, name, email, password_hash, role_id, avatar) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role_id, avatar',
-        [newId, name, email, passwordHash, roleId, avatar]
+        'INSERT INTO participants (id, name, email, password_hash, role_id, avatar, provider, google_id, email_verified) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, name, email, role_id, avatar, provider',
+        [newId, name, email, passwordHash, roleId, avatar, provider, googleId, emailVerified]
     );
     return { ...result, roleId: result.role_id };
 }
 
 export async function updateParticipant(id: string, participant: Partial<Omit<Participant, 'id'>> & { password?: string }): Promise<Participant | null> {
-    const { name, email, password, roleId, avatar } = participant;
+    const { name, email, password, roleId, avatar, googleId, emailVerified } = participant;
 
     let passwordHash: string | undefined;
     if (password) {
@@ -106,14 +130,24 @@ export async function updateParticipant(id: string, participant: Partial<Omit<Pa
         passwordHash = await bcrypt.hash(password, saltRounds);
     }
 
+    // This is a simplified update. A more robust solution would use dynamic query building
+    // to only update fields that are explicitly provided.
     const result = await queryOne<any>(
-        'UPDATE participants SET name = COALESCE($1, name), email = COALESCE($2, email), role_id = COALESCE($3, role_id), avatar = COALESCE($4, avatar), password_hash = COALESCE($5, password_hash) WHERE id = $6 RETURNING id, name, email, role_id, avatar',
-        [name, email, roleId, avatar, passwordHash, id]
+        'UPDATE participants SET name = COALESCE($1, name), email = COALESCE($2, email), role_id = COALESCE($3, role_id), avatar = COALESCE($4, avatar), password_hash = COALESCE($5, password_hash), google_id = COALESCE($6, google_id), email_verified = COALESCE($7, email_verified) WHERE id = $8 RETURNING id, name, email, role_id, avatar, provider',
+        [name, email, roleId, avatar, passwordHash, googleId, emailVerified, id]
     );
 
     if (!result) return null;
     return { ...result, roleId: result.role_id };
 }
+
+export async function linkGoogleAccount(userId: string, googleId: string): Promise<void> {
+    await pool.query(
+        'UPDATE participants SET google_id = $1, provider = \'google\', email_verified = NOW() WHERE id = $2',
+        [googleId, userId]
+    );
+}
+
 
 export async function deleteParticipant(id: string): Promise<{ success: boolean }> {
     const result = await pool.query('DELETE FROM participants WHERE id = $1', [id]);

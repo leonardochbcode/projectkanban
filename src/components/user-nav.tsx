@@ -13,30 +13,34 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/hooks/use-store';
 import { Skeleton } from './ui/skeleton';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { signOut, useSession } from 'next-auth/react';
 
 export function UserNav() {
-  const { currentUser, isLoaded, logout } = useStore();
-  const router = useRouter();
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  const { data: session, status } = useSession();
+  const { participants } = useStore();
 
   const handleLogout = async () => {
-    logout();
-    router.push('/login');
+    await signOut({ callbackUrl: '/login' });
   };
 
-  // Wait for the store to be loaded and user to be authenticated
-  if (!hydrated || !isLoaded || !currentUser) {
+  // While session is loading, show a skeleton
+  if (status === 'loading') {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
-  const user = currentUser;
+  // If user is not authenticated, don't render the component
+  if (status === 'unauthenticated' || !session?.user) {
+    return null;
+  }
+
+  // Find the full user object from the participants list
+  const user = participants.find(p => p.id === session.user.id);
+
+  // If the full user object is not found yet, show skeleton
+  if (!user) {
+     return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
 
   return (
     <DropdownMenu>
