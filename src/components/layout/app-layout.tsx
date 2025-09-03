@@ -29,32 +29,35 @@ import { CompanyHeaderInfo } from './company-header-info';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { ThemeSwitcher } from '../theme-switcher';
+import { useSession } from 'next-auth/react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isLoaded, currentUser, getRole, logout, companyInfo, workspaces } = useStore();
+  const { status } = useSession();
+  const { isLoaded, currentUser, getRole, companyInfo, workspaces } = useStore();
 
   useEffect(() => {
-    if (isLoaded && !currentUser) {
+    if (status === 'unauthenticated') {
       router.push('/login');
     }
-  }, [isLoaded, currentUser, router]);
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
+  }, [status, router]);
   
-  if (!isLoaded || !currentUser) {
+  // Show a loading skeleton while the session is loading or the store data is not yet ready.
+  // We also wait for currentUser to be populated to prevent a flash of the loading screen
+  // between the session being ready and the user object being found in the store.
+  if (status === 'loading' || !isLoaded || !currentUser) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="p-4 space-y-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <Skeleton className="h-4 w-[250px]" />
-                <Skeleton className="h-4 w-[200px]" />
-            </div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="p-4 space-y-4 text-center">
+          <div className="flex justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-12 w-12 fill-current animate-pulse">
+                <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
+            </svg>
+          </div>
+          <p className="text-muted-foreground">Carregando...</p>
         </div>
+      </div>
     );
   }
 
