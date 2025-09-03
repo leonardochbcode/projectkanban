@@ -10,7 +10,7 @@ import NextAuthSessionProvider from '@/components/session-provider';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'CHB Planner',
+  title: 'CHBProject',
   description: 'Sistema de gerenciamento de projetos moderno e responsivo.',
 };
 
