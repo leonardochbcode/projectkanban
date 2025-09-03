@@ -3,34 +3,51 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { type Task, type TaskComment } from '@/lib/types';
-import { useStore } from '@/hooks/use-store';
+import { useToast } from '@/hooks/use-toast';
 
-export function TaskCommentForm({ task }: { task: Task }) {
+interface TaskCommentFormProps {
+  task: Task;
+  onCommentAdded: () => void;
+}
+
+export function TaskCommentForm({ task, onCommentAdded }: TaskCommentFormProps) {
   const [comment, setComment] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { participants, updateTask } = useStore();
-  
-  if(!participants.length) {
-    return null;
-  }
-  const currentUser = participants[0]; // Assume first participant is the current user
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) return;
 
-    setIsLoading(true);
-    
-    const newComment: TaskComment = {
-        id: `comment-${Date.now()}`,
-        content: comment,
-        authorId: currentUser.id,
-        createdAt: new Date().toISOString(),
-    }
-    updateTask({...task, comments: [...task.comments, newComment]})
-    setComment('');
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: comment }),
+      });
 
-    setIsLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to add comment');
+      }
+
+      setComment('');
+      onCommentAdded(); // Callback to refresh the task details
+      toast({
+        title: "Comentário adicionado",
+        description: "Seu comentário foi salvo com sucesso.",
+      });
+
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o seu comentário. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -39,10 +56,10 @@ export function TaskCommentForm({ task }: { task: Task }) {
         placeholder="Digite seu comentário ou atualização aqui..."
         value={comment}
         onChange={(e) => setComment(e.target.value)}
-        disabled={isLoading}
+        disabled={isSubmitting}
       />
-      <Button type="submit" disabled={isLoading || !comment.trim()}>
-        {isLoading ? 'Adicionando...' : 'Adicionar Comentário'}
+      <Button type="submit" disabled={isSubmitting || !comment.trim()}>
+        {isSubmitting ? 'Adicionando...' : 'Adicionar Comentário'}
       </Button>
     </form>
   );
