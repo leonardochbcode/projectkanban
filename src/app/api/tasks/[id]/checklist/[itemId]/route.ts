@@ -10,7 +10,7 @@ type RouteParams = {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { itemId } = params;
+    const { itemId } = await params;
     const { completed } = await request.json();
 
     if (typeof completed !== 'boolean') {
@@ -32,7 +32,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { itemId } = params;
+    const { itemId } = await params;
     const result = await deleteChecklistItem(itemId);
 
     if (!result.success) {

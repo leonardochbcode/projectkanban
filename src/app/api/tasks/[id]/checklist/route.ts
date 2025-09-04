@@ -9,7 +9,7 @@ type RouteParams = {
 
 export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const { id: taskId } = params;
+    const { id: taskId } = await params;
     const { text } = await request.json();
 
     if (!text) {

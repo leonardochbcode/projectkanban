@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id: taskId } = params;
+    const { id: taskId } = await params;
     const { content } = await request.json();
 
     if (!content) {
