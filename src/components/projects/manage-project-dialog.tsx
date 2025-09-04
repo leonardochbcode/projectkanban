@@ -120,7 +120,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {Trigger}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full sm:max-w-md md:max-w-lg lg:max-w-2xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-headline">{project ? 'Editar Projeto' : 'Criar Novo Projeto'}</DialogTitle>
