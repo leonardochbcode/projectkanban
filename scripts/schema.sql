@@ -1,5 +1,5 @@
 -- Drop tables if they exist to ensure a clean slate
-DROP TABLE IF EXISTS template_tasks, project_templates, checklist_items, task_attachments, task_comments, tasks, project_participants, projects, opportunity_attachments, opportunity_comments, opportunities, workspaces, clients, participants, roles, company_info CASCADE;
+DROP TABLE IF EXISTS project_workbooks, workbooks, template_tasks, project_templates, checklist_items, task_attachments, task_comments, tasks, project_participants, projects, opportunity_attachments, opportunity_comments, opportunities, workspaces, clients, participants, roles, company_info CASCADE;
 
 -- Company Information
 CREATE TABLE company_info (
@@ -50,6 +50,21 @@ CREATE TABLE workspaces (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL
+);
+
+-- Workbooks
+CREATE TABLE workbooks (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    workspace_id VARCHAR(50) REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL
+);
+
+-- Join table for Projects and Workbooks (Many-to-Many)
+CREATE TABLE project_workbooks (
+    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE,
+    workbook_id VARCHAR(50) REFERENCES workbooks(id) ON DELETE CASCADE,
+    PRIMARY KEY (project_id, workbook_id)
 );
 
 -- Opportunities

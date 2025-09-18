@@ -11,7 +11,7 @@ import {
   useMemo,
 } from 'react';
 import React from 'react';
-import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace, TemplateTask } from '@/lib/types';
+import type { Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, ProjectTemplate, Workspace, Workbook, TemplateTask } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 import { useSession } from 'next-auth/react';
 
@@ -27,6 +27,7 @@ interface Store {
   companyInfo: CompanyInfo | null;
   projectTemplates: ProjectTemplate[];
   workspaces: Workspace[];
+  workbooks: Workbook[];
 }
 
 const StoreContext = createContext<Store & { dispatch: (newState: Partial<Store>) => void } | null>(
@@ -73,6 +74,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [companyInfo, setCompanyInfo] = useLocalStorage<CompanyInfo | null>('companyInfo', null);
   const [projectTemplates, setProjectTemplates] = useLocalStorage<ProjectTemplate[]>('projectTemplates', []);
   const [workspaces, setWorkspaces] = useLocalStorage<Workspace[]>('workspaces', []);
+  const [workbooks, setWorkbooks] = useLocalStorage<Workbook[]>('workbooks', []);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const currentUser = useMemo(() => {
@@ -178,7 +180,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     companyInfo,
     projectTemplates,
     workspaces,
-  }), [isLoaded, projects, tasks, participants, roles, clients, opportunities, currentUser, companyInfo, projectTemplates, workspaces]);
+    workbooks,
+  }), [isLoaded, projects, tasks, participants, roles, clients, opportunities, currentUser, companyInfo, projectTemplates, workspaces, workbooks]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
@@ -191,6 +194,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.companyInfo) setCompanyInfo(newState.companyInfo);
     if (newState.projectTemplates) setProjectTemplates(newState.projectTemplates);
     if (newState.workspaces) setWorkspaces(newState.workspaces);
+    if (newState.workbooks) setWorkbooks(newState.workbooks);
   };
   
   const value = useMemo(() => ({ ...store, dispatch }), [store]);
@@ -710,6 +714,124 @@ export const useStore = () => {
     }
   }, [store.workspaces, store.projects, dispatch]);
 
+  const getWorkbook = useCallback((workbookId: string) => {
+    return store.workbooks.find(w => w.id === workbookId);
+  }, [store.workbooks]);
+
+  const getWorkbooksByWorkspace = useCallback((workspaceId: string) => {
+    return store.workbooks.filter(w => w.workspaceId === workspaceId);
+  }, [store.workbooks]);
+
+  const fetchWorkbooksByWorkspace = useCallback(async (workspaceId: string) => {
+    try {
+      const response = await fetch(`/api/workbooks?workspaceId=${workspaceId}`);
+      if (!response.ok) throw new Error('Failed to fetch workbooks');
+      const fetchedWorkbooks = await response.json();
+      // Avoid duplicates and merge with existing workbooks
+      const existingWorkbookIds = new Set(store.workbooks.map(w => w.id));
+      const newWorkbooks = fetchedWorkbooks.filter((w: Workbook) => !existingWorkbookIds.has(w.id));
+      if (newWorkbooks.length > 0) {
+        dispatch({ workbooks: [...store.workbooks, ...newWorkbooks] });
+      }
+    } catch (error) {
+      console.error(`Failed to fetch workbooks for workspace ${workspaceId}:`, error);
+    }
+  }, [store.workbooks, dispatch]);
+
+  const addWorkbook = useCallback(async (workbook: Omit<Workbook, 'id' | 'projectIds'>) => {
+    try {
+      const response = await fetch('/api/workbooks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(workbook),
+      });
+      if (!response.ok) throw new Error('Failed to create workbook');
+      const newWorkbook = await response.json();
+      dispatch({ workbooks: [...store.workbooks, newWorkbook] });
+      return newWorkbook;
+    } catch(error) {
+      console.error("Failed to add workbook:", error);
+      return null;
+    }
+  }, [store.workbooks, dispatch]);
+
+  const updateWorkbook = useCallback(async (updatedWorkbook: Partial<Workbook> & {id: string}) => {
+    try {
+      const response = await fetch(`/api/workbooks/${updatedWorkbook.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedWorkbook),
+      });
+      if (!response.ok) throw new Error('Failed to update workbook');
+      const returnedWorkbook = await response.json();
+      dispatch({
+        workbooks: store.workbooks.map(w => w.id === returnedWorkbook.id ? returnedWorkbook : w)
+      });
+    } catch(error) {
+      console.error("Failed to update workbook:", error);
+    }
+  }, [store.workbooks, dispatch]);
+
+  const deleteWorkbook = useCallback(async (workbookId: string) => {
+    try {
+      const response = await fetch(`/api/workbooks/${workbookId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete workbook');
+      dispatch({
+        workbooks: store.workbooks.filter(w => w.id !== workbookId)
+      });
+    } catch(error) {
+      console.error("Failed to delete workbook:", error);
+    }
+  }, [store.workbooks, dispatch]);
+
+  const addProjectToWorkbook = useCallback(async (workbookId: string, projectId: string) => {
+    try {
+      const response = await fetch(`/api/workbooks/${workbookId}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      if (!response.ok) throw new Error('Failed to add project to workbook');
+
+      // Update local state
+      const updatedWorkbooks = store.workbooks.map(w => {
+        if (w.id === workbookId) {
+          return { ...w, projectIds: [...w.projectIds, projectId] };
+        }
+        return w;
+      });
+      dispatch({ workbooks: updatedWorkbooks });
+
+    } catch (error) {
+      console.error("Failed to add project to workbook:", error);
+    }
+  }, [store.workbooks, dispatch]);
+
+  const removeProjectFromWorkbook = useCallback(async (workbookId: string, projectId: string) => {
+    try {
+      const response = await fetch(`/api/workbooks/${workbookId}/projects`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      });
+      if (!response.ok) throw new Error('Failed to remove project from workbook');
+
+      // Update local state
+      const updatedWorkbooks = store.workbooks.map(w => {
+        if (w.id === workbookId) {
+          return { ...w, projectIds: w.projectIds.filter(id => id !== projectId) };
+        }
+        return w;
+      });
+      dispatch({ workbooks: updatedWorkbooks });
+
+    } catch (error) {
+      console.error("Failed to remove project from workbook:", error);
+    }
+  }, [store.workbooks, dispatch]);
+
 
   return {
     ...store,
@@ -747,5 +869,13 @@ export const useStore = () => {
     addWorkspace,
     updateWorkspace,
     deleteWorkspace,
+    getWorkbook,
+    getWorkbooksByWorkspace,
+    fetchWorkbooksByWorkspace,
+    addWorkbook,
+    updateWorkbook,
+    deleteWorkbook,
+    addProjectToWorkbook,
+    removeProjectFromWorkbook,
   };
 };
