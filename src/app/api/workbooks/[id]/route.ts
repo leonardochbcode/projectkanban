@@ -3,12 +3,14 @@ import { updateWorkbook, deleteWorkbook, getWorkbookById } from '@/lib/queries';
 import { partialWorkbookSchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: Promise<{ id: string }>
+  params: {
+    id: string;
+  }
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const workbook = await getWorkbookById(id);
 
     if (!workbook) {
@@ -17,14 +19,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(workbook);
   } catch (error) {
-    console.error(`Failed to fetch workbook ${(await params).id}:`, error);
+    console.error(`Failed to fetch workbook ${params.id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const json = await request.json();
     const parsed = partialWorkbookSchema.safeParse(json);
 
@@ -40,14 +42,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedWorkbook);
   } catch (error) {
-    console.error(`Failed to update workbook ${(await params).id}:`, error);
+    console.error(`Failed to update workbook ${params.id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const result = await deleteWorkbook(id);
 
     if (!result.success) {
@@ -56,7 +58,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete workbook ${(await params).id}:`, error);
+    console.error(`Failed to delete workbook ${params.id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

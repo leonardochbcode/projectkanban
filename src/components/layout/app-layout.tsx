@@ -127,10 +127,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     {workspaces.map(ws => (
                         <Link
                             key={ws.id}
-                            href={`/workspaces/${ws.id}/workbooks`}
+                            href={`/workspaces/${ws.id}`}
                             className={cn(
                                 'rounded-md px-3 py-1.5 text-muted-foreground hover:text-primary truncate',
-                                pathname.startsWith(`/workspaces/${ws.id}`) && 'bg-accent text-accent-foreground'
+                                pathname === `/workspaces/${ws.id}` && 'bg-accent text-accent-foreground'
                             )}
                             title={ws.name}
                         >
