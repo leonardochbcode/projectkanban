@@ -11,6 +11,7 @@ export const projectSchema = z.object({
   opportunityId: z.string().optional(),
   pmoId: z.string().optional(),
   participantIds: z.array(z.string()).optional().default([]),
+  workbookIds: z.array(z.string()).optional().default([]),
 });
 
 export const partialProjectSchema = projectSchema.partial();
@@ -22,6 +23,14 @@ export const workspaceSchema = z.object({
 });
 
 export const partialWorkspaceSchema = workspaceSchema.partial();
+
+export const workbookSchema = z.object({
+  name: z.string().min(1, { message: "Workbook name is required." }),
+  description: z.string().optional(),
+  workspaceId: z.string().min(1, { message: "Workspace ID is required." }),
+});
+
+export const partialWorkbookSchema = workbookSchema.partial();
 
 export const taskSchema = z.object({
   title: z.string().min(1, { message: "Task title is required." }),

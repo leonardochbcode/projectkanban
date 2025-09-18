@@ -20,6 +20,7 @@ function ProjectsPageContent() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [clientFilter, setClientFilter] = useState('all');
   const [workspaceFilter, setWorkspaceFilter] = useState('all');
+  const [workbookFilter, setWorkbookFilter] = useState('all');
 
   const filteredProjects = useMemo(() => {
     let filtered = projects;
@@ -35,8 +36,14 @@ function ProjectsPageContent() {
     if (workspaceFilter !== 'all') {
       filtered = filtered.filter(p => p.workspaceId === workspaceFilter);
     }
+    if (workbookFilter === 'in_workbook') {
+      filtered = filtered.filter(p => p.workbookIds && p.workbookIds.length > 0);
+    }
+    if (workbookFilter === 'not_in_workbook') {
+      filtered = filtered.filter(p => !p.workbookIds || p.workbookIds.length === 0);
+    }
     return filtered;
-  }, [projects, nameFilter, statusFilter, clientFilter, workspaceFilter]);
+  }, [projects, nameFilter, statusFilter, clientFilter, workspaceFilter, workbookFilter]);
   
   const handleAdd = () => {
     setEditingProject(undefined);
@@ -113,6 +120,16 @@ function ProjectsPageContent() {
                         {clients.map(client => (
                             <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                         ))}
+                    </SelectContent>
+                </Select>
+                <Select value={workbookFilter} onValueChange={setWorkbookFilter}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Workbook" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="in_workbook">Em workbook</SelectItem>
+                        <SelectItem value="not_in_workbook">Fora de workbook</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

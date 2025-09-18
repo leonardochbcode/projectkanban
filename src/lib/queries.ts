@@ -1,6 +1,6 @@
 import pool from './db';
 import type {
-  Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, Workspace, ProjectTemplate, TaskComment, ChecklistItem
+  Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, Workspace, Workbook, ProjectTemplate, TaskComment, ChecklistItem
 } from './types';
 
 import { randomBytes } from 'crypto';
@@ -226,6 +226,100 @@ export async function deleteWorkspace(id: string): Promise<{ success: boolean }>
 }
 
 
+// Workbooks
+export async function getWorkbooksByWorkspace(workspaceId: string): Promise<Workbook[]> {
+    const workbooks = await queryMany<any>('SELECT id, name, description, workspace_id FROM workbooks WHERE workspace_id = $1', [workspaceId]);
+    for (const workbook of workbooks) {
+        const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [workbook.id]);
+        workbook.projectIds = projects.map(p => p.project_id);
+    }
+    return workbooks.map(w => ({
+        ...w,
+        workspaceId: w.workspace_id,
+        // Ensure projectIds is always an array
+        projectIds: w.projectIds || []
+    }));
+}
+
+export async function getWorkbookById(id: string): Promise<Workbook | null> {
+    const workbook = await queryOne<any>('SELECT id, name, description, workspace_id FROM workbooks WHERE id = $1', [id]);
+    if (!workbook) return null;
+
+    const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [workbook.id]);
+    const projectIds = projects.map(p => p.project_id);
+
+    return {
+        id: workbook.id,
+        name: workbook.name,
+        description: workbook.description,
+        workspaceId: workbook.workspace_id,
+        projectIds: projectIds,
+    };
+}
+
+export async function createWorkbook(workbook: Omit<Workbook, 'id' | 'projectIds'>): Promise<Workbook> {
+    const newId = `wb_${randomBytes(8).toString('hex')}`;
+    const { name, description, workspaceId } = workbook;
+    const result = await queryOne<any>(
+        'INSERT INTO workbooks (id, name, description, workspace_id) VALUES ($1, $2, $3, $4) RETURNING id, name, description, workspace_id',
+        [newId, name, description, workspaceId]
+    );
+    return {
+        // id: result.id, // This is already in result
+        // name: result.name, // This is already in result
+        // description: result.description, // This is already in result
+        ...result,
+        workspaceId: result.workspace_id,
+        projectIds: [],
+    };
+}
+
+export async function updateWorkbook(id: string, workbook: Partial<Omit<Workbook, 'id' | 'projectIds'>>): Promise<Workbook | null> {
+    const { name, description } = workbook;
+    const result = await queryOne<any>(
+        'UPDATE workbooks SET name = COALESCE($1, name), description = COALESCE($2, description) WHERE id = $3 RETURNING id, name, description, workspace_id',
+        [name, description, id]
+    );
+    if (!result) return null;
+
+    // Fetch the project IDs separately
+    const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [id]);
+    const projectIds = projects.map(p => p.project_id);
+
+    return {
+        // id: result.id,
+        // name: result.name,
+        // description: result.description,
+        ...result,
+        workspaceId: result.workspace_id,
+        projectIds: projectIds,
+    };
+}
+
+export async function deleteWorkbook(id: string): Promise<{ success: boolean }> {
+    // The ON DELETE CASCADE in project_workbooks will handle removing associations
+    const result = await pool.query('DELETE FROM workbooks WHERE id = $1', [id]);
+    return { success: result.rowCount > 0 };
+}
+
+export async function addProjectToWorkbook(workbookId: string, projectId: string): Promise<{ success: boolean }> {
+    // Optional: Add a check to ensure the project and workbook are in the same workspace
+    const result = await pool.query(
+        'INSERT INTO project_workbooks (workbook_id, project_id) VALUES ($1, $2) ON CONFLICT (workbook_id, project_id) DO NOTHING',
+        [workbookId, projectId]
+    );
+    return { success: result.rowCount > 0 };
+}
+
+export async function removeProjectFromWorkbook(workbookId: string, projectId: string): Promise<{ success: boolean }> {
+    const result = await pool.query(
+        'DELETE FROM project_workbooks WHERE workbook_id = $1 AND project_id = $2',
+        [workbookId, projectId]
+    );
+    return { success: result.rowCount > 0 };
+}
+
+
 // Opportunities
 export async function getOpportunities(): Promise<Opportunity[]> {
     // This is a simplified query. In a real app, comments and attachments would be fetched separately or aggregated.
@@ -314,6 +408,9 @@ export async function getProjects(): Promise<Project[]> {
     for (const project of projects) {
         const participants = await queryMany<any>('SELECT participant_id FROM project_participants WHERE project_id = $1', [project.id]);
         project.participantIds = participants.map(p => p.participant_id);
+
+        const workbooks = await queryMany<any>('SELECT workbook_id FROM project_workbooks WHERE project_id = $1', [project.id]);
+        project.workbookIds = workbooks.map(w => w.workbook_id);
     }
 
     return projects.map(p => ({
@@ -323,7 +420,8 @@ export async function getProjects(): Promise<Project[]> {
         workspaceId: p.workspace_id,
         clientId: p.client_id,
         opportunityId: p.opportunity_id,
-        pmoId: p.pmo_id
+        pmoId: p.pmo_id,
+        workbookIds: p.workbookIds || [],
     }));
 }
 
@@ -333,6 +431,9 @@ export async function getProjectById(id: string): Promise<Project | null> {
 
     const participants = await queryMany<any>('SELECT participant_id FROM project_participants WHERE project_id = $1', [project.id]);
     project.participantIds = participants.map(p => p.participant_id);
+
+    const workbooks = await queryMany<any>('SELECT workbook_id FROM project_workbooks WHERE project_id = $1', [project.id]);
+    project.workbookIds = workbooks.map(w => w.workbook_id);
 
     return {
         ...project,
@@ -345,9 +446,9 @@ export async function getProjectById(id: string): Promise<Project | null> {
     };
 }
 
-export async function createProject(project: Omit<Project, 'id' | 'participantIds'> & { participantIds: string[] }): Promise<Project> {
+export async function createProject(project: Omit<Project, 'id' | 'participantIds' | 'workbookIds'> & { participantIds: string[], workbookIds: string[] }): Promise<Project> {
     const newId = `prj_${randomBytes(8).toString('hex')}`;
-    const { name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, participantIds } = project;
+    const { name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, participantIds, workbookIds } = project;
 
     const result = await queryOne<any>(`
         INSERT INTO projects (id, name, description, start_date, end_date, status, workspace_id, client_id, opportunity_id, pmo_id)
@@ -361,6 +462,12 @@ export async function createProject(project: Omit<Project, 'id' | 'participantId
         }
     }
 
+    if (workbookIds && workbookIds.length > 0) {
+        for (const workbookId of workbookIds) {
+            await pool.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2)', [newId, workbookId]);
+        }
+    }
+
     return {
         ...result,
         startDate: result.start_date,
@@ -370,11 +477,12 @@ export async function createProject(project: Omit<Project, 'id' | 'participantId
         opportunityId: result.opportunity_id,
         pmoId: result.pmo_id,
         participantIds,
+        workbookIds,
     };
 }
 
-export async function updateProject(id: string, project: Partial<Omit<Project, 'id' | 'participantIds'>> & { participantIds?: string[] }): Promise<Project | null> {
-    const { name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, participantIds } = project;
+export async function updateProject(id: string, project: Partial<Omit<Project, 'id' | 'participantIds' | 'workbookIds'>> & { participantIds?: string[], workbookIds?: string[] }): Promise<Project | null> {
+    const { name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, participantIds, workbookIds } = project;
 
     // Build the update query dynamically
     const fields: any[] = [];
@@ -391,9 +499,9 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
     if (opportunityId !== undefined) { fields.push('opportunity_id'); values.push(opportunityId); }
     if (pmoId !== undefined) { fields.push('pmo_id'); values.push(pmoId); }
 
-    if (fields.length === 0 && participantIds === undefined) {
+    if (fields.length === 0 && participantIds === undefined && workbookIds === undefined) {
         // Nothing to update, just fetch the project
-        return queryOne<Project>('SELECT * FROM projects WHERE id = $1', [id]);
+        return getProjectById(id);
     }
 
     let result: any;
@@ -414,14 +522,25 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
         }
     }
 
-    // If only participants were updated, we need to fetch the project
+    // Handle workbooks update
+    if (workbookIds !== undefined) {
+        // First, remove existing associations
+        await pool.query('DELETE FROM project_workbooks WHERE project_id = $1', [id]);
+        // Then, add the new ones
+        for (const workbookId of workbookIds) {
+            await pool.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2)', [id, workbookId]);
+        }
+    }
+
+    // If only participants/workbooks were updated, we need to fetch the project
     if (!result) {
         result = await queryOne<any>('SELECT * FROM projects WHERE id = $1', [id]);
     }
     if (!result) return null;
 
-    // Get the final list of participant IDs
+    // Get the final list of participant and workbook IDs
     const finalParticipantIds = await queryMany<any>('SELECT participant_id FROM project_participants WHERE project_id = $1', [id]);
+    const finalWorkbookIds = await queryMany<any>('SELECT workbook_id FROM project_workbooks WHERE project_id = $1', [id]);
 
     return {
         ...result,
@@ -432,6 +551,7 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
         opportunityId: result.opportunity_id,
         pmoId: result.pmo_id,
         participantIds: finalParticipantIds.map(p => p.participant_id),
+        workbookIds: finalWorkbookIds.map(w => w.workbook_id),
     };
 }
 

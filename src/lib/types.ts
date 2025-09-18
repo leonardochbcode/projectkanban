@@ -125,6 +125,7 @@ export interface Project {
   endDate: string;
   status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído';
   participantIds: string[];
+  workbookIds: string[];
   workspaceId: string;
   clientId?: string;
   opportunityId?: string;
@@ -136,6 +137,14 @@ export interface Workspace {
   name: string;
   description: string;
   clientId?: string;
+}
+
+export interface Workbook {
+  id: string;
+  name: string;
+  description: string;
+  workspaceId: string;
+  projectIds: string[];
 }
 
 
