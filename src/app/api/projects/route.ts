@@ -15,7 +15,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const json = await request.json();
-    const parsed = await projectSchema.safeParse(json);
+    const parsed = projectSchema.safeParse(json);
 
     if (!parsed.success) {
       return NextResponse.json({ message: 'Invalid request body', errors: parsed.error.errors }, { status: 400 });

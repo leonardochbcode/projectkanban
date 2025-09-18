@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { addProjectToWorkbook, removeProjectFromWorkbook } from '@/lib/queries';
 
 type RouteParams = {
-  params: {
-    id: string; // workbookId
-  }
+  params:
+  Promise<{ id: string }> // workbookId
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const workbookId = await params.id;
+    const { id } = await params;
+    const workbookId = id;
     const { projectId } = await request.json();
 
     if (!projectId) {
@@ -26,14 +26,15 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error(`Failed to add project to workbook ${params.id}:`, error);
+    console.error(`Failed to add project to workbook ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const workbookId = await params.id;
+    const { id } = await params;
+    const workbookId = id;
     const { projectId } = await request.json();
 
     if (!projectId) {
@@ -48,7 +49,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error(`Failed to remove project from workbook ${params.id}:`, error);
+    console.error(`Failed to remove project from workbook ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

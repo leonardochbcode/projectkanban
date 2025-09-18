@@ -252,6 +252,11 @@ export const useStore = () => {
     },
     [visibleProjects]
   );
+
+  const getProject = useCallback((projectId: string) => {
+    // Note: This searches through allProjects, not just visibleProjects
+    return store.projects.find(p => p.id === projectId);
+  }, [store.projects]);
   
   const addProject = useCallback(async (project: Omit<Project, 'id'>, templateId?: string) => {
     try {
@@ -838,6 +843,7 @@ export const useStore = () => {
     projects: visibleProjects,
     allProjects: store.projects, // Expose all projects for lookups
     getWorkspaceProjects,
+    getProject,
     getProjectTasks,
     addProject,
     updateProject,

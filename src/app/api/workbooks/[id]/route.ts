@@ -3,9 +3,8 @@ import { updateWorkbook, deleteWorkbook, getWorkbookById } from '@/lib/queries';
 import { partialWorkbookSchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params:
+  Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
@@ -19,7 +18,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(workbook);
   } catch (error) {
-    console.error(`Failed to fetch workbook ${params.id}:`, error);
+    console.error(`Failed to fetch workbook ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
@@ -42,7 +41,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedWorkbook);
   } catch (error) {
-    console.error(`Failed to update workbook ${params.id}:`, error);
+    console.error(`Failed to update workbook ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
@@ -58,7 +57,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete workbook ${params.id}:`, error);
+    console.error(`Failed to delete workbook ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
