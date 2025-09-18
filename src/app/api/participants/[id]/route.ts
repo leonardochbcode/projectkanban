@@ -3,14 +3,12 @@ import { getParticipantById, updateParticipant, deleteParticipant } from '@/lib/
 import { partialParticipantSchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const participant = await getParticipantById(id);
 
     if (!participant) {
@@ -19,19 +17,19 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(participant);
   } catch (error) {
-    console.error(`Failed to fetch participant ${params.id}:`, error);
+    console.error(`Failed to fetch participant ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
 
     // Do not allow password to be an empty string
     if (json.password === '') {
-        delete json.password;
+      delete json.password;
     }
 
     const parsed = partialParticipantSchema.safeParse(json);
@@ -48,9 +46,9 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedParticipant);
   } catch (error) {
-    console.error(`Failed to update participant ${params.id}:`, error);
-     if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
-        return NextResponse.json({ message: 'A participant with this email already exists.' }, { status: 409 });
+    console.error(`Failed to update participant ${(await params).id}:`, error);
+    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
+      return NextResponse.json({ message: 'A participant with this email already exists.' }, { status: 409 });
     }
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
@@ -58,7 +56,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deleteParticipant(id);
 
     if (!result.success) {
@@ -67,7 +65,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete participant ${params.id}:`, error);
+    console.error(`Failed to delete participant ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

@@ -4,9 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function POST(request: Request, { params }: RouteParams) {
@@ -27,7 +25,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(newComment, { status: 201 });
   } catch (error) {
-    console.error(`Failed to create comment for task ${params.id}:`, error);
+    console.error(`Failed to create comment for task ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

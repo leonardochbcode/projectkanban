@@ -3,9 +3,7 @@ import { updateTask, deleteTask, getTaskById } from '@/lib/queries';
 import { partialTaskSchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
@@ -19,7 +17,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(task);
   } catch (error) {
-    console.error(`Failed to fetch task ${params.id}:`, error);
+    console.error(`Failed to fetch task ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
@@ -42,7 +40,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedTask);
   } catch (error) {
-    console.error(`Failed to update task ${params.id}:`, error);
+    console.error(`Failed to update task ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
@@ -58,7 +56,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete task ${params.id}:`, error);
+    console.error(`Failed to delete task ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

@@ -3,14 +3,12 @@ import { updateWorkspace, deleteWorkspace, getWorkspaceById } from '@/lib/querie
 import { partialWorkspaceSchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const workspace = await getWorkspaceById(id);
 
     if (!workspace) {
@@ -19,14 +17,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(workspace);
   } catch (error) {
-    console.error(`Failed to fetch workspace ${params.id}:`, error);
+    console.error(`Failed to fetch workspace ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
     const parsed = partialWorkspaceSchema.safeParse(json);
 
@@ -42,14 +40,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedWorkspace);
   } catch (error) {
-    console.error(`Failed to update workspace ${params.id}:`, error);
+    console.error(`Failed to update workspace ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deleteWorkspace(id);
 
     if (!result.success) {
@@ -58,7 +56,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete workspace ${params.id}:`, error);
+    console.error(`Failed to delete workspace ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

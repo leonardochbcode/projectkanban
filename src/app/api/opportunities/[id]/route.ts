@@ -3,14 +3,12 @@ import { getOpportunityById, updateOpportunity, deleteOpportunity } from '@/lib/
 import { partialOpportunitySchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const opportunity = await getOpportunityById(id);
 
     if (!opportunity) {
@@ -19,14 +17,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(opportunity);
   } catch (error) {
-    console.error(`Failed to fetch opportunity ${params.id}:`, error);
+    console.error(`Failed to fetch opportunity ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
     const parsed = partialOpportunitySchema.safeParse(json);
 
@@ -42,14 +40,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedOpportunity);
   } catch (error) {
-    console.error(`Failed to update opportunity ${params.id}:`, error);
+    console.error(`Failed to update opportunity ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deleteOpportunity(id);
 
     if (!result.success) {
@@ -58,7 +56,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete opportunity ${params.id}:`, error);
+    console.error(`Failed to delete opportunity ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

@@ -3,14 +3,12 @@ import { updateProject, deleteProject, getProjectById } from '@/lib/queries';
 import { partialProjectSchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const project = await getProjectById(id);
 
     if (!project) {
@@ -19,14 +17,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(project);
   } catch (error) {
-    console.error(`Failed to fetch project ${params.id}:`, error);
+    console.error(`Failed to fetch project ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
     const parsed = partialProjectSchema.safeParse(json);
 
@@ -42,14 +40,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedProject);
   } catch (error) {
-    console.error(`Failed to update project ${params.id}:`, error);
+    console.error(`Failed to update project ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deleteProject(id);
 
     if (!result.success) {
@@ -58,7 +56,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete project ${params.id}:`, error);
+    console.error(`Failed to delete project ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

@@ -3,14 +3,12 @@ import { getClientById, updateClient, deleteClient } from '@/lib/queries';
 import { partialClientSchema } from '@/lib/schemas';
 
 type RouteParams = {
-  params: {
-    id: string;
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const client = await getClientById(id);
 
     if (!client) {
@@ -19,14 +17,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(client);
   } catch (error) {
-    console.error(`Failed to fetch client ${params.id}:`, error);
+    console.error(`Failed to fetch client ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
     const parsed = partialClientSchema.safeParse(json);
 
@@ -42,14 +40,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedClient);
   } catch (error) {
-    console.error(`Failed to update client ${params.id}:`, error);
+    console.error(`Failed to update client ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deleteClient(id);
 
     if (!result.success) {
@@ -58,7 +56,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     return new NextResponse(null, { status: 204 }); // No Content
   } catch (error) {
-    console.error(`Failed to delete client ${params.id}:`, error);
+    console.error(`Failed to delete client ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

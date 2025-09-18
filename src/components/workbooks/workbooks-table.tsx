@@ -2,12 +2,23 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Workbook, Project } from '@/lib/types';
-import { MoreVertical, Edit, ChevronDown, ChevronRight, FolderKanban } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { MoreVertical, Edit, ChevronDown, ChevronRight, FolderKanban, Trash2 } from 'lucide-react';
+import { Progress } from '../ui/progress';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { useStore } from '@/hooks/use-store';
 import { ManageWorkbookProjectsDialog } from './manage-workbook-projects-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface WorkbooksTableProps {
   workbooks: Workbook[];
@@ -53,9 +64,10 @@ function WorkbookProjectsRow({ workbook, projects, isVisible }: { workbook: Work
 }
 
 export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
-  const { getProject } = useStore();
+  const { getProject, deleteWorkbook } = useStore();
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [isProjectsDialogOpen, setIsProjectsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedWorkbook, setSelectedWorkbook] = useState<Workbook | null>(null);
 
   const toggleRow = (workbookId: string) => {
@@ -67,6 +79,19 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
     setIsProjectsDialogOpen(true);
   };
 
+  const handleDelete = (workbook: Workbook) => {
+    setSelectedWorkbook(workbook);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedWorkbook) {
+      deleteWorkbook(selectedWorkbook.id);
+    }
+    setIsDeleteDialogOpen(false);
+    setSelectedWorkbook(null);
+  };
+
   return (
     <>
       <Table>
@@ -75,12 +100,15 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
             <TableHead className="w-12"></TableHead>
             <TableHead>Nome</TableHead>
             <TableHead>Nº de Projetos</TableHead>
+            <TableHead>Progresso</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {workbooks.map((workbook) => {
             const projects = workbook.projectIds.map(id => getProject(id)).filter(Boolean) as Project[];
+            const completedProjects = projects.filter(p => p.status === 'Concluído').length;
+            const progress = projects.length > 0 ? (completedProjects / projects.length) * 100 : 0;
             const isExpanded = expandedRows[workbook.id];
             return (
               <React.Fragment key={workbook.id}>
@@ -94,7 +122,13 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
                           {workbook.name}
                       </TableCell>
                       <TableCell>
-                          {workbook.projectIds.length}
+                          {projects.length}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress value={progress} className="w-[100px]" />
+                          <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                       <DropdownMenu>
@@ -112,6 +146,11 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
                               <FolderKanban className="mr-2 h-4 w-4" />
                               Gerenciar Projetos
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={() => handleDelete(workbook)} className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Excluir
+                          </DropdownMenuItem>
                           </DropdownMenuContent>
                       </DropdownMenu>
                       </TableCell>
@@ -122,6 +161,7 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
           })}
         </TableBody>
       </Table>
+
       {selectedWorkbook && (
         <ManageWorkbookProjectsDialog
           workbook={selectedWorkbook}
@@ -129,6 +169,22 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
           onOpenChange={setIsProjectsDialogOpen}
         />
       )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o workbook
+              e removerá todas as associações de projetos (os projetos não serão excluídos).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Continuar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
