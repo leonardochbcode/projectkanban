@@ -10,7 +10,7 @@ type RouteParams = {
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const workbook = await getWorkbookById(id);
 
     if (!workbook) {
@@ -26,7 +26,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
     const parsed = partialWorkbookSchema.safeParse(json);
 
@@ -49,7 +49,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deleteWorkbook(id);
 
     if (!result.success) {

@@ -9,7 +9,7 @@ type RouteParams = {
 
 export async function POST(request: Request, { params }: RouteParams) {
   try {
-    const workbookId = params.id;
+    const workbookId = await params.id;
     const { projectId } = await request.json();
 
     if (!projectId) {
@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const workbookId = params.id;
+    const workbookId = await params.id;
     const { projectId } = await request.json();
 
     if (!projectId) {

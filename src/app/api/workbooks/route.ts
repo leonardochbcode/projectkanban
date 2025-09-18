@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: Request) {
   try {
     const json = await request.json();
-    const parsed = workbookSchema.safeParse(json);
+    const parsed = await workbookSchema.safeParse(json);
 
     if (!parsed.success) {
       return NextResponse.json({ message: 'Invalid request body', errors: parsed.error.errors }, { status: 400 });

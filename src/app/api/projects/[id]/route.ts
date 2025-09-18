@@ -10,7 +10,7 @@ type RouteParams = {
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const project = await getProjectById(id);
 
     if (!project) {
@@ -26,9 +26,9 @@ export async function GET(request: Request, { params }: RouteParams) {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const json = await request.json();
-    const parsed = partialProjectSchema.safeParse(json);
+    const parsed = await partialProjectSchema.safeParse(json);
 
     if (!parsed.success) {
       return NextResponse.json({ message: 'Invalid request body', errors: parsed.error.errors }, { status: 400 });
@@ -49,7 +49,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const result = await deleteProject(id);
 
     if (!result.success) {
