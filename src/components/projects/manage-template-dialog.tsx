@@ -74,7 +74,7 @@ export function ManageTemplateDialog({ template, open, onOpenChange }: ManageTem
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-xl">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-headline">

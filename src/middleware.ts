@@ -9,7 +9,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - login (the login page)
+     * - any other file with a dot (e.g. .png)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|login).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|login|.*\\..*).*)',
   ]
 };

@@ -81,4 +81,4 @@ The application should now be running at [http://localhost:9002](http://localhos
 
 You can log in with one of the default users from the seed data, for example:
 - **Email:** `admin@chb.com.br`
-- **Password:** `chb123`
+- **Password:** `chb13`
