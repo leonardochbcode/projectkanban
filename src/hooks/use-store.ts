@@ -302,8 +302,8 @@ export const useStore = () => {
       return newProject;
     } catch (error) {
       console.error("Failed to add project:", error);
-      // Optionally re-throw or handle the error (e.g., show a toast)
-      return null;
+      // Re-throw the error to be caught by the calling component
+      throw error;
     }
   }, [store.projects, store.tasks, store.projectTemplates, dispatch]);
 
