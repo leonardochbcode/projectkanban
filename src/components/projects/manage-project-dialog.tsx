@@ -108,14 +108,15 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         clientId,
         participantIds,
         pmoId,
+        workbookIds,
     };
 
     try {
         if (project) {
-            await updateProject({ ...project, ...projectData, workbookIds });
+            await updateProject({ id: project.id, ...projectData });
         } else {
             // On creation, include the workbookId to associate the project
-            await addProject({ ...projectData, workbookIds }, templateId);
+            await addProject(projectData, templateId);
         }
         setOpen(false);
     } catch (error) {
