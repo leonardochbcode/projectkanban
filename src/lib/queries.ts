@@ -502,25 +502,21 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
     try {
         await client.query('BEGIN');
 
-        const hasProjectDetails = [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId].some(field => field !== undefined);
-
-        if (hasProjectDetails) {
-            const updateQuery = `
-                UPDATE projects
-                SET
-                    name = COALESCE($1, name),
-                    description = COALESCE($2, description),
-                    start_date = COALESCE($3, start_date),
-                    end_date = COALESCE($4, end_date),
-                    status = COALESCE($5, status),
-                    workspace_id = COALESCE($6, workspace_id),
-                    client_id = COALESCE($7, client_id),
-                    opportunity_id = COALESCE($8, opportunity_id),
-                    pmo_id = COALESCE($9, pmo_id)
-                WHERE id = $10;
-            `;
-            await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
-        }
+        const updateQuery = `
+            UPDATE projects
+            SET
+                name = COALESCE($1, name),
+                description = COALESCE($2, description),
+                start_date = COALESCE($3, start_date),
+                end_date = COALESCE($4, end_date),
+                status = COALESCE($5, status),
+                workspace_id = COALESCE($6, workspace_id),
+                client_id = COALESCE($7, client_id),
+                opportunity_id = COALESCE($8, opportunity_id),
+                pmo_id = COALESCE($9, pmo_id)
+            WHERE id = $10;
+        `;
+        await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
 
         if (participantIds !== undefined) {
             await client.query('DELETE FROM project_participants WHERE project_id = $1', [id]);
