@@ -23,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Project } from '@/lib/types';
+import type { Project, Workbook } from '@/lib/types';
 import { MultiSelect } from '../ui/multi-select';
+import { format, parseISO } from 'date-fns';
 
 interface ManageProjectDialogProps {
   children?: ReactNode; // Tornando children opcional
@@ -55,9 +56,9 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [clientId, setClientId] = useState<string | undefined>();
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [pmoId, setPmoId] = useState<string | undefined>();
-  const [workbookId, setWorkbookId] = useState<string | undefined>();
+  const [workbookIds, setWorkbookIds] = useState<string[]>([]);
 
-  const workbooksForSelectedWorkspace = workspaceId ? getWorkbooksByWorkspace(workspaceId) : [];
+  const workbooksForSelectedWorkspace = workspaceId ? getWorkbooksByWorkspace(workspaceId).map((w: Workbook) => ({ label: w.name, value: w.id })) : [];
 
 
   useEffect(() => {
@@ -65,15 +66,15 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
     if (project && open) {
         setName(project.name);
         setDescription(project.description);
-        setStartDate(project.startDate);
-        setEndDate(project.endDate);
+        setStartDate(project.startDate ? format(parseISO(project.startDate), 'yyyy-MM-dd') : '');
+        setEndDate(project.endDate ? format(parseISO(project.endDate), 'yyyy-MM-dd') : '');
         setStatus(project.status);
         setWorkspaceId(project.workspaceId);
         setClientId(project.clientId);
         setParticipantIds(project.participantIds || []);
         setPmoId(project.pmoId);
         setTemplateId(undefined); // Don't show template when editing
-        setWorkbookId(project.workbookIds?.[0]);
+        setWorkbookIds(project.workbookIds || []);
     } else if (!project && open) {
         // Reset form for "Add New" mode when dialog opens
         setName('');
@@ -86,7 +87,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setParticipantIds(currentUser ? [currentUser.id] : []);
         setPmoId(currentUser?.id);
         setTemplateId(undefined);
-        setWorkbookId(undefined);
+        setWorkbookIds([]);
     }
   }, [project, open, initialWorkspaceId, currentUser]);
 
@@ -111,10 +112,10 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
 
     try {
         if (project) {
-            await updateProject({ ...project, ...projectData, workbookIds: workbookId ? [workbookId] : project.workbookIds });
+            await updateProject({ ...project, ...projectData, workbookIds });
         } else {
             // On creation, include the workbookId to associate the project
-            await addProject({ ...projectData, workbookIds: workbookId ? [workbookId] : [] }, templateId);
+            await addProject({ ...projectData, workbookIds }, templateId);
         }
         setOpen(false);
     } catch (error) {
@@ -160,7 +161,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
             )}
              <div className="space-y-2">
                 <Label htmlFor="workspace">Espaço</Label>
-                <Select value={workspaceId} onValueChange={(value) => { setWorkspaceId(value); setWorkbookId(undefined); }} required>
+                <Select value={workspaceId} onValueChange={(value) => { setWorkspaceId(value); setWorkbookIds([]); }} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um espaço" />
                   </SelectTrigger>
@@ -176,19 +177,12 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                {workspaceId && workbooksForSelectedWorkspace.length > 0 && (
                 <div className="space-y-2">
                     <Label htmlFor="workbook">Pasta de Trabalho (Opcional)</Label>
-                    <Select value={workbookId} onValueChange={(value) => setWorkbookId(value === 'none' ? undefined : value)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Adicionar a uma pasta de trabalho" />
-                        </SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="none">Nenhuma</SelectItem>
-                             {workbooksForSelectedWorkspace.map((wb) => (
-                                <SelectItem key={wb.id} value={wb.id}>
-                                    {wb.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <MultiSelect
+                        options={workbooksForSelectedWorkspace}
+                        value={workbookIds}
+                        onValueChange={setWorkbookIds}
+                        placeholder="Adicionar a uma pasta de trabalho"
+                    />
                 </div>
               )}
             <div className="space-y-2">
