@@ -43,7 +43,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser, getWorkbooksForWorkspace } = useStore();
+  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser, getWorkbooksByWorkspace } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -57,7 +57,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [pmoId, setPmoId] = useState<string | undefined>();
   const [workbookId, setWorkbookId] = useState<string | undefined>();
 
-  const workbooksForSelectedWorkspace = workspaceId ? getWorkbooksForWorkspace(workspaceId) : [];
+  const workbooksForSelectedWorkspace = workspaceId ? getWorkbooksByWorkspace(workspaceId) : [];
 
 
   useEffect(() => {
@@ -73,9 +73,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setParticipantIds(project.participantIds || []);
         setPmoId(project.pmoId);
         setTemplateId(undefined); // Don't show template when editing
-        // We don't set workbookId when editing to avoid accidental changes.
-        // The logic for adding/removing projects from workbooks is handled elsewhere.
-        setWorkbookId(undefined);
+        setWorkbookId(project.workbookIds?.[0]);
     } else if (!project && open) {
         // Reset form for "Add New" mode when dialog opens
         setName('');
@@ -92,7 +90,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
     }
   }, [project, open, initialWorkspaceId, currentUser]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !startDate || !endDate || !workspaceId) {
       alert('Por favor, preencha todos os campos obrigatórios, incluindo o espaço de trabalho.');
@@ -111,14 +109,19 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         pmoId,
     };
 
-    if (project) {
-        updateProject({ ...project, ...projectData });
-    } else {
-        // On creation, include the workbookId to associate the project
-        addProject({ ...projectData, workbookIds: workbookId ? [workbookId] : [] }, templateId);
+    try {
+        if (project) {
+            await updateProject({ ...project, ...projectData, workbookIds: workbookId ? [workbookId] : project.workbookIds });
+        } else {
+            // On creation, include the workbookId to associate the project
+            await addProject({ ...projectData, workbookIds: workbookId ? [workbookId] : [] }, templateId);
+        }
+        setOpen(false);
+    } catch (error) {
+        console.error("Failed to save project:", error);
+        // Optionally, show an error message to the user
+        alert("Falha ao salvar o projeto. Tente novamente.");
     }
-
-    setOpen(false);
   };
   
   const Trigger = children ? <DialogTrigger asChild>{children}</DialogTrigger> : null;
@@ -170,7 +173,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                   </SelectContent>
                 </Select>
               </div>
-               {!project && workspaceId && workbooksForSelectedWorkspace.length > 0 && (
+               {workspaceId && workbooksForSelectedWorkspace.length > 0 && (
                 <div className="space-y-2">
                     <Label htmlFor="workbook">Pasta de Trabalho (Opcional)</Label>
                     <Select value={workbookId} onValueChange={(value) => setWorkbookId(value === 'none' ? undefined : value)}>
