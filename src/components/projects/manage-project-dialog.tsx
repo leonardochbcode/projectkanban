@@ -43,7 +43,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser } = useStore();
+  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser, getWorkbooksForWorkspace } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -55,6 +55,9 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [clientId, setClientId] = useState<string | undefined>();
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [pmoId, setPmoId] = useState<string | undefined>();
+  const [workbookId, setWorkbookId] = useState<string | undefined>();
+
+  const workbooksForSelectedWorkspace = workspaceId ? getWorkbooksForWorkspace(workspaceId) : [];
 
 
   useEffect(() => {
@@ -70,6 +73,9 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setParticipantIds(project.participantIds || []);
         setPmoId(project.pmoId);
         setTemplateId(undefined); // Don't show template when editing
+        // We don't set workbookId when editing to avoid accidental changes.
+        // The logic for adding/removing projects from workbooks is handled elsewhere.
+        setWorkbookId(undefined);
     } else if (!project && open) {
         // Reset form for "Add New" mode when dialog opens
         setName('');
@@ -82,6 +88,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setParticipantIds(currentUser ? [currentUser.id] : []);
         setPmoId(currentUser?.id);
         setTemplateId(undefined);
+        setWorkbookId(undefined);
     }
   }, [project, open, initialWorkspaceId, currentUser]);
 
@@ -101,13 +108,14 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         workspaceId,
         clientId,
         participantIds,
-        pmoId
-    }
+        pmoId,
+    };
 
     if (project) {
         updateProject({ ...project, ...projectData });
     } else {
-        addProject(projectData, templateId);
+        // On creation, include the workbookId to associate the project
+        addProject({ ...projectData, workbookIds: workbookId ? [workbookId] : [] }, templateId);
     }
 
     setOpen(false);
@@ -149,7 +157,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
             )}
              <div className="space-y-2">
                 <Label htmlFor="workspace">Espaço</Label>
-                <Select value={workspaceId} onValueChange={setWorkspaceId} required>
+                <Select value={workspaceId} onValueChange={(value) => { setWorkspaceId(value); setWorkbookId(undefined); }} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um espaço" />
                   </SelectTrigger>
@@ -162,6 +170,24 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                   </SelectContent>
                 </Select>
               </div>
+               {!project && workspaceId && workbooksForSelectedWorkspace.length > 0 && (
+                <div className="space-y-2">
+                    <Label htmlFor="workbook">Pasta de Trabalho (Opcional)</Label>
+                    <Select value={workbookId} onValueChange={(value) => setWorkbookId(value === 'none' ? undefined : value)}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Adicionar a uma pasta de trabalho" />
+                        </SelectTrigger>
+                        <SelectContent>
+                             <SelectItem value="none">Nenhuma</SelectItem>
+                             {workbooksForSelectedWorkspace.map((wb) => (
+                                <SelectItem key={wb.id} value={wb.id}>
+                                    {wb.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+              )}
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
               <Input

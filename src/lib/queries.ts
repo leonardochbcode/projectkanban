@@ -447,112 +447,111 @@ export async function getProjectById(id: string): Promise<Project | null> {
 }
 
 export async function createProject(project: Omit<Project, 'id' | 'participantIds' | 'workbookIds'> & { participantIds: string[], workbookIds: string[] }): Promise<Project> {
-    const newId = `prj_${randomBytes(8).toString('hex')}`;
     const { name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, participantIds, workbookIds } = project;
+    const newId = `prj_${randomBytes(8).toString('hex')}`;
 
-    const result = await queryOne<any>(`
-        INSERT INTO projects (id, name, description, start_date, end_date, status, workspace_id, client_id, opportunity_id, pmo_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *;
-    `, [newId, name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId]);
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
-    if (participantIds && participantIds.length > 0) {
-        for (const participantId of participantIds) {
-            await pool.query('INSERT INTO project_participants (project_id, participant_id) VALUES ($1, $2)', [newId, participantId]);
+        const projectResult = await client.query(`
+            INSERT INTO projects (id, name, description, start_date, end_date, status, workspace_id, client_id, opportunity_id, pmo_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *;
+        `, [newId, name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId]);
+        const newProject = projectResult.rows[0];
+
+        if (participantIds && participantIds.length > 0) {
+            for (const participantId of participantIds) {
+                await client.query('INSERT INTO project_participants (project_id, participant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [newId, participantId]);
+            }
         }
-    }
 
-    if (workbookIds && workbookIds.length > 0) {
-        for (const workbookId of workbookIds) {
-            await pool.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2)', [newId, workbookId]);
+        if (workbookIds && workbookIds.length > 0) {
+            for (const workbookId of workbookIds) {
+                await client.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [newId, workbookId]);
+            }
         }
-    }
 
-    return {
-        ...result,
-        startDate: result.start_date,
-        endDate: result.end_date,
-        workspaceId: result.workspace_id,
-        clientId: result.client_id,
-        opportunityId: result.opportunity_id,
-        pmoId: result.pmo_id,
-        participantIds,
-        workbookIds,
-    };
+        await client.query('COMMIT');
+
+        return {
+            ...newProject,
+            startDate: newProject.start_date,
+            endDate: newProject.end_date,
+            workspaceId: newProject.workspace_id,
+            clientId: newProject.client_id,
+            opportunityId: newProject.opportunity_id,
+            pmoId: newProject.pmo_id,
+            participantIds: participantIds || [],
+            workbookIds: workbookIds || [],
+        };
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error('Failed to create project:', e);
+        throw e;
+    } finally {
+        client.release();
+    }
 }
 
 export async function updateProject(id: string, project: Partial<Omit<Project, 'id' | 'participantIds' | 'workbookIds'>> & { participantIds?: string[], workbookIds?: string[] }): Promise<Project | null> {
     const { name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, participantIds, workbookIds } = project;
 
-    // Build the update query dynamically
-    const fields: any[] = [];
-    const values: any[] = [];
-    let query = 'UPDATE projects SET ';
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
-    if (name !== undefined) { fields.push('name'); values.push(name); }
-    if (description !== undefined) { fields.push('description'); values.push(description); }
-    if (startDate !== undefined) { fields.push('start_date'); values.push(startDate); }
-    if (endDate !== undefined) { fields.push('end_date'); values.push(endDate); }
-    if (status !== undefined) { fields.push('status'); values.push(status); }
-    if (workspaceId !== undefined) { fields.push('workspace_id'); values.push(workspaceId); }
-    if (clientId !== undefined) { fields.push('client_id'); values.push(clientId); }
-    if (opportunityId !== undefined) { fields.push('opportunity_id'); values.push(opportunityId); }
-    if (pmoId !== undefined) { fields.push('pmo_id'); values.push(pmoId); }
+        const hasProjectDetails = [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId].some(field => field !== undefined);
 
-    if (fields.length === 0 && participantIds === undefined && workbookIds === undefined) {
-        // Nothing to update, just fetch the project
-        return getProjectById(id);
-    }
-
-    let result: any;
-    if (fields.length > 0) {
-        query += fields.map((field, i) => `${field} = $${i + 1}`).join(', ');
-        values.push(id);
-        query += ` WHERE id = $${values.length} RETURNING *;`;
-        result = await queryOne<any>(query, values);
-    }
-
-    // Handle participants update
-    if (participantIds !== undefined) {
-        // First, remove existing participants
-        await pool.query('DELETE FROM project_participants WHERE project_id = $1', [id]);
-        // Then, add the new ones
-        for (const participantId of participantIds) {
-            await pool.query('INSERT INTO project_participants (project_id, participant_id) VALUES ($1, $2)', [id, participantId]);
+        if (hasProjectDetails) {
+            const updateQuery = `
+                UPDATE projects
+                SET
+                    name = COALESCE($1, name),
+                    description = COALESCE($2, description),
+                    start_date = COALESCE($3, start_date),
+                    end_date = COALESCE($4, end_date),
+                    status = COALESCE($5, status),
+                    workspace_id = COALESCE($6, workspace_id),
+                    client_id = COALESCE($7, client_id),
+                    opportunity_id = COALESCE($8, opportunity_id),
+                    pmo_id = COALESCE($9, pmo_id)
+                WHERE id = $10;
+            `;
+            await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
         }
-    }
 
-    // Handle workbooks update
-    if (workbookIds !== undefined) {
-        // First, remove existing associations
-        await pool.query('DELETE FROM project_workbooks WHERE project_id = $1', [id]);
-        // Then, add the new ones
-        for (const workbookId of workbookIds) {
-            await pool.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2)', [id, workbookId]);
+        if (participantIds !== undefined) {
+            await client.query('DELETE FROM project_participants WHERE project_id = $1', [id]);
+            if (participantIds.length > 0) {
+                for (const participantId of participantIds) {
+                    await client.query('INSERT INTO project_participants (project_id, participant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [id, participantId]);
+                }
+            }
         }
+
+        if (workbookIds !== undefined) {
+            await client.query('DELETE FROM project_workbooks WHERE project_id = $1', [id]);
+            if (workbookIds.length > 0) {
+                for (const workbookId of workbookIds) {
+                    await client.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [id, workbookId]);
+                }
+            }
+        }
+
+        await client.query('COMMIT');
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error('Failed to update project:', e);
+        // In case of error, return null to signify that the update failed.
+        return null;
+    } finally {
+        client.release();
     }
 
-    // If only participants/workbooks were updated, we need to fetch the project
-    if (!result) {
-        result = await queryOne<any>('SELECT * FROM projects WHERE id = $1', [id]);
-    }
-    if (!result) return null;
-
-    // Get the final list of participant and workbook IDs
-    const finalParticipantIds = await queryMany<any>('SELECT participant_id FROM project_participants WHERE project_id = $1', [id]);
-    const finalWorkbookIds = await queryMany<any>('SELECT workbook_id FROM project_workbooks WHERE project_id = $1', [id]);
-
-    return {
-        ...result,
-        startDate: result.start_date,
-        endDate: result.end_date,
-        workspaceId: result.workspace_id,
-        clientId: result.client_id,
-        opportunityId: result.opportunity_id,
-        pmoId: result.pmo_id,
-        participantIds: finalParticipantIds.map(p => p.participant_id),
-        workbookIds: finalWorkbookIds.map(w => w.workbook_id),
-    };
+    // Return the updated project with all its relations
+    return getProjectById(id);
 }
 
 export async function deleteProject(id: string): Promise<{ success: boolean }> {

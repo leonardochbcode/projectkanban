@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandEmpty } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Badge } from './badge';
@@ -105,18 +105,17 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                         </Badge>
                     ))}
                     <div className="relative flex-1">
-                        <input
+                        <CommandInput
                             ref={inputRef}
-                            placeholder={value.length > 0 ? '' : placeholder}
+                            placeholder={placeholder}
                             onFocus={() => setIsPopoverOpen(true)}
                             onBlurCapture={() => setIsPopoverOpen(false)}
-                            className='w-full bg-transparent p-1 text-sm outline-none placeholder:text-muted-foreground'
+                            className='w-full flex-1 bg-transparent p-1 text-sm outline-none placeholder:text-muted-foreground'
                         />
-                        {isPopoverOpen && (
-                             <div 
-                                className="absolute top-full z-10 mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95"
-                            >
+                         {isPopoverOpen && (
+                            <div className="absolute top-full z-10 mt-2 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95">
                                 <CommandList>
+                                    <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
                                     <CommandGroup>
                                         {unselectedOptions.map((option) => (
                                             <CommandItem
@@ -126,10 +125,8 @@ const MultiSelect = React.forwardRef<HTMLDivElement, MultiSelectProps>(
                                                 className='flex cursor-pointer items-center justify-between'
                                             >
                                                 <div className='flex items-center'>
-                                                {option.icon && (
-                                                    <option.icon className='mr-2 h-4 w-4' />
-                                                )}
-                                                {option.label}
+                                                    {option.icon && <option.icon className='mr-2 h-4 w-4' />}
+                                                    {option.label}
                                                 </div>
                                             </CommandItem>
                                         ))}

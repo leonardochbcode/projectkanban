@@ -21,13 +21,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Briefcase, Calendar, User, Users } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface ProjectCardProps {
   project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-  const { getProjectTasks, participants } = useStore();
+  const { getProjectTasks, participants, getClient, getParticipant } = useStore();
   const tasks = getProjectTasks(project.id);
   const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
@@ -36,57 +38,92 @@ export function ProjectCard({ project }: ProjectCardProps) {
     .map((id) => participants.find((p) => p.id === id))
     .filter(Boolean) as (typeof participants[0])[];
 
-  const statusColors: { [key: string]: string } = {
-    'Em Andamento': 'bg-secondary text-secondary-foreground',
-    Planejamento: 'bg-secondary text-secondary-foreground',
-    Concluído: 'bg-secondary text-secondary-foreground',
-    Pausado: 'bg-secondary text-secondary-foreground',
-  };
+  const client = getClient(project.clientId || '');
+  const pmo = getParticipant(project.pmoId);
+
+  const statusInfo = {
+    'Em Andamento': { label: 'Em Andamento', color: 'bg-blue-500 text-white' },
+    'Planejamento': { label: 'Planejamento', color: 'bg-yellow-500 text-white' },
+    'Concluído': { label: 'Concluído', color: 'bg-green-500 text-white' },
+    'Pausado': { label: 'Pausado', color: 'bg-gray-500 text-white' },
+  }[project.status] || { label: project.status, color: 'bg-gray-200 text-gray-800' };
+
 
   return (
-    <Link href={`/projects/${project.id}`}>
-      <Card className="hover:shadow-lg transition-shadow h-full flex flex-col">
+    <Link href={`/projects/${project.id}`} className="block h-full">
+      <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col border-l-4" style={{ borderLeftColor: statusInfo.color }}>
         <CardHeader>
-          <div className="flex justify-between items-start">
-            <CardTitle className="font-headline text-lg">{project.name}</CardTitle>
-            <Badge variant="outline" className={cn(statusColors[project.status])}>
-              {project.status}
+          <div className="flex justify-between items-start gap-2">
+            <CardTitle className="font-headline text-lg leading-tight">{project.name}</CardTitle>
+            <Badge variant="default" className={cn("text-xs whitespace-nowrap", statusInfo.color)}>
+              {statusInfo.label}
             </Badge>
           </div>
-          <CardDescription className="line-clamp-2">{project.description}</CardDescription>
+          {project.description && <CardDescription className="text-sm line-clamp-2 mt-1">{project.description}</CardDescription>}
         </CardHeader>
-        <CardContent className="flex-grow">
-          <div className="space-y-1">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Progresso</span>
-              <span>{Math.round(progress)}%</span>
+        <CardContent className="flex-grow space-y-4">
+            {/* Project Details */}
+            <div className="space-y-2 text-sm text-muted-foreground">
+                {client && (
+                    <div className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" />
+                        <span>{client.name}</span>
+                    </div>
+                )}
+                {pmo && (
+                     <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>{pmo.name}</span>
+                    </div>
+                )}
+                <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>{format(new Date(project.startDate), 'dd/MM/yy')} - {format(new Date(project.endDate), 'dd/MM/yy')}</span>
+                </div>
             </div>
-            <Progress value={progress} />
-            <div className="flex justify-between text-xs text-muted-foreground pt-1">
-              <span>{completedTasks} / {tasks.length} tarefas</span>
-              <span>Prazo: {new Date(project.endDate).toLocaleDateString()}</span>
+
+            {/* Progress Bar */}
+            <div className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Progresso</span>
+                    <span>{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+                <div className="text-xs text-muted-foreground pt-1">
+                    <span>{completedTasks} de {tasks.length} tarefas concluídas</span>
+                </div>
             </div>
-          </div>
         </CardContent>
-        <CardFooter>
-          <div className="flex -space-x-2 overflow-hidden">
-            <TooltipProvider>
-              {projectParticipants.map((p) =>
-                p ? (
-                  <Tooltip key={p.id}>
-                    <TooltipTrigger asChild>
-                      <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                        <AvatarImage src={p.avatar} />
-                        <AvatarFallback>{p.name[0]}</AvatarFallback>
-                      </Avatar>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{p.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : null
-              )}
-            </TooltipProvider>
+        <CardFooter className="pt-4">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex -space-x-2 overflow-hidden">
+              <TooltipProvider>
+                {projectParticipants.slice(0, 5).map((p) =>
+                  p ? (
+                    <Tooltip key={p.id}>
+                      <TooltipTrigger asChild>
+                        <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
+                          <AvatarImage src={p.avatar} alt={p.name} />
+                          <AvatarFallback>{p.name[0]}</AvatarFallback>
+                        </Avatar>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{p.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : null
+                )}
+              </TooltipProvider>
+               {projectParticipants.length > 5 && (
+                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted text-muted-foreground text-xs ring-2 ring-background">
+                    +{projectParticipants.length - 5}
+                 </div>
+                )}
+            </div>
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span>{projectParticipants.length}</span>
+            </div>
           </div>
         </CardFooter>
       </Card>
