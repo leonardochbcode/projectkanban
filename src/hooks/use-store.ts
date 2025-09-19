@@ -743,6 +743,10 @@ export const useStore = () => {
     }
   }, [store.workbooks, dispatch]);
 
+  const getWorkbooksForWorkspace = useCallback((workspaceId: string) => {
+    return store.workbooks.filter(w => w.workspaceId === workspaceId);
+    }, [store.workbooks]);
+
   const addWorkbook = useCallback(async (workbook: Omit<Workbook, 'id' | 'projectIds'>) => {
     try {
       const response = await fetch('/api/workbooks', {
@@ -878,6 +882,7 @@ export const useStore = () => {
     getWorkbook,
     getWorkbooksByWorkspace,
     fetchWorkbooksByWorkspace,
+    getWorkbooksForWorkspace,
     addWorkbook,
     updateWorkbook,
     deleteWorkbook,
