@@ -26,41 +26,41 @@ interface WorkbooksTableProps {
 }
 
 function WorkbookProjectsRow({ workbook, projects, isVisible }: { workbook: Workbook, projects: Project[], isVisible: boolean }) {
-    if (!isVisible) return null;
+  if (!isVisible) return null;
 
-    return (
-        <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableCell colSpan={4} className="p-0">
-                <div className="p-4">
-                    <h4 className="text-sm font-semibold mb-2">Projetos no Workbook: {workbook.name}</h4>
-                    {projects.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nome do Projeto</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {projects.map(project => (
-                                    <TableRow key={project.id}>
-                                        <TableCell>
-                                            <Link href={`/projects/${project.id}`} className="hover:underline">
-                                                {project.name}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell>{project.status}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-sm text-muted-foreground px-4 py-2">Nenhum projeto neste workbook.</p>
-                    )}
-                </div>
-            </TableCell>
-        </TableRow>
-    )
+  return (
+    <TableRow className="bg-muted/50 hover:bg-muted/50">
+      <TableCell colSpan={4} className="p-0">
+        <div className="p-4">
+          <h4 className="text-sm font-semibold mb-2">Projetos na Pasta de Trabalho: {workbook.name}</h4>
+          {projects.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome do Projeto</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projects.map(project => (
+                  <TableRow key={project.id}>
+                    <TableCell>
+                      <Link href={`/projects/${project.id}`} className="hover:underline">
+                        {project.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{project.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground px-4 py-2">Nenhum projeto neste workbook.</p>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  )
 }
 
 export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
@@ -112,50 +112,50 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
             const isExpanded = expandedRows[workbook.id];
             return (
               <React.Fragment key={workbook.id}>
-                  <TableRow>
-                      <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => toggleRow(workbook.id)} className="h-8 w-8">
-                              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                          </Button>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                          {workbook.name}
-                      </TableCell>
-                      <TableCell>
-                          {projects.length}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Progress value={progress} className="w-[100px]" />
-                          <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                          </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                          <DropdownMenuItem onSelect={() => onEdit(workbook)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleManageProjects(workbook)}>
-                              <FolderKanban className="mr-2 h-4 w-4" />
-                              Gerenciar Projetos
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onSelect={() => handleDelete(workbook)} className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Excluir
-                          </DropdownMenuItem>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                      </TableCell>
-                  </TableRow>
-                  <WorkbookProjectsRow workbook={workbook} projects={projects} isVisible={isExpanded} />
+                <TableRow>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => toggleRow(workbook.id)} className="h-8 w-8">
+                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </Button>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {workbook.name}
+                  </TableCell>
+                  <TableCell>
+                    {projects.length}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Progress value={progress} className="w-[100px]" />
+                      <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => onEdit(workbook)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleManageProjects(workbook)}>
+                          <FolderKanban className="mr-2 h-4 w-4" />
+                          Gerenciar Projetos
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => handleDelete(workbook)} className="text-red-600">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+                <WorkbookProjectsRow workbook={workbook} projects={projects} isVisible={isExpanded} />
               </React.Fragment>
             )
           })}

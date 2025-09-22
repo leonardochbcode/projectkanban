@@ -15,7 +15,7 @@ function ProjectsPageContent() {
   const { projects, clients, workspaces } = useStore();
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
+
   const [nameFilter, setNameFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [clientFilter, setClientFilter] = useState('all');
@@ -44,7 +44,7 @@ function ProjectsPageContent() {
     }
     return filtered;
   }, [projects, nameFilter, statusFilter, clientFilter, workspaceFilter, workbookFilter]);
-  
+
   const handleAdd = () => {
     setEditingProject(undefined);
     setIsDialogOpen(true);
@@ -64,86 +64,86 @@ function ProjectsPageContent() {
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2 mb-4">
-             <h1 className="text-3xl font-bold tracking-tight font-headline">Todos os Projetos</h1>
-            <div className="flex items-center space-x-2">
-                <ManageProjectDialog project={editingProject} open={isDialogOpen} onOpenChange={handleDialogClose}>
-                    <Button onClick={handleAdd}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar Projeto
-                    </Button>
-                </ManageProjectDialog>
-            </div>
+      <div className="flex items-center justify-between space-y-2 mb-4">
+        <h1 className="text-3xl font-bold tracking-tight font-headline">Todos os Projetos</h1>
+        <div className="flex items-center space-x-2">
+          <ManageProjectDialog project={editingProject} open={isDialogOpen} onOpenChange={handleDialogClose}>
+            <Button onClick={handleAdd}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Criar Projeto
+            </Button>
+          </ManageProjectDialog>
         </div>
-        <Card>
+      </div>
+      <Card>
         <CardHeader>
-            <CardTitle>Lista de Projetos</CardTitle>
-            <CardDescription>Uma visão geral de todos os projetos em todos os espaços de trabalho.</CardDescription>
+          <CardTitle>Lista de Projetos</CardTitle>
+          <CardDescription>Uma visão geral de todos os projetos em todos os espaços de trabalho.</CardDescription>
         </CardHeader>
         <CardContent>
-            <div className="flex items-center gap-2 mb-4">
-                <Input 
-                    placeholder="Filtrar por nome..."
-                    value={nameFilter}
-                    onChange={(e) => setNameFilter(e.target.value)}
-                    className="max-w-sm"
-                />
-                <Select value={workspaceFilter} onValueChange={setWorkspaceFilter}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Espaço" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os Espaços</SelectItem>
-                        {workspaces.map(ws => (
-                            <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os Status</SelectItem>
-                        <SelectItem value="Planejamento">Planejamento</SelectItem>
-                        <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-                        <SelectItem value="Pausado">Pausado</SelectItem>
-                        <SelectItem value="Concluído">Concluído</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select value={clientFilter} onValueChange={setClientFilter}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos os Clientes</SelectItem>
-                        {clients.map(client => (
-                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Select value={workbookFilter} onValueChange={setWorkbookFilter}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Workbook" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="in_workbook">Em workbook</SelectItem>
-                        <SelectItem value="not_in_workbook">Fora de workbook</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <ProjectsTable projects={filteredProjects} onEdit={handleEdit} />
+          <div className="flex items-center gap-2 mb-4">
+            <Input
+              placeholder="Filtrar por nome..."
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              className="max-w-sm"
+            />
+            <Select value={workspaceFilter} onValueChange={setWorkspaceFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Espaço" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Espaços</SelectItem>
+                {workspaces.map(ws => (
+                  <SelectItem key={ws.id} value={ws.id}>{ws.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Status</SelectItem>
+                <SelectItem value="Planejamento">Planejamento</SelectItem>
+                <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                <SelectItem value="Pausado">Pausado</SelectItem>
+                <SelectItem value="Concluído">Concluído</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={clientFilter} onValueChange={setClientFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Clientes</SelectItem>
+                {clients.map(client => (
+                  <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={workbookFilter} onValueChange={setWorkbookFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Pasta de Trabalho" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="in_workbook">Em workbook</SelectItem>
+                <SelectItem value="not_in_workbook">Fora de workbook</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <ProjectsTable projects={filteredProjects} onEdit={handleEdit} />
         </CardContent>
-        </Card>
-     </div>
+      </Card>
+    </div>
   )
 }
 
 export default function ProjectsPage() {
-    return (
-        <AppLayout>
-            <ProjectsPageContent />
-        </AppLayout>
-    )
+  return (
+    <AppLayout>
+      <ProjectsPageContent />
+    </AppLayout>
+  )
 }

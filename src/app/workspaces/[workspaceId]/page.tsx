@@ -49,7 +49,7 @@ function WorkbooksTab({ workspaceId }: { workspaceId: string }) {
                 <ManageWorkbookDialog workbook={editingWorkbook} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
                     <Button onClick={handleAdd}>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar Workbook
+                        Criar Pasta de Trabalho
                     </Button>
                 </ManageWorkbookDialog>
             </div>
@@ -99,46 +99,46 @@ function ProjectsTab({ workspaceId }: { workspaceId: string }) {
 
 
 function WorkspacePageContent() {
-  const { workspaceId } = useParams() as { workspaceId: string };
-  const { workspaces } = useStore();
-  const workspace = workspaces.find(w => w.id === workspaceId);
+    const { workspaceId } = useParams() as { workspaceId: string };
+    const { workspaces } = useStore();
+    const workspace = workspaces.find(w => w.id === workspaceId);
 
-  if (!workspace) {
-      return notFound();
-  }
+    if (!workspace) {
+        return notFound();
+    }
 
-  return (
-    <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-            <h1 className="text-3xl font-bold tracking-tight font-headline">{workspace.name}</h1>
-            <p className="text-muted-foreground">{workspace.description}</p>
+    return (
+        <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight font-headline">{workspace.name}</h1>
+                    <p className="text-muted-foreground">{workspace.description}</p>
+                </div>
+            </div>
+            <Tabs defaultValue="workbooks">
+                <TabsList>
+                    <TabsTrigger value="workbooks">Pastas de Trabalho</TabsTrigger>
+                    <TabsTrigger value="projects">Projetos</TabsTrigger>
+                    <TabsTrigger value="templates">Templates</TabsTrigger>
+                </TabsList>
+                <TabsContent value="workbooks">
+                    <WorkbooksTab workspaceId={workspaceId} />
+                </TabsContent>
+                <TabsContent value="projects">
+                    <ProjectsTab workspaceId={workspaceId} />
+                </TabsContent>
+                <TabsContent value="templates">
+                    <ManageTemplates />
+                </TabsContent>
+            </Tabs>
         </div>
-      </div>
-      <Tabs defaultValue="workbooks">
-        <TabsList>
-            <TabsTrigger value="workbooks">Workbooks</TabsTrigger>
-            <TabsTrigger value="projects">Projetos</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-        </TabsList>
-        <TabsContent value="workbooks">
-            <WorkbooksTab workspaceId={workspaceId} />
-        </TabsContent>
-        <TabsContent value="projects">
-            <ProjectsTab workspaceId={workspaceId} />
-        </TabsContent>
-        <TabsContent value="templates">
-            <ManageTemplates />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+    );
 }
 
 export default function WorkspacePage() {
-  return (
-    <AppLayout>
-      <WorkspacePageContent />
-    </AppLayout>
-  );
+    return (
+        <AppLayout>
+            <WorkspacePageContent />
+        </AppLayout>
+    );
 }

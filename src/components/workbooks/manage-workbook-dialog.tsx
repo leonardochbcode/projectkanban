@@ -48,9 +48,9 @@ export function ManageWorkbookDialog({ children, workbook, workspaceId, open, on
     }
 
     const workbookData = {
-        name,
-        description,
-        workspaceId,
+      name,
+      description,
+      workspaceId,
     };
 
     if (workbook) {
@@ -74,7 +74,7 @@ export function ManageWorkbookDialog({ children, workbook, workspaceId, open, on
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-headline">
-              {workbook ? 'Editar Workbook' : 'Adicionar Novo Workbook'}
+              {workbook ? 'Editar Pasta de Trabalho' : 'Adicionar Nova Pasta de Trabalho'}
             </DialogTitle>
             <DialogDescription>
               {workbook
@@ -95,7 +95,7 @@ export function ManageWorkbookDialog({ children, workbook, workspaceId, open, on
                 required
               />
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="description" className="text-right">
                 Descrição
               </Label>

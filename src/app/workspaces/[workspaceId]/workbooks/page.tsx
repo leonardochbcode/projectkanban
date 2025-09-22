@@ -27,7 +27,7 @@ function WorkbooksPageContent() {
   const workbooks = getWorkbooksByWorkspace(workspaceId);
 
   if (!workspace) {
-      return notFound();
+    return notFound();
   }
 
   const handleAdd = () => {
@@ -49,29 +49,29 @@ function WorkbooksPageContent() {
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Workbooks: {workspace.name}</h1>
-                <p className="text-muted-foreground">{workspace.description}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-                <ManageWorkbookDialog workbook={editingWorkbook} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
-                    <Button onClick={handleAdd}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar Workbook
-                    </Button>
-                </ManageWorkbookDialog>
-            </div>
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight font-headline">Workbooks: {workspace.name}</h1>
+          <p className="text-muted-foreground">{workspace.description}</p>
         </div>
-        <Card>
+        <div className="flex items-center space-x-2">
+          <ManageWorkbookDialog workbook={editingWorkbook} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
+            <Button onClick={handleAdd}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Criar Pasta de Trabalho
+            </Button>
+          </ManageWorkbookDialog>
+        </div>
+      </div>
+      <Card>
         <CardHeader>
-            <CardTitle>Lista de Workbooks</CardTitle>
-            <CardDescription>Uma visão geral de todos os workbooks neste espaço de trabalho.</CardDescription>
+          <CardTitle>Lista de Pasta de Trabalho</CardTitle>
+          <CardDescription>Uma visão geral de todos os workbooks neste espaço de trabalho.</CardDescription>
         </CardHeader>
         <CardContent>
-            <WorkbooksTable workbooks={workbooks} onEdit={handleEdit} />
+          <WorkbooksTable workbooks={workbooks} onEdit={handleEdit} />
         </CardContent>
-        </Card>
+      </Card>
     </div>
   )
 }

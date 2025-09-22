@@ -23,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Project } from '@/lib/types';
+import type { Project, Workbook } from '@/lib/types';
 import { MultiSelect } from '../ui/multi-select';
+import { format, parseISO } from 'date-fns';
 
 interface ManageProjectDialogProps {
   children?: ReactNode; // Tornando children opcional
@@ -43,7 +44,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser } = useStore();
+  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser, getWorkbooksByWorkspace } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -55,6 +56,9 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const [clientId, setClientId] = useState<string | undefined>();
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [pmoId, setPmoId] = useState<string | undefined>();
+  const [workbookIds, setWorkbookIds] = useState<string[]>([]);
+
+  const workbooksForSelectedWorkspace = workspaceId ? getWorkbooksByWorkspace(workspaceId).map((w: Workbook) => ({ label: w.name, value: w.id })) : [];
 
 
   useEffect(() => {
@@ -62,14 +66,15 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
     if (project && open) {
         setName(project.name);
         setDescription(project.description);
-        setStartDate(project.startDate);
-        setEndDate(project.endDate);
+        setStartDate(project.startDate ? format(parseISO(project.startDate), 'yyyy-MM-dd') : '');
+        setEndDate(project.endDate ? format(parseISO(project.endDate), 'yyyy-MM-dd') : '');
         setStatus(project.status);
         setWorkspaceId(project.workspaceId);
         setClientId(project.clientId);
         setParticipantIds(project.participantIds || []);
         setPmoId(project.pmoId);
         setTemplateId(undefined); // Don't show template when editing
+        setWorkbookIds(project.workbookIds || []);
     } else if (!project && open) {
         // Reset form for "Add New" mode when dialog opens
         setName('');
@@ -82,10 +87,11 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         setParticipantIds(currentUser ? [currentUser.id] : []);
         setPmoId(currentUser?.id);
         setTemplateId(undefined);
+        setWorkbookIds([]);
     }
   }, [project, open, initialWorkspaceId, currentUser]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !startDate || !endDate || !workspaceId) {
       alert('Por favor, preencha todos os campos obrigatórios, incluindo o espaço de trabalho.');
@@ -101,16 +107,23 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
         workspaceId,
         clientId,
         participantIds,
-        pmoId
-    }
+        pmoId,
+        workbookIds,
+    };
 
-    if (project) {
-        updateProject({ ...project, ...projectData });
-    } else {
-        addProject(projectData, templateId);
+    try {
+        if (project) {
+            await updateProject({ id: project.id, ...projectData });
+        } else {
+            // On creation, include the workbookId to associate the project
+            await addProject(projectData, templateId);
+        }
+        setOpen(false);
+    } catch (error) {
+        console.error("Failed to save project:", error);
+        // Optionally, show an error message to the user
+        alert("Falha ao salvar o projeto. Tente novamente.");
     }
-
-    setOpen(false);
   };
   
   const Trigger = children ? <DialogTrigger asChild>{children}</DialogTrigger> : null;
@@ -149,7 +162,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
             )}
              <div className="space-y-2">
                 <Label htmlFor="workspace">Espaço</Label>
-                <Select value={workspaceId} onValueChange={setWorkspaceId} required>
+                <Select value={workspaceId} onValueChange={(value) => { setWorkspaceId(value); setWorkbookIds([]); }} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um espaço" />
                   </SelectTrigger>
@@ -162,6 +175,17 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                   </SelectContent>
                 </Select>
               </div>
+               {workspaceId && workbooksForSelectedWorkspace.length > 0 && (
+                <div className="space-y-2">
+                    <Label htmlFor="workbook">Pasta de Trabalho (Opcional)</Label>
+                    <MultiSelect
+                        options={workbooksForSelectedWorkspace}
+                        value={workbookIds}
+                        onValueChange={setWorkbookIds}
+                        placeholder="Adicionar a uma pasta de trabalho"
+                    />
+                </div>
+              )}
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
               <Input

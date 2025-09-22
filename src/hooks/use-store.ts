@@ -302,25 +302,50 @@ export const useStore = () => {
       return newProject;
     } catch (error) {
       console.error("Failed to add project:", error);
-      // Optionally re-throw or handle the error (e.g., show a toast)
-      return null;
+      // Re-throw the error to be caught by the calling component
+      throw error;
     }
   }, [store.projects, store.tasks, store.projectTemplates, dispatch]);
 
   const updateProject = useCallback(async (updatedProject: Partial<Project> & { id: string }) => {
+    // Optimistic update can be tricky. A safer pattern is to update the state
+    // only after the API call is successful.
+    const originalProjects = [...store.projects];
+
+    // Immediately update the UI for a better user experience (optimistic update)
+    const optimisticProject = { ...originalProjects.find(p => p.id === updatedProject.id)!, ...updatedProject };
+    dispatch({
+        projects: store.projects.map(p => p.id === updatedProject.id ? optimisticProject : p)
+    });
+
     try {
       const response = await fetch(`/api/projects/${updatedProject.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedProject),
       });
-      if (!response.ok) throw new Error('Failed to update project');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update project');
+      }
+
       const returnedProject = await response.json();
+      if (!returnedProject) {
+        throw new Error('Update operation did not return a project.');
+      }
+
+      // If successful, the optimistic update is already correct, but we can sync with the server response
       dispatch({
         projects: store.projects.map(p => p.id === returnedProject.id ? returnedProject : p)
       });
+
     } catch(error) {
       console.error("Failed to update project:", error);
+      // If the API call fails, revert the state to the original
+      dispatch({ projects: originalProjects });
+      // Re-throw the error to be caught by the calling component
+      throw error;
     }
   }, [store.projects, dispatch]);
 
