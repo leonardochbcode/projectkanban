@@ -302,21 +302,40 @@ export async function deleteWorkbook(id: string): Promise<{ success: boolean }> 
     return { success: result.rowCount > 0 };
 }
 
-export async function addProjectToWorkbook(workbookId: string, projectId: string): Promise<{ success: boolean }> {
-    // Optional: Add a check to ensure the project and workbook are in the same workspace
-    const result = await pool.query(
-        'INSERT INTO project_workbooks (workbook_id, project_id) VALUES ($1, $2) ON CONFLICT (workbook_id, project_id) DO NOTHING',
-        [workbookId, projectId]
-    );
-    return { success: result.rowCount > 0 };
-}
+export async function updateWorkbookProjects(
+    workbookId: string,
+    projectsToAdd: string[],
+    projectsToRemove: string[]
+): Promise<{ success: boolean, message?: string }> {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
-export async function removeProjectFromWorkbook(workbookId: string, projectId: string): Promise<{ success: boolean }> {
-    const result = await pool.query(
-        'DELETE FROM project_workbooks WHERE workbook_id = $1 AND project_id = $2',
-        [workbookId, projectId]
-    );
-    return { success: result.rowCount > 0 };
+        // Remove projects
+        if (projectsToRemove.length > 0) {
+            const removeQuery = 'DELETE FROM project_workbooks WHERE workbook_id = $1 AND project_id = ANY($2::text[])';
+            await client.query(removeQuery, [workbookId, projectsToRemove]);
+        }
+
+        // Add projects
+        if (projectsToAdd.length > 0) {
+            // Using a loop with ON CONFLICT to avoid inserting duplicates
+            for (const projectId of projectsToAdd) {
+                const insertQuery = 'INSERT INTO project_workbooks (workbook_id, project_id) VALUES ($1, $2) ON CONFLICT (workbook_id, project_id) DO NOTHING';
+                await client.query(insertQuery, [workbookId, projectId]);
+            }
+        }
+
+        await client.query('COMMIT');
+        return { success: true };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Failed to update workbook projects:', error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return { success: false, message: errorMessage };
+    } finally {
+        client.release();
+    }
 }
 
 

@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useStore } from '@/hooks/use-store';
+import { useToast } from '@/hooks/use-toast';
 import type { Workbook } from '@/lib/types';
 import { MultiSelect } from '../ui/multi-select';
 
@@ -21,14 +22,15 @@ interface ManageWorkbookProjectsDialogProps {
 }
 
 export function ManageWorkbookProjectsDialog({ workbook, open, onOpenChange }: ManageWorkbookProjectsDialogProps) {
-  const { getWorkspaceProjects, addProjectToWorkbook, removeProjectFromWorkbook } = useStore();
+  const { getWorkspaceProjects, updateWorkbookProjects } = useStore();
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const { toast } = useToast();
 
   const projectsInWorkspace = getWorkspaceProjects(workbook.workspaceId);
 
   useEffect(() => {
     if (workbook) {
-      setSelectedProjectIds(workbook.projectIds);
+      setSelectedProjectIds(workbook.projectIds || []);
     }
   }, [workbook]);
 
@@ -38,18 +40,33 @@ export function ManageWorkbookProjectsDialog({ workbook, open, onOpenChange }: M
   }));
 
   const handleSubmit = async () => {
-    const originalProjectIds = new Set(workbook.projectIds);
-    const newProjectIds = new Set(selectedProjectIds);
+    try {
+      const originalProjectIds = new Set(workbook.projectIds || []);
+      const newProjectIds = new Set(selectedProjectIds);
 
-    const projectsToAdd = selectedProjectIds.filter(id => !originalProjectIds.has(id));
-    const projectsToRemove = workbook.projectIds.filter(id => !newProjectIds.has(id));
+      const projectsToAdd = selectedProjectIds.filter(id => !originalProjectIds.has(id));
+      const projectsToRemove = (workbook.projectIds || []).filter(id => !newProjectIds.has(id));
 
-    await Promise.all([
-      ...projectsToAdd.map(projectId => addProjectToWorkbook(workbook.id, projectId)),
-      ...projectsToRemove.map(projectId => removeProjectFromWorkbook(workbook.id, projectId))
-    ]);
+      if (projectsToAdd.length === 0 && projectsToRemove.length === 0) {
+        onOpenChange(false); // Close dialog if no changes were made
+        return;
+      }
 
-    onOpenChange(false);
+      await updateWorkbookProjects(workbook.id, projectsToAdd, projectsToRemove);
+
+      toast({
+        title: "Projetos do Workbook Atualizados",
+        description: "As alterações nos projetos foram salvas com sucesso.",
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Failed to update workbook projects:", error);
+      toast({
+        title: "Erro ao Atualizar",
+        description: "Não foi possível salvar as alterações nos projetos do workbook.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
