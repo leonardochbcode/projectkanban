@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { addProjectToWorkbook, removeProjectFromWorkbook } from '@/lib/queries';
+import { updateWorkbookProjects } from '@/lib/queries';
 
 type RouteParams = {
   params: Promise<{ id: string }>
@@ -9,46 +9,21 @@ export async function POST(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const workbookId = id;
-    const { projectId } = await request.json();
+    const { projectsToAdd, projectsToRemove } = await request.json();
 
-    if (!projectId) {
-      return NextResponse.json({ message: 'projectId is required' }, { status: 400 });
+    if (!Array.isArray(projectsToAdd) || !Array.isArray(projectsToRemove)) {
+      return NextResponse.json({ message: 'projectsToAdd and projectsToRemove must be arrays' }, { status: 400 });
     }
 
-    const result = await addProjectToWorkbook(workbookId, projectId);
+    const result = await updateWorkbookProjects(workbookId, projectsToAdd, projectsToRemove);
 
     if (!result.success) {
-      // This could be because the project or workbook doesn't exist, or the association already exists.
-      // A more specific error message might be helpful in a real app.
-      return NextResponse.json({ message: 'Failed to add project to workbook' }, { status: 400 });
+      return NextResponse.json({ message: result.message || 'Failed to update workbook projects' }, { status: 400 });
     }
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ message: 'Workbook projects updated successfully' }, { status: 200 });
   } catch (error) {
-    console.error(`Failed to add project to workbook ${(await params).id}:`, error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request, { params }: RouteParams) {
-  try {
-    const { id } = await params;
-    const workbookId = id;
-    const { projectId } = await request.json();
-
-    if (!projectId) {
-      return NextResponse.json({ message: 'projectId is required' }, { status: 400 });
-    }
-
-    const result = await removeProjectFromWorkbook(workbookId, projectId);
-
-    if (!result.success) {
-      return NextResponse.json({ message: 'Failed to remove project from workbook' }, { status: 404 });
-    }
-
-    return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error(`Failed to remove project from workbook ${(await params).id}:`, error);
+    console.error(`Failed to update workbook projects for workbook ${(await params).id}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
   }
 }

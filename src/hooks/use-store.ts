@@ -816,49 +816,44 @@ export const useStore = () => {
     }
   }, [store.workbooks, dispatch]);
 
-  const addProjectToWorkbook = useCallback(async (workbookId: string, projectId: string) => {
+  const updateWorkbookProjects = useCallback(async (
+    workbookId: string,
+    projectsToAdd: string[],
+    projectsToRemove: string[]
+  ) => {
+    // Optimistic update
+    const originalWorkbooks = [...store.workbooks];
+    const updatedWorkbooks = store.workbooks.map(w => {
+        if (w.id === workbookId) {
+            const newProjectIds = new Set(w.projectIds);
+            projectsToAdd.forEach(id => newProjectIds.add(id));
+            projectsToRemove.forEach(id => newProjectIds.delete(id));
+            return { ...w, projectIds: Array.from(newProjectIds) };
+        }
+        return w;
+    });
+    dispatch({ workbooks: updatedWorkbooks });
+
     try {
       const response = await fetch(`/api/workbooks/${workbookId}/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId }),
+        body: JSON.stringify({ projectsToAdd, projectsToRemove }),
       });
-      if (!response.ok) throw new Error('Failed to add project to workbook');
 
-      // Update local state
-      const updatedWorkbooks = store.workbooks.map(w => {
-        if (w.id === workbookId) {
-          return { ...w, projectIds: [...w.projectIds, projectId] };
-        }
-        return w;
-      });
-      dispatch({ workbooks: updatedWorkbooks });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update workbook projects');
+      }
+
+      // Optionally, you can refetch the workbook data to ensure consistency
+      // For now, the optimistic update should suffice.
 
     } catch (error) {
-      console.error("Failed to add project to workbook:", error);
-    }
-  }, [store.workbooks, dispatch]);
-
-  const removeProjectFromWorkbook = useCallback(async (workbookId: string, projectId: string) => {
-    try {
-      const response = await fetch(`/api/workbooks/${workbookId}/projects`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId }),
-      });
-      if (!response.ok) throw new Error('Failed to remove project from workbook');
-
-      // Update local state
-      const updatedWorkbooks = store.workbooks.map(w => {
-        if (w.id === workbookId) {
-          return { ...w, projectIds: w.projectIds.filter(id => id !== projectId) };
-        }
-        return w;
-      });
-      dispatch({ workbooks: updatedWorkbooks });
-
-    } catch (error) {
-      console.error("Failed to remove project from workbook:", error);
+      console.error("Failed to update workbook projects:", error);
+      // Revert on failure
+      dispatch({ workbooks: originalWorkbooks });
+      throw error; // Re-throw to be handled by the component
     }
   }, [store.workbooks, dispatch]);
 
@@ -906,7 +901,6 @@ export const useStore = () => {
     addWorkbook,
     updateWorkbook,
     deleteWorkbook,
-    addProjectToWorkbook,
-    removeProjectFromWorkbook,
+    updateWorkbookProjects,
   };
 };

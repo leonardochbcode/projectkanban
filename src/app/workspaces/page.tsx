@@ -1,8 +1,9 @@
 
 'use client';
-import { PlusCircle, Edit, Trash2, Folder, Briefcase, FileText } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Folder, Briefcase, FileText, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useStore } from '@/hooks/use-store';
 import {
   AlertDialog,
@@ -63,7 +64,11 @@ function WorkspacesPageContent() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {workspaces.map((workspace) => {
           const client = workspace.clientId ? getClient(workspace.clientId) : null;
-          const projectCount = getWorkspaceProjects(workspace.id).length;
+          const projects = getWorkspaceProjects(workspace.id);
+          const projectCount = projects.length;
+          const completedProjects = projects.filter(p => p.status === 'Concluído').length;
+          const progress = projectCount > 0 ? (completedProjects / projectCount) * 100 : 0;
+
           return (
             <Card key={workspace.id} className="flex flex-col">
               <CardHeader>
@@ -101,7 +106,7 @@ function WorkspacesPageContent() {
                 </div>
                 <CardDescription>{workspace.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow space-y-3">
+              <CardContent className="flex-grow space-y-4">
                 {client && (
                   <div className="flex items-center text-sm text-muted-foreground gap-2">
                     <Briefcase className="h-4 w-4" />
@@ -111,6 +116,17 @@ function WorkspacesPageContent() {
                 <div className="flex items-center text-sm text-muted-foreground gap-2">
                   <FileText className="h-4 w-4" />
                   <span>{projectCount} {projectCount === 1 ? 'projeto' : 'projetos'}</span>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-muted-foreground">Progresso</span>
+                    <span className="text-sm font-semibold">{Math.round(progress)}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                  <div className="flex items-center text-xs text-muted-foreground mt-1 gap-1">
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                    <span>{completedProjects} de {projectCount} projetos concluídos</span>
+                  </div>
                 </div>
               </CardContent>
               <div className="p-4 pt-0">
