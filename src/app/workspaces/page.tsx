@@ -17,15 +17,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Workspace } from '@/lib/types';
 import { ManageWorkspaceDialog } from '@/components/workspaces/manage-workspace-dialog';
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
 
 function WorkspacesPageContent() {
   const { workspaces, deleteWorkspace, getClient, getWorkspaceProjects } = useStore();
   const [editingWorkspace, setEditingWorkspace] = useState<Workspace | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({ name: '', client: '' });
 
   const handleEdit = (workspace: Workspace) => {
     setEditingWorkspace(workspace);
@@ -44,6 +46,15 @@ function WorkspacesPageContent() {
     setIsDialogOpen(open);
   }
 
+  const filteredWorkspaces = useMemo(() => workspaces.filter(workspace => {
+    const { name, client: clientFilter } = filters;
+    const client = workspace.clientId ? getClient(workspace.clientId) : null;
+    return (
+      workspace.name.toLowerCase().includes(name.toLowerCase()) &&
+      (client?.name || '').toLowerCase().includes(clientFilter.toLowerCase())
+    );
+  }), [workspaces, filters, getClient]);
+
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -61,8 +72,25 @@ function WorkspacesPageContent() {
           </ManageWorkspaceDialog>
         </div>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <div className="flex items-center gap-4 pt-4">
+            <Input
+              placeholder="Filtrar por nome..."
+              value={filters.name}
+              onChange={e => setFilters(prev => ({ ...prev, name: e.target.value }))}
+            />
+            <Input
+              placeholder="Filtrar por cliente..."
+              value={filters.client}
+              onChange={e => setFilters(prev => ({ ...prev, client: e.target.value }))}
+            />
+          </div>
+        </CardHeader>
+      </Card>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {workspaces.map((workspace) => {
+        {filteredWorkspaces.map((workspace) => {
           const client = workspace.clientId ? getClient(workspace.clientId) : null;
           const projects = getWorkspaceProjects(workspace.id);
           const projectCount = projects.length;

@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Participant } from '@/lib/types';
 import {
   AlertDialog,
@@ -28,11 +28,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { AppLayout } from '@/components/layout/app-layout';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function TeamPageContent() {
   const { participants, roles, getRole, deleteParticipant, currentUser } = useStore();
   const [editingParticipant, setEditingParticipant] = useState<Participant | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({ name: '', role: '', type: '' });
 
   const handleEdit = (participant: Participant) => {
     setEditingParticipant(participant);
@@ -43,13 +46,23 @@ function TeamPageContent() {
     setEditingParticipant(undefined);
     setIsDialogOpen(true);
   };
-  
+
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setEditingParticipant(undefined);
     }
     setIsDialogOpen(open);
   }
+
+  const filteredParticipants = useMemo(() => participants.filter(participant => {
+    const { name, role: roleFilter, type } = filters;
+    const role = getRole(participant.roleId);
+    return (
+      participant.name.toLowerCase().includes(name.toLowerCase()) &&
+      (role?.name || '').toLowerCase().includes(roleFilter.toLowerCase()) &&
+      (type === 'all' || (participant.userType || '').toLowerCase() === type.toLowerCase())
+    );
+  }), [participants, filters, getRole]);
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -74,6 +87,28 @@ function TeamPageContent() {
             <CardHeader>
               <CardTitle>Participantes</CardTitle>
               <CardDescription>Uma lista de todos os membros da equipe envolvidos nos projetos.</CardDescription>
+              <div className="flex items-center gap-4 pt-4">
+                <Input
+                  placeholder="Filtrar por nome..."
+                  value={filters.name}
+                  onChange={e => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                />
+                <Input
+                  placeholder="Filtrar por função..."
+                  value={filters.role}
+                  onChange={e => setFilters(prev => ({ ...prev, role: e.target.value }))}
+                />
+                <Select onValueChange={value => setFilters(prev => ({ ...prev, type: value }))} value={filters.type || 'all'}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filtrar por tipo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os Tipos</SelectItem>
+                    <SelectItem value="Colaborador">Colaborador</SelectItem>
+                    <SelectItem value="Convidado">Convidado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
@@ -86,7 +121,7 @@ function TeamPageContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {participants.map((participant) => {
+                  {filteredParticipants.map((participant) => {
                     const role = getRole(participant.roleId);
                     const isCurrentUser = participant.id === currentUser?.id;
                     return (
@@ -109,7 +144,7 @@ function TeamPageContent() {
                         </TableCell>
                         <TableCell>{participant.email}</TableCell>
                         <TableCell className="text-right">
-                           <AlertDialog>
+                          <AlertDialog>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon">
@@ -122,7 +157,7 @@ function TeamPageContent() {
                                   Editar
                                 </DropdownMenuItem>
                                 <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     disabled={isCurrentUser}
                                   >
@@ -133,20 +168,20 @@ function TeamPageContent() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                             <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o participante.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteParticipant(participant.id)}>
-                                        Continuar
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. Isso excluirá permanentemente o participante.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteParticipant(participant.id)}>
+                                  Continuar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
                             </AlertDialogContent>
-                           </AlertDialog>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     );
@@ -157,7 +192,7 @@ function TeamPageContent() {
           </Card>
         </div>
         <div className="md:col-span-1">
-            <ManageRoles />
+          <ManageRoles />
         </div>
       </div>
     </div>
@@ -165,9 +200,9 @@ function TeamPageContent() {
 }
 
 export default function TeamPage() {
-    return (
-        <AppLayout>
-            <TeamPageContent />
-        </AppLayout>
-    )
+  return (
+    <AppLayout>
+      <TeamPageContent />
+    </AppLayout>
+  )
 }

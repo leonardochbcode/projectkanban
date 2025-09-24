@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Client } from '@/lib/types';
 import {
   AlertDialog,
@@ -27,11 +27,13 @@ import {
 import { ManageClientDialog } from '@/components/clients/manage-client-dialog';
 import { Badge } from '@/components/ui/badge';
 import { AppLayout } from '@/components/layout/app-layout';
+import { Input } from '@/components/ui/input';
 
 function ClientsPageContent() {
   const { clients, deleteClient } = useStore();
   const [editingClient, setEditingClient] = useState<Client | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({ name: '', company: '', suportewebCode: '' });
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
@@ -49,6 +51,15 @@ function ClientsPageContent() {
     }
     setIsDialogOpen(open);
   }
+
+  const filteredClients = useMemo(() => clients.filter(client => {
+    const { name, company, suportewebCode } = filters;
+    return (
+      client.name.toLowerCase().includes(name.toLowerCase()) &&
+      (client.company || '').toLowerCase().includes(company.toLowerCase()) &&
+      (client.suportewebCode || '').toLowerCase().includes(suportewebCode.toLowerCase())
+    );
+  }), [clients, filters]);
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -71,6 +82,23 @@ function ClientsPageContent() {
         <CardHeader>
           <CardTitle>Lista de Clientes</CardTitle>
           <CardDescription>Uma visão geral de todos os seus clientes.</CardDescription>
+          <div className="flex items-center gap-4 pt-4">
+            <Input
+              placeholder="Filtrar por nome..."
+              value={filters.name}
+              onChange={e => setFilters(prev => ({ ...prev, name: e.target.value }))}
+            />
+            <Input
+              placeholder="Filtrar por empresa..."
+              value={filters.company}
+              onChange={e => setFilters(prev => ({ ...prev, company: e.target.value }))}
+            />
+            <Input
+              placeholder="Filtrar por Cód. Suporte..."
+              value={filters.suportewebCode}
+              onChange={e => setFilters(prev => ({ ...prev, suportewebCode: e.target.value }))}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -86,7 +114,7 @@ function ClientsPageContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
