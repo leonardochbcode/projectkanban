@@ -45,29 +45,41 @@ export function ManageParticipantDialog({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [roleId, setRoleId] = useState('');
+  const [userType, setUserType] = useState('Colaborador');
   const [isLoading, setIsLoading] = useState(false);
+
+  const isCollaborator = userType === 'Colaborador';
 
   useEffect(() => {
     if (participant) {
       setName(participant.name);
       setEmail(participant.email);
-      setRoleId(participant.roleId);
-      setPassword(''); // Password is not editable for existing users in this dialog
+      const type = participant.userType || 'Colaborador';
+      setUserType(type);
+      setRoleId(type === 'Colaborador' ? participant.roleId : '');
+      setPassword('');
     } else {
-      // Reset form when adding new
       setName('');
       setEmail('');
       setRoleId('');
+      setUserType('Colaborador');
       setPassword('');
     }
     setShowPassword(false);
     setIsLoading(false);
   }, [participant, open]);
 
+  const handleUserTypeChange = (value: 'Colaborador' | 'Convidado') => {
+    setUserType(value);
+    if (value === 'Convidado') {
+      setRoleId('');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !roleId) {
-      toast({ variant: 'destructive', description: 'Por favor, preencha nome, email e função.' });
+    if (!name || !email || (isCollaborator && !roleId)) {
+      toast({ variant: 'destructive', description: 'Por favor, preencha todos os campos obrigatórios.' });
       return;
     }
     if (!participant && !password) {
@@ -78,16 +90,21 @@ export function ManageParticipantDialog({
     setIsLoading(true);
 
     try {
+      const participantData = {
+        name,
+        email,
+        userType,
+        roleId: isCollaborator ? roleId : null,
+      };
+
       if (participant) {
         updateParticipant({
           ...participant,
-          name,
-          email,
-          roleId,
+          ...participantData,
         });
         toast({ description: 'Membro da equipe atualizado com sucesso.' });
       } else {
-        addParticipant({ name, email, roleId, password });
+        addParticipant({ ...participantData, password });
         toast({ description: 'Novo membro da equipe adicionado.' });
       }
       onOpenChange(false);
@@ -122,6 +139,7 @@ export function ManageParticipantDialog({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Input fields for name, email, password */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
                 Nome
@@ -149,7 +167,6 @@ export function ManageParticipantDialog({
                 disabled={isLoading}
               />
             </div>
-            
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="password" className="text-right">
                 Senha
@@ -173,22 +190,45 @@ export function ManageParticipantDialog({
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
-          
+
+            {/* User Type Select */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="userType" className="text-right">
+                Tipo
+              </Label>
+              <Select
+                value={userType}
+                onValueChange={(value) => handleUserTypeChange(value as 'Colaborador' | 'Convidado')}
+                required
+                disabled={isLoading}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecione um tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Colaborador">Colaborador</SelectItem>
+                  <SelectItem value="Convidado">Convidado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Role Select */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="role" className="text-right">
                 Função
               </Label>
-              <Select value={roleId} onValueChange={setRoleId} required disabled={isLoading}>
+              <Select
+                value={roleId}
+                onValueChange={setRoleId}
+                required={isCollaborator}
+                disabled={!isCollaborator || isLoading}
+              >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Selecione uma função" />
+                  <SelectValue placeholder={isCollaborator ? "Selecione uma função" : "N/A"} />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (

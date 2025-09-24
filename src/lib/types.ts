@@ -73,12 +73,13 @@ export interface Opportunity {
 }
 
 export interface Participant {
-  id: string;
+  id:string;
   name: string;
   email: string;
-  roleId: string;
+  roleId: string | null;
   avatar: string;
   password?: string;
+  userType: 'Colaborador' | 'Convidado';
 }
 
 export interface TaskComment {

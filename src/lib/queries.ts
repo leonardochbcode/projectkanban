@@ -65,8 +65,8 @@ export async function deleteRole(id: string): Promise<{ success: boolean }> {
 
 // Participants
 export async function getParticipants(): Promise<Participant[]> {
-    const users = await queryMany<any>('SELECT id, name, email, role_id, avatar, provider FROM participants');
-    return users.map(u => ({ ...u, roleId: u.role_id }));
+    const users = await queryMany<any>('SELECT id, name, email, role_id, avatar, provider, user_type FROM participants');
+    return users.map(u => ({ ...u, roleId: u.role_id, userType: u.user_type }));
 }
 
 export async function getParticipantByEmail(email: string): Promise<(Participant & { password_hash: string | null, google_id: string | null, provider: string, email_verified: Date | null }) | null> {
@@ -85,9 +85,9 @@ export async function getParticipantByEmail(email: string): Promise<(Participant
 }
 
 export async function getParticipantById(id: string): Promise<Participant | null> {
-    const user = await queryOne<any>('SELECT id, name, email, role_id, avatar, provider FROM participants WHERE id = $1', [id]);
+    const user = await queryOne<any>('SELECT id, name, email, role_id, avatar, provider, user_type FROM participants WHERE id = $1', [id]);
     if (!user) return null;
-    return { ...user, roleId: user.role_id };
+    return { ...user, roleId: user.role_id, userType: user.user_type };
 }
 
 export async function getParticipantByGoogleId(googleId: string): Promise<Participant | null> {
@@ -101,7 +101,7 @@ export async function createParticipant(
 ): Promise<Participant> {
     const newId = `user_${randomBytes(8).toString('hex')}`;
     // Default provider to 'local' if not specified. This fixes manual user creation from the UI.
-    const { name, email, password, roleId, avatar, provider = 'local', googleId } = participant;
+    const { name, email, password, roleId, avatar, provider = 'local', googleId, userType } = participant;
 
     let passwordHash: string | null = null;
     if (provider === 'local' || password) {
@@ -116,30 +116,54 @@ export async function createParticipant(
     const emailVerified = provider === 'google' ? new Date() : null;
 
     const result = await queryOne<any>(
-        'INSERT INTO participants (id, name, email, password_hash, role_id, avatar, provider, google_id, email_verified) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, name, email, role_id, avatar, provider',
-        [newId, name, email, passwordHash, roleId, avatar, provider, googleId, emailVerified]
+        'INSERT INTO participants (id, name, email, password_hash, role_id, avatar, provider, google_id, email_verified, user_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, name, email, role_id, avatar, provider, user_type',
+        [newId, name, email, passwordHash, roleId, avatar, provider, googleId, emailVerified, userType]
     );
-    return { ...result, roleId: result.role_id };
+    return { ...result, roleId: result.role_id, userType: result.user_type };
 }
 
 export async function updateParticipant(id: string, participant: Partial<Omit<Participant, 'id'>> & { password?: string }): Promise<Participant | null> {
-    const { name, email, password, roleId, avatar, googleId, emailVerified } = participant;
+    const { password, ...restOfParticipant } = participant;
 
-    let passwordHash: string | undefined;
+    const fieldsToUpdate: Record<string, any> = { ...restOfParticipant };
+
     if (password) {
         const saltRounds = 10;
-        passwordHash = await bcrypt.hash(password, saltRounds);
+        fieldsToUpdate.password_hash = await bcrypt.hash(password, saltRounds);
     }
 
-    // This is a simplified update. A more robust solution would use dynamic query building
-    // to only update fields that are explicitly provided.
-    const result = await queryOne<any>(
-        'UPDATE participants SET name = COALESCE($1, name), email = COALESCE($2, email), role_id = COALESCE($3, role_id), avatar = COALESCE($4, avatar), password_hash = COALESCE($5, password_hash), google_id = COALESCE($6, google_id), email_verified = COALESCE($7, email_verified) WHERE id = $8 RETURNING id, name, email, role_id, avatar, provider',
-        [name, email, roleId, avatar, passwordHash, googleId, emailVerified, id]
-    );
+    // Map camelCase keys from the application to snake_case keys in the database
+    const keyMappings: Record<string, string> = {
+        roleId: 'role_id',
+        userType: 'user_type',
+        googleId: 'google_id',
+        emailVerified: 'email_verified'
+    };
+
+    for (const [appKey, dbKey] of Object.entries(keyMappings)) {
+        if (Object.prototype.hasOwnProperty.call(fieldsToUpdate, appKey)) {
+            fieldsToUpdate[dbKey] = fieldsToUpdate[appKey];
+            delete fieldsToUpdate[appKey];
+        }
+    }
+
+    const fieldEntries = Object.entries(fieldsToUpdate);
+    if (fieldEntries.length === 0) {
+        return getParticipantById(id); // Nothing to update
+    }
+
+    const setClause = fieldEntries
+        .map(([key], index) => `"${key}" = $${index + 1}`)
+        .join(', ');
+
+    const values = fieldEntries.map(([, value]) => value);
+
+    const sql = `UPDATE participants SET ${setClause} WHERE id = $${values.length + 1} RETURNING id, name, email, role_id, avatar, provider, user_type`;
+
+    const result = await queryOne<any>(sql, [...values, id]);
 
     if (!result) return null;
-    return { ...result, roleId: result.role_id };
+    return { ...result, roleId: result.role_id, userType: result.user_type };
 }
 
 export async function linkGoogleAccount(userId: string, googleId: string): Promise<void> {

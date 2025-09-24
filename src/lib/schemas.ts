@@ -72,18 +72,35 @@ export const opportunitySchema = z.object({
 
 export const partialOpportunitySchema = opportunitySchema.partial();
 
-export const participantSchema = z.object({
+const baseParticipantSchema = z.object({
   name: z.string().min(1, { message: "Participant name is required." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  roleId: z.string().min(1, { message: "Role ID is required." }),
+  roleId: z.string().optional().nullable(),
   avatar: z.string().optional(),
+  userType: z.enum(['Colaborador', 'Convidado']).default('Colaborador'),
 });
 
-// For updates, password is optional
-export const partialParticipantSchema = participantSchema.partial().extend({
+const participantRefinement = (data: any) => {
+    if (data.userType === 'Colaborador') {
+        return !!data.roleId && data.roleId.length > 0;
+    }
+    return true;
+};
+
+const refinementOptions = {
+    message: "A função é obrigatória para o tipo 'Colaborador'.",
+    path: ["roleId"],
+};
+
+export const participantSchema = baseParticipantSchema.refine(participantRefinement, refinementOptions);
+
+export const partialParticipantSchema = baseParticipantSchema
+  .partial()
+  .extend({
     password: z.string().min(6).optional().or(z.literal('')),
-});
+  })
+  .refine(participantRefinement, refinementOptions);
 
 export const roleSchema = z.object({
   id: z.string().optional(), // Optional for creation, as it can be derived from name

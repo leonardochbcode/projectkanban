@@ -28,7 +28,8 @@ CREATE TABLE participants (
     avatar VARCHAR(255),
     google_id VARCHAR(255) UNIQUE,
     provider VARCHAR(50) NOT NULL DEFAULT 'local',
-    email_verified TIMESTAMPTZ
+    email_verified TIMESTAMPTZ,
+    user_type VARCHAR(50) NOT NULL DEFAULT 'Colaborador' CHECK (user_type IN ('Colaborador', 'Convidado'))
 );
 
 -- Clients
