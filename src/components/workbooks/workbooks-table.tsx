@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { Workbook, Project, Task, Participant } from '@/lib/types';
-import { MoreVertical, Edit, FolderKanban, Trash2, Book, Users, Calendar, Flag, User, ChevronDown, CheckCircle, GripVertical } from 'lucide-react';
+import { MoreVertical, Edit, FolderKanban, Trash2, Folder, Users, Calendar, Flag, User, ChevronDown, CheckCircle, GripVertical } from 'lucide-react';
 import { Progress } from '../ui/progress';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
@@ -144,7 +144,7 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-4">
-                    <Book className="h-6 w-6 text-primary" />
+                    <Folder className="h-6 w-6 text-primary" />
                     <div>
                       <h3 className="text-lg font-semibold text-left">{workbook.name}</h3>
                       <p className="text-sm text-muted-foreground text-left">{workbook.description}</p>
