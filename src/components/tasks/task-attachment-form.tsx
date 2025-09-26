@@ -23,30 +23,38 @@ export function TaskAttachmentForm({ task, onAttachmentAdded }: TaskAttachmentFo
 
     const file = files[0];
 
-    // In a real app, you would upload the file to a storage service (e.g., S3, Firebase Storage)
-    // and then send the URL to your API. For this example, we'll simulate this.
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('taskId', task.id);
 
     try {
-        // This is where you would typically upload the file.
-        // const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
-        // const { url } = await uploadResponse.json();
+        // 1. Upload the file to the server
+        const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+        });
 
-        // For now, we'll skip the actual upload and go straight to our API.
-        const response = await fetch(`/api/tasks/${task.id}/attachments`, {
+        if (!uploadResponse.ok) {
+            throw new Error('File upload failed');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        const { url } = uploadResult;
+
+        // 2. Create the attachment record in the database with the new URL
+        const attachmentResponse = await fetch(`/api/tasks/${task.id}/attachments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name: file.name,
                 size: file.size,
                 type: file.type,
-                url: `/uploads/${task.id}/${file.name}` // Mock URL
+                url: url,
             }),
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to add attachment');
+        if (!attachmentResponse.ok) {
+            throw new Error('Failed to create attachment record');
         }
 
         toast({

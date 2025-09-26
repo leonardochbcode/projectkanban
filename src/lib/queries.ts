@@ -732,3 +732,8 @@ export async function createTaskAttachment(taskId: string, attachment: Omit<Task
     );
     return { ...result, createdAt: result.created_at };
 }
+
+export async function deleteTaskAttachment(attachmentId: string): Promise<{ success: boolean }> {
+    const result = await pool.query('DELETE FROM task_attachments WHERE id = $1', [attachmentId]);
+    return { success: result.rowCount > 0 };
+}

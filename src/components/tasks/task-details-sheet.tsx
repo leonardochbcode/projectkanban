@@ -18,6 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Task } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
+import { useToast } from '@/hooks/use-toast';
 import { CalendarIcon, User, Flag, ChevronsUpDown, Paperclip, X } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { TaskCommentForm } from './task-comment-form';
@@ -35,6 +36,7 @@ interface TaskDetailsSheetProps {
 
 export function TaskDetailsSheet({ task: initialTask, children, open: openProp, onOpenChange: onOpenChangeProp }: TaskDetailsSheetProps) {
   const { participants, updateTask: updateTaskInStore } = useStore();
+  const { toast } = useToast();
   const [task, setTask] = useState<Task>(initialTask);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -105,9 +107,40 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
     updateTask({ assigneeId });
   };
   
-  const handleRemoveAttachment = (attachmentId: string) => {
-    const updatedAttachments = (task.attachments || []).filter(att => att.id !== attachmentId);
-    updateTask({ attachments: updatedAttachments });
+  const handleRemoveAttachment = async (attachmentId: string) => {
+    // Optimistic UI update
+    const originalAttachments = task.attachments || [];
+    const updatedAttachments = originalAttachments.filter(att => att.id !== attachmentId);
+    setTask(prevTask => ({ ...prevTask, attachments: updatedAttachments }));
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/attachments/${attachmentId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete attachment');
+      }
+
+      toast({
+        title: 'Anexo removido',
+        description: 'O anexo foi removido com sucesso.',
+      });
+
+      // The UI is already updated, but a full refetch ensures consistency.
+      // If the optimistic update is reliable, you could skip this.
+      await fetchTask();
+
+    } catch (error) {
+      console.error("Error removing attachment:", error);
+      // Revert the optimistic update on failure
+      setTask(prevTask => ({ ...prevTask, attachments: originalAttachments }));
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover o anexo. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
   
   const Trigger = children ? <SheetTrigger asChild>{children}</SheetTrigger> : null;
@@ -197,18 +230,23 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
             <h3 className="font-semibold mb-2 font-headline">Anexos</h3>
              <div className="space-y-2">
                 {(task.attachments || []).map((attachment) => (
-                    <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                           <Paperclip className="h-4 w-4 flex-shrink-0" />
-                           <div className="truncate">
-                            <p className="font-medium truncate">{attachment.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatBytes(attachment.size)}</p>
-                           </div>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleRemoveAttachment(attachment.id)}>
-                            <X className="h-4 w-4 text-destructive" />
-                        </Button>
-                    </div>
+                  <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 overflow-hidden flex-1 group"
+                    >
+                      <Paperclip className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <div className="truncate">
+                        <p className="font-medium truncate group-hover:underline">{attachment.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatBytes(attachment.size)}</p>
+                      </div>
+                    </a>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleRemoveAttachment(attachment.id)}>
+                      <X className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 ))}
                 {(!task.attachments || task.attachments.length === 0) && (
                     <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
