@@ -35,7 +35,7 @@ function TeamPageContent() {
   const { participants, roles, getRole, deleteParticipant, currentUser } = useStore();
   const [editingParticipant, setEditingParticipant] = useState<Participant | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [filters, setFilters] = useState({ name: '', role: '', type: '' });
+  const [filters, setFilters] = useState({ name: '', role: '', type: 'all' });
 
   const handleEdit = (participant: Participant) => {
     setEditingParticipant(participant);
