@@ -8,6 +8,10 @@ import { TaskDetailsSheet } from '@/components/tasks/task-details-sheet';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Pagination } from '@/components/ui/pagination';
+import { useState } from 'react';
+
+const ITEMS_PER_PAGE = 10;
 
 const statusColors: { [key: string]: string } = {
     'A Fazer': 'bg-yellow-500/20 text-yellow-700',
@@ -25,6 +29,7 @@ const priorityColors: { [key: string]: string } = {
 
 function MyTasksPageContent() {
     const { tasks, currentUser, allProjects } = useStore();
+    const [currentPage, setCurrentPage] = useState(1);
 
     const myTasks = useMemo(() => {
         if (!currentUser) return [];
@@ -38,6 +43,12 @@ function MyTasksPageContent() {
         
         return sortedTasks;
     }, [tasks, currentUser]);
+
+    const totalPages = Math.ceil(myTasks.length / ITEMS_PER_PAGE);
+    const paginatedTasks = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return myTasks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [myTasks, currentPage]);
 
     const getProjectName = (projectId: string) => {
         // We need to use the raw projects from the store, not the visible ones,
@@ -69,7 +80,7 @@ function MyTasksPageContent() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {myTasks.map(task => (
+                            {paginatedTasks.map(task => (
                                 <TaskDetailsSheet key={task.id} task={task}>
                                     <TableRow className="cursor-pointer">
                                         <TableCell className="font-medium">{task.title}</TableCell>
@@ -94,7 +105,13 @@ function MyTasksPageContent() {
                             ))}
                         </TableBody>
                     </Table>
-                     {myTasks.length === 0 && (
+                    {paginatedTasks.length > 0 ? (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    ) : (
                         <div className="text-center py-10 text-muted-foreground">
                             Você não tem nenhuma tarefa atribuída.
                         </div>

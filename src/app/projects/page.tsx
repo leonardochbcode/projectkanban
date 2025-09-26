@@ -11,10 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ProjectsTable } from '@/components/projects/projects-table';
 import { AppLayout } from '@/components/layout/app-layout';
 
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 7;
+
 function ProjectsPageContent() {
   const { projects, clients, workspaces } = useStore();
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [nameFilter, setNameFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -42,8 +47,15 @@ function ProjectsPageContent() {
     if (workbookFilter === 'not_in_workbook') {
       filtered = filtered.filter(p => !p.workbookIds || p.workbookIds.length === 0);
     }
+    setCurrentPage(1);
     return filtered;
   }, [projects, nameFilter, statusFilter, clientFilter, workspaceFilter, workbookFilter]);
+
+  const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+  const paginatedProjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProjects.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredProjects, currentPage]);
 
   const handleAdd = () => {
     setEditingProject(undefined);
@@ -133,7 +145,12 @@ function ProjectsPageContent() {
               </SelectContent>
             </Select>
           </div>
-          <ProjectsTable projects={filteredProjects} onEdit={handleEdit} />
+          <ProjectsTable projects={paginatedProjects} onEdit={handleEdit} />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
     </div>
