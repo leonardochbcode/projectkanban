@@ -89,7 +89,7 @@ function WorkspacesPageContent() {
           </div>
         </CardHeader>
       </Card>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         {filteredWorkspaces.map((workspace) => {
           const client = workspace.clientId ? getClient(workspace.clientId) : null;
           const projects = getWorkspaceProjects(workspace.id);

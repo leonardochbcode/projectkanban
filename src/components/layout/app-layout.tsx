@@ -102,45 +102,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ))}
       
       {canManageWorkspaces && (
-         <Accordion type="single" collapsible defaultValue={pathname.startsWith('/workspaces') ? "workspaces" : undefined} className="w-full">
-            <AccordionItem value="workspaces" className="border-b-0">
-                <AccordionTrigger className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:no-underline",
-                     pathname.startsWith('/workspaces') && "text-primary"
-                )}>
-                    <div className="flex items-center gap-3">
-                        <Folder className="h-4 w-4" />
-                        <span>Espaços de Trabalho</span>
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="pl-8 pt-1 pb-0">
-                   <div className="flex flex-col space-y-1">
-                     <Link
-                        href="/workspaces"
-                        className={cn(
-                            'rounded-md px-3 py-1.5 text-muted-foreground hover:text-primary',
-                             pathname === '/workspaces' && 'bg-accent text-accent-foreground'
-                        )}
-                        >
-                        Ver Todos
-                     </Link>
-                    {workspaces.map(ws => (
-                        <Link
-                            key={ws.id}
-                            href={`/workspaces/${ws.id}`}
-                            className={cn(
-                                'rounded-md px-3 py-1.5 text-muted-foreground hover:text-primary truncate',
-                                pathname === `/workspaces/${ws.id}` && 'bg-accent text-accent-foreground'
-                            )}
-                            title={ws.name}
-                        >
-                        {ws.name}
-                        </Link>
-                    ))}
-                   </div>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
+        <Link
+          href="/workspaces"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+            { 'bg-accent text-accent-foreground': pathname.startsWith('/workspaces') },
+          )}
+        >
+          <Folder className="h-4 w-4" />
+          Espaços de Trabalho
+        </Link>
       )}
     </nav>
   );

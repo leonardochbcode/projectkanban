@@ -30,12 +30,16 @@ import {
 import { AppLayout } from '@/components/layout/app-layout';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 function TeamPageContent() {
   const { participants, roles, getRole, deleteParticipant, currentUser } = useStore();
   const [editingParticipant, setEditingParticipant] = useState<Participant | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filters, setFilters] = useState({ name: '', role: '', type: 'all' });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const handleEdit = (participant: Participant) => {
     setEditingParticipant(participant);
@@ -54,15 +58,25 @@ function TeamPageContent() {
     setIsDialogOpen(open);
   }
 
-  const filteredParticipants = useMemo(() => participants.filter(participant => {
-    const { name, role: roleFilter, type } = filters;
-    const role = getRole(participant.roleId);
-    return (
-      participant.name.toLowerCase().includes(name.toLowerCase()) &&
-      (role?.name || '').toLowerCase().includes(roleFilter.toLowerCase()) &&
-      (type === 'all' || (participant.userType || '').toLowerCase() === type.toLowerCase())
-    );
-  }), [participants, filters, getRole]);
+  const filteredParticipants = useMemo(() => {
+    const filtered = participants.filter(participant => {
+      const { name, role: roleFilter, type } = filters;
+      const role = getRole(participant.roleId);
+      return (
+        participant.name.toLowerCase().includes(name.toLowerCase()) &&
+        (role?.name || '').toLowerCase().includes(roleFilter.toLowerCase()) &&
+        (type === 'all' || (participant.userType || '').toLowerCase() === type.toLowerCase())
+      );
+    });
+    setCurrentPage(1);
+    return filtered;
+  }, [participants, filters, getRole]);
+
+  const totalPages = Math.ceil(filteredParticipants.length / ITEMS_PER_PAGE);
+  const paginatedParticipants = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredParticipants.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredParticipants, currentPage]);
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -121,7 +135,7 @@ function TeamPageContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredParticipants.map((participant) => {
+                  {paginatedParticipants.map((participant) => {
                     const role = getRole(participant.roleId);
                     const isCurrentUser = participant.id === currentUser?.id;
                     return (
@@ -188,6 +202,11 @@ function TeamPageContent() {
                   })}
                 </TableBody>
               </Table>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </CardContent>
           </Card>
         </div>

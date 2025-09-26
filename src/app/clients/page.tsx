@@ -28,12 +28,16 @@ import { ManageClientDialog } from '@/components/clients/manage-client-dialog';
 import { Badge } from '@/components/ui/badge';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 function ClientsPageContent() {
   const { clients, deleteClient } = useStore();
   const [editingClient, setEditingClient] = useState<Client | undefined>(undefined);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filters, setFilters] = useState({ name: '', company: '', suportewebCode: '' });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
@@ -52,14 +56,24 @@ function ClientsPageContent() {
     setIsDialogOpen(open);
   }
 
-  const filteredClients = useMemo(() => clients.filter(client => {
-    const { name, company, suportewebCode } = filters;
-    return (
-      client.name.toLowerCase().includes(name.toLowerCase()) &&
-      (client.company || '').toLowerCase().includes(company.toLowerCase()) &&
-      (client.suportewebCode || '').toLowerCase().includes(suportewebCode.toLowerCase())
-    );
-  }), [clients, filters]);
+  const filteredClients = useMemo(() => {
+    const filtered = clients.filter(client => {
+      const { name, company, suportewebCode } = filters;
+      return (
+        client.name.toLowerCase().includes(name.toLowerCase()) &&
+        (client.company || '').toLowerCase().includes(company.toLowerCase()) &&
+        (client.suportewebCode || '').toLowerCase().includes(suportewebCode.toLowerCase())
+      );
+    });
+    setCurrentPage(1);
+    return filtered;
+  }, [clients, filters]);
+
+  const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
+  const paginatedClients = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredClients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredClients, currentPage]);
 
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -114,7 +128,7 @@ function ClientsPageContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClients.map((client) => (
+              {paginatedClients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -177,6 +191,11 @@ function ClientsPageContent() {
               ))}
             </TableBody>
           </Table>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
     </div>
