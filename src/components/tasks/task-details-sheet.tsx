@@ -197,18 +197,23 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
             <h3 className="font-semibold mb-2 font-headline">Anexos</h3>
              <div className="space-y-2">
                 {(task.attachments || []).map((attachment) => (
-                    <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                           <Paperclip className="h-4 w-4 flex-shrink-0" />
-                           <div className="truncate">
-                            <p className="font-medium truncate">{attachment.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatBytes(attachment.size)}</p>
-                           </div>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleRemoveAttachment(attachment.id)}>
-                            <X className="h-4 w-4 text-destructive" />
-                        </Button>
-                    </div>
+                  <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 overflow-hidden flex-1 group"
+                    >
+                      <Paperclip className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <div className="truncate">
+                        <p className="font-medium truncate group-hover:underline">{attachment.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatBytes(attachment.size)}</p>
+                      </div>
+                    </a>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleRemoveAttachment(attachment.id)}>
+                      <X className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 ))}
                 {(!task.attachments || task.attachments.length === 0) && (
                     <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
