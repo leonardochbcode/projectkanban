@@ -1,0 +1,58 @@
+
+WITH total_notas_blip AS (
+    SELECT 
+        agente,
+        count(*) AS total_blip_4_5
+    FROM view_metabase_indice_csat
+    WHERE nota IN (4,5)
+        AND linked_id = 'CSAT'
+        AND agente IN ('Alberto Martins', 'Alex Santos', 'Aline Fernandes Borges', 'José Marcos', 'Junior Marangoni', 'Luis Carlos', 'Rodrigo Mariano')
+        AND horario BETWEEN '01/01/2023' AND '31/12/2023'
+    GROUP BY agente
+),
+total_notas_pabx AS (
+    SELECT 
+        agente,
+        count(*) AS total_pabx_4_5
+    FROM view_metabase_indice_csat
+    WHERE nota IN (4,5)
+        AND id_f_pesquisa_satisfacao_item = 1
+        AND agente IN ('Alberto', 'Alex RH', 'Aline Borges', 'Jose Marcos', 'Junior', 'Luis Carlos', 'Rodrigo O')
+        AND horario BETWEEN '01/01/2023' AND '31/12/2023'
+    GROUP BY agente
+),
+total_respondidos_pabx AS (
+    SELECT 
+        agente,
+        count(*) AS total_ligacoes_respondidas
+    FROM view_metabase_indice_csat
+    WHERE linked_id <> 'CSAT'
+        AND nota > 0
+        AND id_f_pesquisa_satisfacao_item = 1
+        AND agente IN ('Alberto', 'Alex RH', 'Aline Borges', 'Jose Marcos', 'Junior', 'Luis Carlos', 'Rodrigo O')
+        AND horario BETWEEN '01/01/2023' AND '31/12/2023'
+    GROUP BY agente
+),
+total_respondidos_blip AS (
+    SELECT 
+        agente,
+        count(*) AS total_blip_respondidos
+    FROM view_metabase_indice_csat
+    WHERE nota > 0
+        AND linked_id = 'CSAT'
+        AND agente IN ('Alberto Martins', 'Alex Santos', 'Aline Fernandes Borges', 'José Marcos', 'Junior Marangoni', 'Luis Carlos', 'Rodrigo Mariano')
+        AND horario BETWEEN '01/01/2023' AND '31/12/2023'
+    GROUP BY agente
+)
+SELECT
+    COALESCE(nb.agente, np.agente, trp.agente, trb.agente) AS agente,
+    COALESCE(((nb.total_blip_4_5::numeric + np.total_pabx_4_5::numeric) / (trp.total_ligacoes_respondidas + trb.total_blip_respondidos)) * 100, 0) AS CSAT
+FROM
+    total_notas_blip nb
+FULL JOIN
+    total_notas_pabx np ON nb.agente = np.agente
+FULL JOIN
+    total_respondidos_pabx trp ON nb.agente = trp.agente
+FULL JOIN
+    total_respondidos_blip trb ON nb.agente = trb.agente;
+ 

@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     await writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/${safeTaskId}/${safeFilename}`;
+    const publicUrl = `/api/files/uploads/${safeTaskId}/${safeFilename}`;
 
     return NextResponse.json({ success: true, url: publicUrl }, { status: 201 });
   } catch (error) {
