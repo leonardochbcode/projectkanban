@@ -10,60 +10,60 @@
 
 @layer base {
   :root, .light {
-    --background: #f8fafc; /* Very light gray for the main background */
-    --foreground: #020817;
-    --card: #ffffff;
-    --card-foreground: #020817;
-    --popover: #ffffff;
-    --popover-foreground: #020817;
-    --primary: #387195; /* Main button color */
-    --primary-foreground: #ffffff;
-    --secondary: #e2e8f0; /* Lighter gray for secondary elements */
-    --secondary-foreground: #387195;
-    --muted: #387195; /* Navbar background */
-    --muted-foreground: #ffffff; /* Navbar text */
-    --accent: #e2e8f0; /* Accent for hover states, etc. */
-    --accent-foreground: #387195;
-    --destructive: #e53e3e;
-    --destructive-foreground: #f9fafb;
-    --border: #e2e8f0;
-    --input: #e2e8f0;
-    --ring: #387195;
+    --background: 210 40% 98%;
+    --foreground: 222.9 83.3% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.9 83.3% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.9 83.3% 4.9%;
+    --primary: 206.8 45.1% 40.2%; /* Button color */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 20% 91%;
+    --secondary-foreground: 206.8 45.1% 40.2%;
+    --muted: 206.8 45.1% 40.2%; /* Navbar background */
+    --muted-foreground: 0 0% 100%; /* Navbar text */
+    --accent: 215 20% 91%;
+    --accent-foreground: 206.8 45.1% 40.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 20% 91%;
+    --input: 215 20% 91%;
+    --ring: 206.8 45.1% 40.2%;
     --radius: 0.5rem;
-    --chart-1: #387195;
-    --chart-2: #94a3b8;
-    --chart-3: #cbd5e1;
-    --chart-4: #e2e8f0;
-    --chart-5: #f1f5f9;
-    --menu-foreground: #020817;
+    --chart-1: 206.8 45.1% 40.2%;
+    --chart-2: 215 20% 91%;
+    --chart-3: 215 20% 80%;
+    --chart-4: 215 20% 70%;
+    --chart-5: 215 20% 60%;
+    --menu-foreground: 222.9 83.3% 4.9%;
   }
 
   .dark {
-    --background: #0f172a; /* Dark blue-gray for the main background */
-    --foreground: #f8fafc;
-    --card: #020817;
-    --card-foreground: #f8fafc;
-    --popover: #020817;
-    --popover-foreground: #f8fafc;
-    --primary: #387195; /* Button color, as requested */
-    --primary-foreground: #ffffff;
-    --secondary: #1e293b; /* Darker gray for secondary elements */
-    --secondary-foreground: #f8fafc;
-    --muted: #042247; /* Navbar background */
-    --muted-foreground: #ffffff; /* Navbar text */
-    --accent: #1e293b; /* Accent for hover states */
-    --accent-foreground: #f8fafc;
-    --destructive: #9b2c2c;
-    --destructive-foreground: #f9fafb;
-    --border: #1e293b;
-    --input: #1e293b;
-    --ring: #387195;
-    --chart-1: #387195;
-    --chart-2: #1e293b;
-    --chart-3: #334155;
-    --chart-4: #475569;
-    --chart-5: #64748b;
-    --menu-foreground: #f8fafc;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222.9 83.3% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.9 83.3% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 206.8 45.1% 40.2%; /* Button color */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 39% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 216.4 90.6% 14.7%; /* Navbar background */
+    --muted-foreground: 0 0% 100%; /* Navbar text */
+    --accent: 215 39% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 39% 17%;
+    --input: 215 39% 17%;
+    --ring: 206.8 45.1% 40.2%;
+    --chart-1: 206.8 45.1% 40.2%;
+    --chart-2: 215 39% 17%;
+    --chart-3: 215 39% 27%;
+    --chart-4: 215 39% 37%;
+    --chart-5: 215 39% 47%;
+    --menu-foreground: 210 40% 98%;
   }
 }
 
