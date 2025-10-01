@@ -10,19 +10,19 @@
 
 @layer base {
   :root, .light {
-    --background: #ffffff;
+    --background: #f8fafc; /* Very light gray for the main background */
     --foreground: #020817;
     --card: #ffffff;
     --card-foreground: #020817;
     --popover: #ffffff;
     --popover-foreground: #020817;
-    --primary: #387195;
+    --primary: #387195; /* Main button color */
     --primary-foreground: #ffffff;
-    --secondary: #f1f5f9;
+    --secondary: #e2e8f0; /* Lighter gray for secondary elements */
     --secondary-foreground: #387195;
-    --muted: #f8fafc;
-    --muted-foreground: #64748b;
-    --accent: #e2e8f0;
+    --muted: #387195; /* Navbar background */
+    --muted-foreground: #ffffff; /* Navbar text */
+    --accent: #e2e8f0; /* Accent for hover states, etc. */
     --accent-foreground: #387195;
     --destructive: #e53e3e;
     --destructive-foreground: #f9fafb;
@@ -39,19 +39,19 @@
   }
 
   .dark {
-    --background: #020817;
+    --background: #0f172a; /* Dark blue-gray for the main background */
     --foreground: #f8fafc;
     --card: #020817;
     --card-foreground: #f8fafc;
     --popover: #020817;
     --popover-foreground: #f8fafc;
-    --primary: #042247;
+    --primary: #387195; /* Button color, as requested */
     --primary-foreground: #ffffff;
-    --secondary: #1e293b;
+    --secondary: #1e293b; /* Darker gray for secondary elements */
     --secondary-foreground: #f8fafc;
-    --muted: #0f172a;
-    --muted-foreground: #94a3b8;
-    --accent: #387195;
+    --muted: #042247; /* Navbar background */
+    --muted-foreground: #ffffff; /* Navbar text */
+    --accent: #1e293b; /* Accent for hover states */
     --accent-foreground: #f8fafc;
     --destructive: #9b2c2c;
     --destructive-foreground: #f9fafb;
