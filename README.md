@@ -38,7 +38,7 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 NEXTAUTH_SECRET="your-nextauth-secret"
 
 # The base URL of your application for NextAuth callbacks
-NEXTAUTH_URL="http://localhost:9002"
+NEXTAUTH_URL="http://localhost:9005"
 ```
 
 #### Setting up Google OAuth
@@ -50,7 +50,7 @@ To enable login with Google, you need to create OAuth 2.0 credentials in the Goo
 3.  Select **Web application** as the application type.
 4.  Give it a name (e.g., "CHBProject Dev").
 5.  Under **Authorized redirect URIs**, add the following URL:
-    `http://localhost:9002/api/auth/callback/google`
+    `http://localhost:9005/api/auth/callback/google`
 6.  Click **Create**. You will be shown your Client ID and Client Secret. Copy these values into the `.env.local` file.
 
 ### 3. Set up the database
@@ -77,7 +77,7 @@ Once the setup is complete, you can start the Next.js development server:
 npm run dev
 ```
 
-The application should now be running at [http://localhost:9002](http://localhost:9002).
+The application should now be running at [http://localhost:9005](http://localhost:9005).
 
 You can log in with one of the default users from the seed data, for example:
 - **Email:** `admin@chb.com.br`

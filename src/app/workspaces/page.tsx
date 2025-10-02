@@ -99,40 +99,40 @@ function WorkspacesPageContent() {
 
           return (
             <Card key={workspace.id} className="flex flex-col">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <Folder className="h-6 w-6 text-primary" />
-                    <CardTitle className="font-headline">{workspace.name}</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(workspace)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o espaço de trabalho.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteWorkspace(workspace.id)}>
-                            Continuar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+              <CardHeader className="relative pt-8">
+                <div className="absolute top-1 right-1 flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(workspace)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o espaço de trabalho.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteWorkspace(workspace.id)}>
+                          Continuar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                <div className="flex items-center gap-3">
+                  {/* <Folder className="h-6 w-6 text-primary" /> */}
+                  <div className='mb-1 mt-2'>
+                    <CardTitle className="font-headline mb-3">{workspace.name}</CardTitle>
+                    <CardDescription>{workspace.description}</CardDescription>
                   </div>
                 </div>
-                <CardDescription>{workspace.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
                 {client && (

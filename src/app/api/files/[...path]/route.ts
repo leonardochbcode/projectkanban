@@ -8,7 +8,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { path: string[] } }
 ) {
-  const filePathParts = await params.path;
+  const { path } = await params;
+  const filePathParts = path;
   if (!filePathParts || filePathParts.length === 0) {
     return NextResponse.json({ message: 'File path is required' }, { status: 400 });
   }

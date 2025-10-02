@@ -19,11 +19,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Task } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, User, Flag, ChevronsUpDown, Paperclip, X } from 'lucide-react';
+import { CalendarIcon, User, Flag, ChevronsUpDown, Paperclip, X, Edit } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { TaskCommentForm } from './task-comment-form';
 import { TaskAttachmentForm } from './task-attachment-form';
 import { Button } from '../ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { formatBytes } from '@/lib/utils';
 import { TaskChecklist } from './task-checklist';
 
@@ -39,6 +41,10 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
   const { toast } = useToast();
   const [task, setTask] = useState<Task>(initialTask);
   const [isLoading, setIsLoading] = useState(false);
+  const [title, setTitle] = useState(initialTask.title);
+  const [description, setDescription] = useState(initialTask.description);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
 
   const assignee = participants.find((p) => p.id === task.assigneeId);
 
@@ -62,6 +68,8 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
       if (!response.ok) throw new Error('Failed to fetch task');
       const freshTask = await response.json();
       setTask(freshTask);
+      setTitle(freshTask.title);
+      setDescription(freshTask.description);
     } catch (error) {
       console.error("Error fetching task details:", error);
       // Optionally, show a toast to the user
@@ -72,9 +80,12 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
 
   useEffect(() => {
     if (open) {
+      setTask(initialTask);
+      setTitle(initialTask.title);
+      setDescription(initialTask.description);
       fetchTask();
     }
-  }, [open, initialTask.id]);
+  }, [open, initialTask]);
 
   // Sincroniza o estado interno se o componente se tornar controlado
   useEffect(() => {
@@ -150,8 +161,65 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
       {Trigger}
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
         <SheetHeader className="mb-4">
-          <SheetTitle className="font-headline text-2xl">{task.title}</SheetTitle>
-          <SheetDescription>{task.description}</SheetDescription>
+          <div className="flex items-center gap-2">
+            {isEditingTitle ? (
+              <Input
+                id="task-title"
+                className="font-headline text-2xl h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={() => {
+                  if (title !== task.title) {
+                    updateTask({ title });
+                  }
+                  setIsEditingTitle(false);
+                }}
+                autoFocus
+              />
+            ) : (
+              <SheetTitle
+                className="font-headline text-2xl"
+                onClick={() => setIsEditingTitle(true)}
+              >
+                {task.title}
+              </SheetTitle>
+            )}
+            {!isEditingTitle && (
+              <Button variant="ghost" size="icon" onClick={() => setIsEditingTitle(true)} className="h-7 w-7">
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {isEditingDescription ? (
+              <Textarea
+                id="task-description"
+                className="h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm text-muted-foreground flex-1"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={() => {
+                  if (description !== task.description) {
+                    updateTask({ description });
+                  }
+                  setIsEditingDescription(false);
+                }}
+                placeholder="Adicione uma descrição para a tarefa..."
+                autoFocus
+              />
+            ) : (
+              <>
+                <SheetDescription
+                  onClick={() => setIsEditingDescription(true)}
+                  className="cursor-pointer"
+                >
+                  {task.description || 'Adicione uma descrição...'}
+                </SheetDescription>
+                <Button variant="ghost" size="icon" onClick={() => setIsEditingDescription(true)} className="h-7 w-7 flex-shrink-0">
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         </SheetHeader>
         <div className="space-y-6">
           <div className="grid gap-2 text-sm">
