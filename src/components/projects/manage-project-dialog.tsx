@@ -110,38 +110,27 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
       pmoId,
     };
 
-    const originalWorkbookIds = project?.workbookIds || [];
-
     try {
+      const projectPayload = {
+        ...projectData,
+        workbookIds,
+      };
+
       const savedProject = project
-        ? await updateProject({ id: project.id, ...projectData, workbookIds })
-        : await addProject({ ...projectData, workbookIds }, templateId);
+        ? await updateProject({ id: project.id, ...projectPayload })
+        : await addProject(projectPayload, templateId);
 
       if (!savedProject) {
         throw new Error('Failed to save project details.');
       }
 
-      const newWorkbookIds = workbookIds;
-      const workbooksToAddLink = newWorkbookIds.filter(id => !originalWorkbookIds.includes(id));
-      const workbooksToRemoveLink = originalWorkbookIds.filter(id => !newWorkbookIds.includes(id));
-
-      const updatePromises: Promise<any>[] = [];
-
-      workbooksToAddLink.forEach(workbookId => {
-        updatePromises.push(updateWorkbookProjects(workbookId, [savedProject.id], []));
-      });
-
-      workbooksToRemoveLink.forEach(workbookId => {
-        updatePromises.push(updateWorkbookProjects(workbookId, [], [savedProject.id]));
-      });
-
-      await Promise.all(updatePromises);
-
+      // After a successful save, refresh the workbooks data for the current workspace
+      // to ensure the UI reflects the new/updated project association.
       if (workspaceId) {
         await fetchWorkbooksByWorkspace(workspaceId);
       }
 
-      setOpen(false);
+      setOpen(false); // Close the dialog
     } catch (error) {
       console.error("Failed to save project and associations:", error);
       alert("Falha ao salvar o projeto e suas associações. Tente novamente.");
