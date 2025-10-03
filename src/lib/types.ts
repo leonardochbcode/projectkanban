@@ -145,7 +145,7 @@ export interface Workbook {
   name: string;
   description: string;
   workspaceId: string;
-  projectIds: string[];
+  projects: Project[];
 }
 
 

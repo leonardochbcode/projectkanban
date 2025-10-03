@@ -253,19 +253,59 @@ export async function deleteWorkspace(id: string): Promise<{ success: boolean }>
 // Workbooks
 export async function getWorkbooksByWorkspace(workspaceId: string): Promise<Workbook[]> {
     const sql = `
+        WITH project_details AS (
+            SELECT
+                p.id,
+                p.name,
+                p.description,
+                p.start_date,
+                p.end_date,
+                p.status,
+                p.workspace_id,
+                p.client_id,
+                p.opportunity_id,
+                p.pmo_id,
+                COALESCE(json_agg(DISTINCT pp.participant_id) FILTER (WHERE pp.participant_id IS NOT NULL), '[]'::json) AS "participantIds",
+                COALESCE(json_agg(DISTINCT pw_inner.workbook_id) FILTER (WHERE pw_inner.workbook_id IS NOT NULL), '[]'::json) AS "workbookIds"
+            FROM
+                projects p
+            LEFT JOIN
+                project_participants pp ON p.id = pp.project_id
+            LEFT JOIN
+                project_workbooks pw_inner ON p.id = pw_inner.project_id
+            GROUP BY
+                p.id
+        )
         SELECT
             w.id,
             w.name,
             w.description,
             w.workspace_id AS "workspaceId",
             COALESCE(
-                json_agg(pw.project_id) FILTER (WHERE pw.project_id IS NOT NULL),
+                json_agg(
+                    json_build_object(
+                        'id', pd.id,
+                        'name', pd.name,
+                        'description', pd.description,
+                        'startDate', pd.start_date,
+                        'endDate', pd.end_date,
+                        'status', pd.status,
+                        'workspaceId', pd.workspace_id,
+                        'clientId', pd.client_id,
+                        'opportunityId', pd.opportunity_id,
+                        'pmoId', pd.pmo_id,
+                        'participantIds', pd."participantIds",
+                        'workbookIds', pd."workbookIds"
+                    )
+                ) FILTER (WHERE pd.id IS NOT NULL),
                 '[]'::json
-            ) AS "projectIds"
+            ) AS projects
         FROM
             workbooks w
         LEFT JOIN
-            project_workbooks pw ON w.id = pw.workbook_id
+            project_workbooks pw_main ON w.id = pw_main.workbook_id
+        LEFT JOIN
+            project_details pd ON pw_main.project_id = pd.id
         WHERE
             w.workspace_id = $1
         GROUP BY
@@ -273,27 +313,76 @@ export async function getWorkbooksByWorkspace(workspaceId: string): Promise<Work
         ORDER BY
             w.name;
     `;
-    const workbooks = await queryMany<Workbook>(sql, [workspaceId]);
-    return workbooks;
+    const workbooks = await queryMany<any>(sql, [workspaceId]);
+    return workbooks.map(w => ({
+        ...w,
+        projects: w.projects.map((p: any) => ({
+            ...p,
+            startDate: p.startDate,
+            endDate: p.endDate,
+            workspaceId: p.workspaceId,
+            clientId: p.clientId,
+            opportunityId: p.opportunityId,
+            pmoId: p.pmoId,
+        }))
+    }));
 }
 
 export async function getWorkbookById(id: string): Promise<Workbook | null> {
-    const workbook = await queryOne<any>('SELECT id, name, description, workspace_id FROM workbooks WHERE id = $1', [id]);
+    const sql = `
+        SELECT
+            w.id,
+            w.name,
+            w.description,
+            w.workspace_id AS "workspaceId",
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', p.id,
+                        'name', p.name,
+                        'description', p.description,
+                        'startDate', p.start_date,
+                        'endDate', p.end_date,
+                        'status', p.status,
+                        'workspaceId', p.workspace_id,
+                        'clientId', p.client_id,
+                        'opportunityId', p.opportunity_id,
+                        'pmoId', p.pmo_id,
+                        'participantIds', (SELECT COALESCE(json_agg(pp.participant_id), '[]'::json) FROM project_participants pp WHERE pp.project_id = p.id),
+                        'workbookIds', (SELECT COALESCE(json_agg(pw_inner.workbook_id), '[]'::json) FROM project_workbooks pw_inner WHERE pw_inner.project_id = p.id)
+                    )
+                ) FILTER (WHERE p.id IS NOT NULL),
+                '[]'::json
+            ) AS projects
+        FROM
+            workbooks w
+        LEFT JOIN
+            project_workbooks pw ON w.id = pw.workbook_id
+        LEFT JOIN
+            projects p ON pw.project_id = p.id
+        WHERE
+            w.id = $1
+        GROUP BY
+            w.id, w.name, w.description, w.workspace_id;
+    `;
+    const workbook = await queryOne<any>(sql, [id]);
     if (!workbook) return null;
 
-    const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [workbook.id]);
-    const projectIds = projects.map(p => p.project_id);
-
     return {
-        id: workbook.id,
-        name: workbook.name,
-        description: workbook.description,
-        workspaceId: workbook.workspace_id,
-        projectIds: projectIds,
+        ...workbook,
+        projects: workbook.projects.map((p: any) => ({
+            ...p,
+            startDate: p.startDate,
+            endDate: p.endDate,
+            workspaceId: p.workspaceId,
+            clientId: p.clientId,
+            opportunityId: p.opportunityId,
+            pmoId: p.pmoId,
+        }))
     };
 }
 
-export async function createWorkbook(workbook: Omit<Workbook, 'id' | 'projectIds'>): Promise<Workbook> {
+export async function createWorkbook(workbook: Omit<Workbook, 'id' | 'projects'>): Promise<Workbook> {
     const newId = `wb_${randomBytes(8).toString('hex')}`;
     const { name, description, workspaceId } = workbook;
     const result = await queryOne<any>(
@@ -303,11 +392,11 @@ export async function createWorkbook(workbook: Omit<Workbook, 'id' | 'projectIds
     return {
         ...result,
         workspaceId: result.workspace_id,
-        projectIds: [],
+        projects: [],
     };
 }
 
-export async function updateWorkbook(id: string, workbook: Partial<Omit<Workbook, 'id' | 'projectIds'>>): Promise<Workbook | null> {
+export async function updateWorkbook(id: string, workbook: Partial<Omit<Workbook, 'id' | 'projects'>>): Promise<Workbook | null> {
     const { name, description } = workbook;
     const result = await queryOne<any>(
         'UPDATE workbooks SET name = COALESCE($1, name), description = COALESCE($2, description) WHERE id = $3 RETURNING id, name, description, workspace_id',
@@ -315,14 +404,9 @@ export async function updateWorkbook(id: string, workbook: Partial<Omit<Workbook
     );
     if (!result) return null;
 
-    const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [id]);
-    const projectIds = projects.map(p => p.project_id);
-
-    return {
-        ...result,
-        workspaceId: result.workspace_id,
-        projectIds: projectIds,
-    };
+    // After updating, we need to return the full workbook, including the projects.
+    // Re-using getWorkbookById ensures consistency.
+    return getWorkbookById(id);
 }
 
 export async function deleteWorkbook(id: string): Promise<{ success: boolean }> {
@@ -572,10 +656,20 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
                 client_id = COALESCE($7, client_id),
                 opportunity_id = COALESCE($8, opportunity_id),
                 pmo_id = COALESCE($9, pmo_id)
-            WHERE id = $10;
+            WHERE id = $10
+            RETURNING *;
         `;
-        await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
+        const projectResult = await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
 
+        if (projectResult.rows.length === 0) {
+            // Project not found, rollback and return null
+            await client.query('ROLLBACK');
+            return null;
+        }
+
+        const updatedProject = projectResult.rows[0];
+
+        let finalParticipantIds = updatedProject.participantIds;
         if (participantIds !== undefined) {
             await client.query('DELETE FROM project_participants WHERE project_id = $1', [id]);
             if (participantIds.length > 0) {
@@ -583,8 +677,10 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
                     await client.query('INSERT INTO project_participants (project_id, participant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [id, participantId]);
                 }
             }
+            finalParticipantIds = participantIds;
         }
 
+        let finalWorkbookIds = updatedProject.workbookIds;
         if (workbookIds !== undefined) {
             await client.query('DELETE FROM project_workbooks WHERE project_id = $1', [id]);
             if (workbookIds.length > 0) {
@@ -592,20 +688,29 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
                     await client.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [id, workbookId]);
                 }
             }
+            finalWorkbookIds = workbookIds;
         }
 
         await client.query('COMMIT');
+
+        return {
+            ...updatedProject,
+            startDate: updatedProject.start_date,
+            endDate: updatedProject.end_date,
+            workspaceId: updatedProject.workspace_id,
+            clientId: updatedProject.client_id,
+            opportunityId: updatedProject.opportunity_id,
+            pmoId: updatedProject.pmo_id,
+            participantIds: finalParticipantIds,
+            workbookIds: finalWorkbookIds,
+        };
     } catch (e) {
         await client.query('ROLLBACK');
         console.error('Failed to update project:', e);
-        // In case of error, return null to signify that the update failed.
-        return null;
+        throw e; // Re-throw the error to be handled by the API route
     } finally {
         client.release();
     }
-
-    // Return the updated project with all its relations
-    return getProjectById(id);
 }
 
 export async function deleteProject(id: string): Promise<{ success: boolean }> {
