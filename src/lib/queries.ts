@@ -252,17 +252,29 @@ export async function deleteWorkspace(id: string): Promise<{ success: boolean }>
 
 // Workbooks
 export async function getWorkbooksByWorkspace(workspaceId: string): Promise<Workbook[]> {
-    const workbooks = await queryMany<any>('SELECT id, name, description, workspace_id FROM workbooks WHERE workspace_id = $1', [workspaceId]);
-    for (const workbook of workbooks) {
-        const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [workbook.id]);
-        workbook.projectIds = projects.map(p => p.project_id);
-    }
-    return workbooks.map(w => ({
-        ...w,
-        workspaceId: w.workspace_id,
-        // Ensure projectIds is always an array
-        projectIds: w.projectIds || []
-    }));
+    const sql = `
+        SELECT
+            w.id,
+            w.name,
+            w.description,
+            w.workspace_id AS "workspaceId",
+            COALESCE(
+                json_agg(pw.project_id) FILTER (WHERE pw.project_id IS NOT NULL),
+                '[]'::json
+            ) AS "projectIds"
+        FROM
+            workbooks w
+        LEFT JOIN
+            project_workbooks pw ON w.id = pw.workbook_id
+        WHERE
+            w.workspace_id = $1
+        GROUP BY
+            w.id, w.name, w.description, w.workspace_id
+        ORDER BY
+            w.name;
+    `;
+    const workbooks = await queryMany<Workbook>(sql, [workspaceId]);
+    return workbooks;
 }
 
 export async function getWorkbookById(id: string): Promise<Workbook | null> {
@@ -289,9 +301,6 @@ export async function createWorkbook(workbook: Omit<Workbook, 'id' | 'projectIds
         [newId, name, description, workspaceId]
     );
     return {
-        // id: result.id, // This is already in result
-        // name: result.name, // This is already in result
-        // description: result.description, // This is already in result
         ...result,
         workspaceId: result.workspace_id,
         projectIds: [],
@@ -306,14 +315,10 @@ export async function updateWorkbook(id: string, workbook: Partial<Omit<Workbook
     );
     if (!result) return null;
 
-    // Fetch the project IDs separately
     const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [id]);
     const projectIds = projects.map(p => p.project_id);
 
     return {
-        // id: result.id,
-        // name: result.name,
-        // description: result.description,
         ...result,
         workspaceId: result.workspace_id,
         projectIds: projectIds,
@@ -321,7 +326,6 @@ export async function updateWorkbook(id: string, workbook: Partial<Omit<Workbook
 }
 
 export async function deleteWorkbook(id: string): Promise<{ success: boolean }> {
-    // The ON DELETE CASCADE in project_workbooks will handle removing associations
     const result = await pool.query('DELETE FROM workbooks WHERE id = $1', [id]);
     return { success: result.rowCount > 0 };
 }
@@ -335,15 +339,12 @@ export async function updateWorkbookProjects(
     try {
         await client.query('BEGIN');
 
-        // Remove projects
         if (projectsToRemove.length > 0) {
             const removeQuery = 'DELETE FROM project_workbooks WHERE workbook_id = $1 AND project_id = ANY($2::text[])';
             await client.query(removeQuery, [workbookId, projectsToRemove]);
         }
 
-        // Add projects
         if (projectsToAdd.length > 0) {
-            // Using a loop with ON CONFLICT to avoid inserting duplicates
             for (const projectId of projectsToAdd) {
                 const insertQuery = 'INSERT INTO project_workbooks (workbook_id, project_id) VALUES ($1, $2) ON CONFLICT (workbook_id, project_id) DO NOTHING';
                 await client.query(insertQuery, [workbookId, projectId]);
@@ -365,7 +366,6 @@ export async function updateWorkbookProjects(
 
 // Opportunities
 export async function getOpportunities(): Promise<Opportunity[]> {
-    // This is a simplified query. In a real app, comments and attachments would be fetched separately or aggregated.
     const opportunities = await queryMany<any>('SELECT id, name, contact_name, email, company, phone, description, status, created_at, value, client_id, owner_id FROM opportunities');
     return opportunities.map(o => ({
         ...o,
@@ -373,8 +373,8 @@ export async function getOpportunities(): Promise<Opportunity[]> {
         createdAt: o.created_at,
         clientId: o.client_id,
         ownerId: o.owner_id,
-        comments: [], // Fetch separately
-        attachments: [], // Fetch separately
+        comments: [],
+        attachments: [],
     }));
 }
 
@@ -387,8 +387,8 @@ export async function getOpportunityById(id: string): Promise<Opportunity | null
         createdAt: o.created_at,
         clientId: o.client_id,
         ownerId: o.owner_id,
-        comments: [], // Fetch separately
-        attachments: [], // Fetch separately
+        comments: [],
+        attachments: [],
     };
 }
 
@@ -446,26 +446,39 @@ export async function getProjectTemplates(): Promise<ProjectTemplate[]> {
 
 // Projects
 export async function getProjects(): Promise<Project[]> {
-    const projects = await queryMany<any>('SELECT id, name, description, start_date, end_date, status, workspace_id, client_id, opportunity_id, pmo_id FROM projects');
-
-    for (const project of projects) {
-        const participants = await queryMany<any>('SELECT participant_id FROM project_participants WHERE project_id = $1', [project.id]);
-        project.participantIds = participants.map(p => p.participant_id);
-
-        const workbooks = await queryMany<any>('SELECT workbook_id FROM project_workbooks WHERE project_id = $1', [project.id]);
-        project.workbookIds = workbooks.map(w => w.workbook_id);
-    }
-
-    return projects.map(p => ({
-        ...p,
-        startDate: p.start_date,
-        endDate: p.end_date,
-        workspaceId: p.workspace_id,
-        clientId: p.client_id,
-        opportunityId: p.opportunity_id,
-        pmoId: p.pmo_id,
-        workbookIds: p.workbookIds || [],
-    }));
+    const sql = `
+        SELECT
+            p.id,
+            p.name,
+            p.description,
+            p.start_date AS "startDate",
+            p.end_date AS "endDate",
+            p.status,
+            p.workspace_id AS "workspaceId",
+            p.client_id AS "clientId",
+            p.opportunity_id AS "opportunityId",
+            p.pmo_id AS "pmoId",
+            COALESCE(
+                json_agg(DISTINCT pp.participant_id) FILTER (WHERE pp.participant_id IS NOT NULL),
+                '[]'::json
+            ) AS "participantIds",
+            COALESCE(
+                json_agg(DISTINCT pw.workbook_id) FILTER (WHERE pw.workbook_id IS NOT NULL),
+                '[]'::json
+            ) AS "workbookIds"
+        FROM
+            projects p
+        LEFT JOIN
+            project_participants pp ON p.id = pp.project_id
+        LEFT JOIN
+            project_workbooks pw ON p.id = pw.project_id
+        GROUP BY
+            p.id
+        ORDER BY
+            p.name;
+    `;
+    const projects = await queryMany<Project>(sql);
+    return projects;
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
@@ -486,6 +499,8 @@ export async function getProjectById(id: string): Promise<Project | null> {
         clientId: project.client_id,
         opportunityId: project.opportunity_id,
         pmoId: project.pmo_id,
+        participantIds: project.participantIds || [],
+        workbookIds: project.workbookIds || [],
     };
 }
 
@@ -688,10 +703,7 @@ export async function createChecklistItem(taskId: string, text: string): Promise
         'INSERT INTO checklist_items (id, text, completed, task_id) VALUES ($1, $2, $3, $4) RETURNING *',
         [newId, text, false, taskId]
     );
-    // The queryOne utility already returns the object in the desired shape, but if it returned raw snake_case,
-    // you would need to map it like this:
-    // return { id: result.id, text: result.text, completed: result.completed, taskId: result.task_id };
-    return result!; // We are sure it's not null because of RETURNING *
+    return result!;
 }
 
 export async function updateChecklistItem(id: string, completed: boolean): Promise<ChecklistItem | null> {

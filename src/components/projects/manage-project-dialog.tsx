@@ -44,7 +44,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser, getWorkbooksByWorkspace } = useStore();
+  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser, getWorkbooksByWorkspace, updateWorkbookProjects, fetchWorkbooksByWorkspace } = useStore();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -97,32 +97,54 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
       alert('Por favor, preencha todos os campos obrigatórios, incluindo o espaço de trabalho.');
       return;
     }
-    
+
     const projectData = {
-        name,
-        description,
-        startDate,
-        endDate,
-        status,
-        workspaceId,
-        clientId,
-        participantIds,
-        pmoId,
-        workbookIds,
+      name,
+      description,
+      startDate,
+      endDate,
+      status,
+      workspaceId,
+      clientId,
+      participantIds,
+      pmoId,
     };
 
+    const originalWorkbookIds = project?.workbookIds || [];
+
     try {
-        if (project) {
-            await updateProject({ id: project.id, ...projectData });
-        } else {
-            // On creation, include the workbookId to associate the project
-            await addProject(projectData, templateId);
-        }
-        setOpen(false);
+      const savedProject = project
+        ? await updateProject({ id: project.id, ...projectData, workbookIds })
+        : await addProject({ ...projectData, workbookIds }, templateId);
+
+      if (!savedProject) {
+        throw new Error('Failed to save project details.');
+      }
+
+      const newWorkbookIds = workbookIds;
+      const workbooksToAddLink = newWorkbookIds.filter(id => !originalWorkbookIds.includes(id));
+      const workbooksToRemoveLink = originalWorkbookIds.filter(id => !newWorkbookIds.includes(id));
+
+      const updatePromises: Promise<any>[] = [];
+
+      workbooksToAddLink.forEach(workbookId => {
+        updatePromises.push(updateWorkbookProjects(workbookId, [savedProject.id], []));
+      });
+
+      workbooksToRemoveLink.forEach(workbookId => {
+        updatePromises.push(updateWorkbookProjects(workbookId, [], [savedProject.id]));
+      });
+
+      await Promise.all(updatePromises);
+
+      if (workspaceId) {
+        await fetchWorkbooksByWorkspace(workspaceId);
+      }
+
+      setOpen(false);
     } catch (error) {
-        console.error("Failed to save project:", error);
-        // Optionally, show an error message to the user
-        alert("Falha ao salvar o projeto. Tente novamente.");
+      console.error("Failed to save project and associations:", error);
+      alert("Falha ao salvar o projeto e suas associações. Tente novamente.");
     }
   };
   
