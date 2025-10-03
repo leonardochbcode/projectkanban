@@ -572,9 +572,16 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
                 client_id = COALESCE($7, client_id),
                 opportunity_id = COALESCE($8, opportunity_id),
                 pmo_id = COALESCE($9, pmo_id)
-            WHERE id = $10;
+            WHERE id = $10
+            RETURNING *;
         `;
-        await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
+        const projectResult = await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
+        const updatedProject = projectResult.rows[0];
+
+        if (!updatedProject) {
+            await client.query('ROLLBACK');
+            return null;
+        }
 
         if (participantIds !== undefined) {
             await client.query('DELETE FROM project_participants WHERE project_id = $1', [id]);
@@ -595,17 +602,25 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
         }
 
         await client.query('COMMIT');
+
+        return {
+            ...updatedProject,
+            startDate: updatedProject.start_date,
+            endDate: updatedProject.end_date,
+            workspaceId: updatedProject.workspace_id,
+            clientId: updatedProject.client_id,
+            opportunityId: updatedProject.opportunity_id,
+            pmoId: updatedProject.pmo_id,
+            participantIds: participantIds || [],
+            workbookIds: workbookIds || [],
+        };
     } catch (e) {
         await client.query('ROLLBACK');
         console.error('Failed to update project:', e);
-        // In case of error, return null to signify that the update failed.
-        return null;
+        throw e;
     } finally {
         client.release();
     }
-
-    // Return the updated project with all its relations
-    return getProjectById(id);
 }
 
 export async function deleteProject(id: string): Promise<{ success: boolean }> {
