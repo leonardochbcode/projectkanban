@@ -313,19 +313,7 @@ export async function getWorkbooksByWorkspace(workspaceId: string): Promise<Work
         ORDER BY
             w.name;
     `;
-    const workbooks = await queryMany<any>(sql, [workspaceId]);
-    return workbooks.map(w => ({
-        ...w,
-        projects: w.projects.map((p: any) => ({
-            ...p,
-            startDate: p.startDate,
-            endDate: p.endDate,
-            workspaceId: p.workspaceId,
-            clientId: p.clientId,
-            opportunityId: p.opportunityId,
-            pmoId: p.pmoId,
-        }))
-    }));
+    return queryMany<Workbook>(sql, [workspaceId]);
 }
 
 export async function getWorkbookById(id: string): Promise<Workbook | null> {
@@ -365,21 +353,7 @@ export async function getWorkbookById(id: string): Promise<Workbook | null> {
         GROUP BY
             w.id, w.name, w.description, w.workspace_id;
     `;
-    const workbook = await queryOne<any>(sql, [id]);
-    if (!workbook) return null;
-
-    return {
-        ...workbook,
-        projects: workbook.projects.map((p: any) => ({
-            ...p,
-            startDate: p.startDate,
-            endDate: p.endDate,
-            workspaceId: p.workspaceId,
-            clientId: p.clientId,
-            opportunityId: p.opportunityId,
-            pmoId: p.pmoId,
-        }))
-    };
+    return queryOne<Workbook>(sql, [id]);
 }
 
 export async function createWorkbook(workbook: Omit<Workbook, 'id' | 'projects'>): Promise<Workbook> {
@@ -399,13 +373,13 @@ export async function createWorkbook(workbook: Omit<Workbook, 'id' | 'projects'>
 export async function updateWorkbook(id: string, workbook: Partial<Omit<Workbook, 'id' | 'projects'>>): Promise<Workbook | null> {
     const { name, description } = workbook;
     const result = await queryOne<any>(
-        'UPDATE workbooks SET name = COALESCE($1, name), description = COALESCE($2, description) WHERE id = $3 RETURNING id, name, description, workspace_id',
+        'UPDATE workbooks SET name = COALESCE($1, name), description = COALESCE($2, description) WHERE id = $3 RETURNING id',
         [name, description, id]
     );
     if (!result) return null;
 
     // After updating, we need to return the full workbook, including the projects.
-    // Re-using getWorkbookById ensures consistency.
+    // Re-using getWorkbookById ensures consistency and that we get the full project objects.
     return getWorkbookById(id);
 }
 
@@ -664,12 +638,15 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
         if (projectResult.rows.length === 0) {
             // Project not found, rollback and return null
             await client.query('ROLLBACK');
+            client.release();
             return null;
         }
 
         const updatedProject = projectResult.rows[0];
 
-        let finalParticipantIds = updatedProject.participantIds;
+        // Use the passed participantIds if they exist, otherwise keep the existing ones.
+        // This is crucial because if participantIds is not part of the update, we shouldn't wipe them out.
+        let finalParticipantIds: string[];
         if (participantIds !== undefined) {
             await client.query('DELETE FROM project_participants WHERE project_id = $1', [id]);
             if (participantIds.length > 0) {
@@ -678,9 +655,13 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
                 }
             }
             finalParticipantIds = participantIds;
+        } else {
+            const existingParticipants = await client.query('SELECT participant_id FROM project_participants WHERE project_id = $1', [id]);
+            finalParticipantIds = existingParticipants.rows.map(row => row.participant_id);
         }
 
-        let finalWorkbookIds = updatedProject.workbookIds;
+        // Same logic for workbookIds
+        let finalWorkbookIds: string[];
         if (workbookIds !== undefined) {
             await client.query('DELETE FROM project_workbooks WHERE project_id = $1', [id]);
             if (workbookIds.length > 0) {
@@ -689,14 +670,20 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
                 }
             }
             finalWorkbookIds = workbookIds;
+        } else {
+            const existingWorkbooks = await client.query('SELECT workbook_id FROM project_workbooks WHERE project_id = $1', [id]);
+            finalWorkbookIds = existingWorkbooks.rows.map(row => row.workbook_id);
         }
 
         await client.query('COMMIT');
 
         return {
-            ...updatedProject,
+            id: updatedProject.id,
+            name: updatedProject.name,
+            description: updatedProject.description,
             startDate: updatedProject.start_date,
             endDate: updatedProject.end_date,
+            status: updatedProject.status,
             workspaceId: updatedProject.workspace_id,
             clientId: updatedProject.client_id,
             opportunityId: updatedProject.opportunity_id,
