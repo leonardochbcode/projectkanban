@@ -41,12 +41,12 @@ function ProjectsPageContent() {
     if (workspaceFilter !== 'all') {
       filtered = filtered.filter(p => p.workspaceId === workspaceFilter);
     }
-    if (workbookFilter === 'in_workbook') {
-      filtered = filtered.filter(p => p.workbookIds && p.workbookIds.length > 0);
-    }
-    if (workbookFilter === 'not_in_workbook') {
-      filtered = filtered.filter(p => !p.workbookIds || p.workbookIds.length === 0);
-    }
+    // if (workbookFilter === 'in_workbook') {
+    //   filtered = filtered.filter(p => p.workbookIds && p.workbookIds.length > 0);
+    // }
+    // if (workbookFilter === 'not_in_workbook') {
+    //   filtered = filtered.filter(p => !p.workbookIds || p.workbookIds.length === 0);
+    // }
     setCurrentPage(1);
     return filtered;
   }, [projects, nameFilter, statusFilter, clientFilter, workspaceFilter, workbookFilter]);

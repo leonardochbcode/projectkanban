@@ -1,24 +1,24 @@
 export const availablePermissions = {
-    view_dashboard: 'Ver Painel',
-    manage_workspaces: 'Gerenciar Espaços de Trabalho',
-    manage_projects: 'Gerenciar Projetos',
-    view_all_projects: 'Ver Todos os Projetos',
-    manage_clients: 'Gerenciar Clientes',
-    manage_opportunities: 'Gerenciar Oportunidades',
-    view_opportunity_values: 'Ver Valores das Oportunidades',
-    manage_team: 'Gerenciar Equipe',
-    view_reports: 'Ver Relatórios',
-    manage_settings: 'Gerenciar Configurações'
+  view_dashboard: 'Ver Painel',
+  manage_workspaces: 'Gerenciar Espaços de Trabalho',
+  manage_projects: 'Gerenciar Projetos',
+  view_all_projects: 'Ver Todos os Projetos',
+  manage_clients: 'Gerenciar Clientes',
+  manage_opportunities: 'Gerenciar Oportunidades',
+  view_opportunity_values: 'Ver Valores das Oportunidades',
+  manage_team: 'Gerenciar Equipe',
+  view_reports: 'Ver Relatórios',
+  manage_settings: 'Gerenciar Configurações'
 } as const;
 
 export type Permission = keyof typeof availablePermissions;
 
 export interface CompanyInfo {
-    name: string;
-    cnpj: string;
-    address: string;
-    suportewebCode: string;
-    logoUrl?: string;
+  name: string;
+  cnpj: string;
+  address: string;
+  suportewebCode: string;
+  logoUrl?: string;
 }
 
 export interface Role {
@@ -47,33 +47,33 @@ export interface OpportunityComment {
 }
 
 export interface OpportunityAttachment {
-    id: string;
-    name: string;
-    size: number;
-    type: string;
-    url: string; // In a real app, this would be a URL to the stored file
-    createdAt: string;
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string; // In a real app, this would be a URL to the stored file
+  createdAt: string;
 }
 
 export interface Opportunity {
-    id: string;
-    name: string;
-    contactName: string;
-    email: string;
-    company?: string;
-    phone?: string;
-    description: string;
-    status: 'A Analisar' | 'Contato Realizado' | 'Proposta Enviada' | 'Ganha' | 'Perdida';
-    createdAt: string;
-    comments: OpportunityComment[];
-    attachments: OpportunityAttachment[];
-    value: number;
-    clientId?: string;
-    ownerId: string;
+  id: string;
+  name: string;
+  contactName: string;
+  email: string;
+  company?: string;
+  phone?: string;
+  description: string;
+  status: 'A Analisar' | 'Contato Realizado' | 'Proposta Enviada' | 'Ganha' | 'Perdida';
+  createdAt: string;
+  comments: OpportunityComment[];
+  attachments: OpportunityAttachment[];
+  value: number;
+  clientId?: string;
+  ownerId: string;
 }
 
 export interface Participant {
-  id:string;
+  id: string;
   name: string;
   email: string;
   roleId: string | null;
@@ -90,12 +90,12 @@ export interface TaskComment {
 }
 
 export interface TaskAttachment {
-    id: string;
-    name: string;
-    size: number;
-    type: string;
-    url: string;
-    createdAt: string;
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+  createdAt: string;
 }
 
 export interface ChecklistItem {
@@ -126,7 +126,6 @@ export interface Project {
   endDate: string;
   status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído';
   participantIds: string[];
-  workbookIds: string[];
   workspaceId: string;
   clientId?: string;
   opportunityId?: string;
@@ -155,7 +154,7 @@ export interface TemplateTask {
   description: string;
   priority: 'Baixa' | 'Média' | 'Alta';
   // A duração em dias a partir da data de início do projeto
-  dueDayOffset: number; 
+  dueDayOffset: number;
 }
 
 export interface ProjectTemplate {
