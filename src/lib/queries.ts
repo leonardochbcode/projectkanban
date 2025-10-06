@@ -252,17 +252,29 @@ export async function deleteWorkspace(id: string): Promise<{ success: boolean }>
 
 // Workbooks
 export async function getWorkbooksByWorkspace(workspaceId: string): Promise<Workbook[]> {
-    const workbooks = await queryMany<any>('SELECT id, name, description, workspace_id FROM workbooks WHERE workspace_id = $1', [workspaceId]);
-    for (const workbook of workbooks) {
-        const projects = await queryMany<any>('SELECT project_id FROM project_workbooks WHERE workbook_id = $1', [workbook.id]);
-        workbook.projectIds = projects.map(p => p.project_id);
-    }
-    return workbooks.map(w => ({
-        ...w,
-        workspaceId: w.workspace_id,
-        // Ensure projectIds is always an array
-        projectIds: w.projectIds || []
-    }));
+    const sql = `
+        SELECT
+            w.id,
+            w.name,
+            w.description,
+            w.workspace_id as "workspaceId",
+            COALESCE(
+                json_agg(pw.project_id) FILTER (WHERE pw.project_id IS NOT NULL),
+                '[]'::json
+            ) as "projectIds"
+        FROM
+            workbooks w
+        LEFT JOIN
+            project_workbooks pw ON w.id = pw.workbook_id
+        WHERE
+            w.workspace_id = $1
+        GROUP BY
+            w.id
+        ORDER BY
+            w.name;
+    `;
+    const workbooks = await queryMany<Workbook>(sql, [workspaceId]);
+    return workbooks;
 }
 
 export async function getWorkbookById(id: string): Promise<Workbook | null> {

@@ -196,7 +196,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     if (newState.workspaces) setWorkspaces(newState.workspaces);
     if (newState.workbooks) setWorkbooks(newState.workbooks);
   };
-  
+
   const value = useMemo(() => ({ ...store, dispatch }), [store]);
 
   return React.createElement(StoreContext.Provider, { value }, children);
@@ -236,11 +236,11 @@ export const useStore = () => {
     }
 
     return store.projects.filter(project => {
-        const userTasksInProject = store.tasks.filter(t => t.projectId === project.id && t.assigneeId === store.currentUser!.id);
-        
-        return project.participantIds.includes(store.currentUser!.id) ||
-               project.pmoId === store.currentUser!.id ||
-               userTasksInProject.length > 0;
+      const userTasksInProject = store.tasks.filter(t => t.projectId === project.id && t.assigneeId === store.currentUser!.id);
+
+      return project.participantIds.includes(store.currentUser!.id) ||
+        project.pmoId === store.currentUser!.id ||
+        userTasksInProject.length > 0;
     });
 
   }, [store.projects, store.currentUser, store.isLoaded, getRole, store.tasks]);
@@ -257,7 +257,7 @@ export const useStore = () => {
     // Note: This searches through allProjects, not just visibleProjects
     return store.projects.find(p => p.id === projectId);
   }, [store.projects]);
-  
+
   const addProject = useCallback(async (project: Omit<Project, 'id'>, templateId?: string) => {
     try {
       const response = await fetch('/api/projects', {
@@ -315,7 +315,7 @@ export const useStore = () => {
     // Immediately update the UI for a better user experience (optimistic update)
     const optimisticProject = { ...originalProjects.find(p => p.id === updatedProject.id)!, ...updatedProject };
     dispatch({
-        projects: store.projects.map(p => p.id === updatedProject.id ? optimisticProject : p)
+      projects: store.projects.map(p => p.id === updatedProject.id ? optimisticProject : p)
     });
 
     try {
@@ -340,7 +340,7 @@ export const useStore = () => {
         projects: store.projects.map(p => p.id === returnedProject.id ? returnedProject : p)
       });
 
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to update project:", error);
       // If the API call fails, revert the state to the original
       dispatch({ projects: originalProjects });
@@ -351,7 +351,7 @@ export const useStore = () => {
 
   const deleteProject = useCallback(async (projectId: string) => {
     try {
-       const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await fetch(`/api/projects/${projectId}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete project');
@@ -377,13 +377,13 @@ export const useStore = () => {
       const newTask = await response.json();
       dispatch({ tasks: [...store.tasks, newTask] });
       return newTask;
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to add task:", error);
       return null;
     }
   }, [store.tasks, dispatch]);
 
-  const updateTask = useCallback(async (updatedTask: Partial<Task> & {id: string}) => {
+  const updateTask = useCallback(async (updatedTask: Partial<Task> & { id: string }) => {
     try {
       const response = await fetch(`/api/tasks/${updatedTask.id}`, {
         method: 'PUT',
@@ -399,7 +399,7 @@ export const useStore = () => {
       console.error("Failed to update task:", error);
     }
   }, [store.tasks, dispatch]);
-  
+
   const deleteTask = useCallback(async (taskId: string) => {
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -407,16 +407,16 @@ export const useStore = () => {
       });
       if (!response.ok) throw new Error('Failed to delete task');
       dispatch({
-          tasks: store.tasks.filter(t => t.id !== taskId)
+        tasks: store.tasks.filter(t => t.id !== taskId)
       });
     } catch (error) {
       console.error("Failed to delete task:", error);
     }
   }, [store.tasks, dispatch]);
-  
+
   const getParticipant = useCallback((participantId?: string) => {
-      if(!participantId) return undefined;
-      return store.participants.find(p => p.id === participantId);
+    if (!participantId) return undefined;
+    return store.participants.find(p => p.id === participantId);
   }, [store.participants]);
 
   const addParticipant = useCallback(async (participant: Omit<Participant, 'id' | 'avatar'> & { password?: string }) => {
@@ -437,7 +437,7 @@ export const useStore = () => {
       const newParticipant = await response.json();
       dispatch({ participants: [...store.participants, newParticipant] });
       return newParticipant;
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to add participant:", error);
       // Re-throw the error so the form can catch it
       throw error;
@@ -459,7 +459,7 @@ export const useStore = () => {
       dispatch({
         participants: store.participants.map(p => p.id === returnedParticipant.id ? returnedParticipant : p)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to update participant:", error);
       throw error;
     }
@@ -474,7 +474,7 @@ export const useStore = () => {
       dispatch({
         participants: store.participants.filter(p => p.id !== participantId)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to delete participant:", error);
     }
   }, [store.participants, dispatch]);
@@ -487,19 +487,19 @@ export const useStore = () => {
         body: JSON.stringify(role),
       });
       if (!response.ok) {
-         const error = await response.json();
+        const error = await response.json();
         throw new Error(error.message || 'Failed to create role');
       }
       const newRole = await response.json();
       dispatch({ roles: [...store.roles, newRole] });
       return newRole;
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to add role:", error);
       throw error;
     }
   }, [store.roles, dispatch]);
 
-  const updateRole = useCallback(async (updatedRole: Partial<Role> & {id: string}) => {
+  const updateRole = useCallback(async (updatedRole: Partial<Role> & { id: string }) => {
     try {
       const response = await fetch(`/api/roles/${updatedRole.id}`, {
         method: 'PUT',
@@ -511,27 +511,27 @@ export const useStore = () => {
       dispatch({
         roles: store.roles.map(r => r.id === returnedRole.id ? returnedRole : r)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to update role:", error);
     }
   }, [store.roles, dispatch]);
-  
+
   const deleteRole = useCallback(async (roleId: string) => {
     try {
       const response = await fetch(`/api/roles/${roleId}`, {
         method: 'DELETE',
       });
-       if (!response.ok) {
+      if (!response.ok) {
         const error = await response.json();
         // The alert is now handled by the component catching the error
         throw new Error(error.message || 'Failed to delete role');
       }
       dispatch({
-          roles: store.roles.filter(r => r.id !== roleId)
+        roles: store.roles.filter(r => r.id !== roleId)
       });
-    } catch(error) {
-       console.error("Failed to delete role:", error);
-       throw error;
+    } catch (error) {
+      console.error("Failed to delete role:", error);
+      throw error;
     }
   }, [store.roles, store.participants, dispatch]);
 
@@ -554,13 +554,13 @@ export const useStore = () => {
       const newClient = await response.json();
       dispatch({ clients: [...store.clients, newClient] });
       return newClient;
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to add client:", error);
       return null;
     }
   }, [store.clients, dispatch]);
 
-  const updateClient = useCallback(async (updatedClient: Partial<Client> & {id: string}) => {
+  const updateClient = useCallback(async (updatedClient: Partial<Client> & { id: string }) => {
     try {
       const response = await fetch(`/api/clients/${updatedClient.id}`, {
         method: 'PUT',
@@ -572,7 +572,7 @@ export const useStore = () => {
       dispatch({
         clients: store.clients.map(c => c.id === returnedClient.id ? returnedClient : c)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to update client:", error);
     }
   }, [store.clients, dispatch]);
@@ -586,13 +586,13 @@ export const useStore = () => {
       dispatch({
         clients: store.clients.filter(c => c.id !== clientId)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to delete client:", error);
     }
   }, [store.clients, dispatch]);
-    
+
   const getOpportunity = useCallback((opportunityId: string) => {
-      return store.opportunities.find(l => l.id === opportunityId);
+    return store.opportunities.find(l => l.id === opportunityId);
   }, [store.opportunities]);
 
   const addOpportunity = useCallback(async (opportunity: Omit<Opportunity, 'id' | 'createdAt' | 'comments' | 'attachments' | 'ownerId'>) => {
@@ -610,13 +610,13 @@ export const useStore = () => {
       const newOpportunity = await response.json();
       dispatch({ opportunities: [...store.opportunities, newOpportunity] });
       return newOpportunity;
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to add opportunity:", error);
       return null;
     }
   }, [store.opportunities, store.currentUser, dispatch]);
 
-  const updateOpportunity = useCallback(async (updatedOpportunity: Partial<Opportunity> & {id: string}) => {
+  const updateOpportunity = useCallback(async (updatedOpportunity: Partial<Opportunity> & { id: string }) => {
     try {
       const response = await fetch(`/api/opportunities/${updatedOpportunity.id}`, {
         method: 'PUT',
@@ -628,7 +628,7 @@ export const useStore = () => {
       dispatch({
         opportunities: store.opportunities.map(l => l.id === returnedOpportunity.id ? returnedOpportunity : l)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to update opportunity:", error);
     }
   }, [store.opportunities, dispatch]);
@@ -642,7 +642,7 @@ export const useStore = () => {
       dispatch({
         opportunities: store.opportunities.filter(l => l.id !== opportunityId)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to delete opportunity:", error);
     }
   }, [store.opportunities, dispatch]);
@@ -664,9 +664,9 @@ export const useStore = () => {
       projectId: newProject.id,
     }));
 
-    dispatch({ 
+    dispatch({
       projects: [...store.projects, newProject],
-      tasks: [...store.tasks, ...newTasks] 
+      tasks: [...store.tasks, ...newTasks]
     });
     return newProject;
   }, [store.projects, store.tasks, getProjectTasks, dispatch]);
@@ -690,7 +690,7 @@ export const useStore = () => {
       projectTemplates: store.projectTemplates.filter(t => t.id !== templateId)
     });
   }, [store.projectTemplates, dispatch]);
-  
+
   const addWorkspace = useCallback(async (workspace: Omit<Workspace, 'id'>) => {
     try {
       const response = await fetch('/api/workspaces', {
@@ -702,13 +702,13 @@ export const useStore = () => {
       const newWorkspace = await response.json();
       dispatch({ workspaces: [...store.workspaces, newWorkspace] });
       return newWorkspace;
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to add workspace:", error);
       return null;
     }
   }, [store.workspaces, dispatch]);
 
-  const updateWorkspace = useCallback(async (updatedWorkspace: Partial<Workspace> & {id: string}) => {
+  const updateWorkspace = useCallback(async (updatedWorkspace: Partial<Workspace> & { id: string }) => {
     try {
       const response = await fetch(`/api/workspaces/${updatedWorkspace.id}`, {
         method: 'PUT',
@@ -720,7 +720,7 @@ export const useStore = () => {
       dispatch({
         workspaces: store.workspaces.map(w => w.id === returnedWorkspace.id ? returnedWorkspace : w)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to update workspace:", error);
     }
   }, [store.workspaces, dispatch]);
@@ -739,7 +739,7 @@ export const useStore = () => {
       dispatch({
         workspaces: store.workspaces.filter(w => w.id !== workspaceId)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to delete workspace:", error);
     }
   }, [store.workspaces, store.projects, dispatch]);
@@ -756,17 +756,18 @@ export const useStore = () => {
     try {
       const response = await fetch(`/api/workbooks?workspaceId=${workspaceId}`);
       if (!response.ok) throw new Error('Failed to fetch workbooks');
-      const fetchedWorkbooks = await response.json();
-      // Avoid duplicates and merge with existing workbooks
-      const existingWorkbookIds = new Set(store.workbooks.map(w => w.id));
-      const newWorkbooks = fetchedWorkbooks.filter((w: Workbook) => !existingWorkbookIds.has(w.id));
-      if (newWorkbooks.length > 0) {
-        dispatch({ workbooks: [...store.workbooks, ...newWorkbooks] });
-      }
+      const fetchedWorkbooks: Workbook[] = await response.json();
+
+      const updater = (prevWorkbooks: Workbook[]): Workbook[] => {
+        const otherWorkspacesWorkbooks = prevWorkbooks.filter(w => w.workspaceId !== workspaceId);
+        return [...otherWorkspacesWorkbooks, ...fetchedWorkbooks];
+      };
+
+      dispatch({ workbooks: updater as any });
     } catch (error) {
       console.error(`Failed to fetch workbooks for workspace ${workspaceId}:`, error);
     }
-  }, [store.workbooks, dispatch]);
+  }, []);
 
   const addWorkbook = useCallback(async (workbook: Omit<Workbook, 'id' | 'projectIds'>) => {
     try {
@@ -779,13 +780,13 @@ export const useStore = () => {
       const newWorkbook = await response.json();
       dispatch({ workbooks: [...store.workbooks, newWorkbook] });
       return newWorkbook;
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to add workbook:", error);
       return null;
     }
   }, [store.workbooks, dispatch]);
 
-  const updateWorkbook = useCallback(async (updatedWorkbook: Partial<Workbook> & {id: string}) => {
+  const updateWorkbook = useCallback(async (updatedWorkbook: Partial<Workbook> & { id: string }) => {
     try {
       const response = await fetch(`/api/workbooks/${updatedWorkbook.id}`, {
         method: 'PUT',
@@ -797,7 +798,7 @@ export const useStore = () => {
       dispatch({
         workbooks: store.workbooks.map(w => w.id === returnedWorkbook.id ? returnedWorkbook : w)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to update workbook:", error);
     }
   }, [store.workbooks, dispatch]);
@@ -811,7 +812,7 @@ export const useStore = () => {
       dispatch({
         workbooks: store.workbooks.filter(w => w.id !== workbookId)
       });
-    } catch(error) {
+    } catch (error) {
       console.error("Failed to delete workbook:", error);
     }
   }, [store.workbooks, dispatch]);
@@ -824,13 +825,13 @@ export const useStore = () => {
     // Optimistic update
     const originalWorkbooks = [...store.workbooks];
     const updatedWorkbooks = store.workbooks.map(w => {
-        if (w.id === workbookId) {
-            const newProjectIds = new Set(w.projectIds);
-            projectsToAdd.forEach(id => newProjectIds.add(id));
-            projectsToRemove.forEach(id => newProjectIds.delete(id));
-            return { ...w, projectIds: Array.from(newProjectIds) };
-        }
-        return w;
+      if (w.id === workbookId) {
+        const newProjectIds = new Set(w.projectIds);
+        projectsToAdd.forEach(id => newProjectIds.add(id));
+        projectsToRemove.forEach(id => newProjectIds.delete(id));
+        return { ...w, projectIds: Array.from(newProjectIds) };
+      }
+      return w;
     });
     dispatch({ workbooks: updatedWorkbooks });
 
