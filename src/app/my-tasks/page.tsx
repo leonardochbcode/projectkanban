@@ -53,7 +53,7 @@ function MyTasksPageContent() {
     const getProjectName = (projectId: string) => {
         // We need to use the raw projects from the store, not the visible ones,
         // so we can show the project name even if the user doesn't have direct access to it.
-        return allProjects.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
+        return allProjects?.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
     }
 
     return (

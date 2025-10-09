@@ -46,6 +46,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
     'Planejamento': { label: 'Planejamento', color: 'bg-yellow-500 text-white' },
     'Concluído': { label: 'Concluído', color: 'bg-green-500 text-white' },
     'Pausado': { label: 'Pausado', color: 'bg-gray-500 text-white' },
+    'Cancelado': { label: 'Cancelado', color: 'bg-red-500 text-white' },
   }[project.status] || { label: project.status, color: 'bg-gray-200 text-gray-800' };
 
 

@@ -18,6 +18,7 @@ import { useSession } from 'next-auth/react';
 interface Store {
   isLoaded: boolean;
   projects: Project[];
+  allProjects: Project[];
   tasks: Task[];
   participants: Participant[];
   roles: Role[];
@@ -66,6 +67,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const { data: session, status } = useSession();
 
   const [projects, setProjects] = useLocalStorage<Project[]>('projects', []);
+  const [allProjects, setAllProjects] = useLocalStorage<Project[]>('allProjects', []);
   const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
   const [participants, setParticipants] = useLocalStorage<Participant[]>('participants', []);
   const [roles, setRoles] = useLocalStorage<Role[]>('roles', []);
@@ -91,6 +93,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         try {
           const [
             projectsRes,
+            allProjectsRes,
             tasksRes,
             workspacesRes,
             participantsRes,
@@ -101,6 +104,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             companyInfoRes,
           ] = await Promise.all([
             fetch('/api/projects'),
+            fetch('/api/projects/all'),
             fetch('/api/tasks'),
             fetch('/api/workspaces'),
             fetch('/api/participants'),
@@ -113,6 +117,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
           const [
             projects,
+            allProjects,
             tasks,
             workspaces,
             participants,
@@ -123,6 +128,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
             companyInfo,
           ] = await Promise.all([
             projectsRes.ok ? projectsRes.json() : [],
+            allProjectsRes.ok ? allProjectsRes.json() : [],
             tasksRes.ok ? tasksRes.json() : [],
             workspacesRes.ok ? workspacesRes.json() : [],
             participantsRes.ok ? participantsRes.json() : [],
@@ -134,6 +140,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
           ]);
 
           setProjects(projects);
+          setAllProjects(allProjects);
           setTasks(tasks);
           setWorkspaces(workspaces);
           setParticipants(participants);
@@ -151,6 +158,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         // If user is not authenticated, clear the data from local storage
         // to prevent showing stale data on re-login.
         setProjects([]);
+        setAllProjects([]);
         setTasks([]);
         setWorkspaces([]);
         setParticipants([]);
@@ -171,6 +179,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const store: Store = useMemo(() => ({
     isLoaded,
     projects,
+    allProjects,
     tasks,
     participants,
     roles,
@@ -181,10 +190,11 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     projectTemplates,
     workspaces,
     workbooks,
-  }), [isLoaded, projects, tasks, participants, roles, clients, opportunities, currentUser, companyInfo, projectTemplates, workspaces, workbooks]);
+  }), [isLoaded, projects, allProjects, tasks, participants, roles, clients, opportunities, currentUser, companyInfo, projectTemplates, workspaces, workbooks]);
 
   const dispatch = (newState: Partial<Store>) => {
     if (newState.projects) setProjects(newState.projects);
+    if (newState.allProjects) setAllProjects(newState.allProjects);
     if (newState.tasks) setTasks(newState.tasks);
     if (newState.participants) setParticipants(newState.participants);
     if (newState.roles) setRoles(newState.roles);
@@ -225,32 +235,12 @@ export const useStore = () => {
     [store.tasks]
   );
 
-  const visibleProjects = useMemo(() => {
-    if (!store.currentUser || !store.isLoaded) return [];
-
-    const userRole = getRole(store.currentUser.roleId);
-    const canViewAll = userRole?.permissions.includes('view_all_projects');
-
-    if (canViewAll) {
-      return store.projects;
-    }
-
-    return store.projects.filter(project => {
-      const userTasksInProject = store.tasks.filter(t => t.projectId === project.id && t.assigneeId === store.currentUser!.id);
-
-      return project.participantIds.includes(store.currentUser!.id) ||
-        project.pmoId === store.currentUser!.id ||
-        userTasksInProject.length > 0;
-    });
-
-  }, [store.projects, store.currentUser, store.isLoaded, getRole, store.tasks]);
-
-
   const getWorkspaceProjects = useCallback(
     (workspaceId: string) => {
-      return visibleProjects.filter((project) => project.workspaceId === workspaceId);
+      // The `store.projects` array is already filtered by the API based on user access.
+      return store.projects.filter((project) => project.workspaceId === workspaceId);
     },
-    [visibleProjects]
+    [store.projects]
   );
 
   const getProject = useCallback((projectId: string) => {
@@ -478,6 +468,17 @@ export const useStore = () => {
       console.error("Failed to delete participant:", error);
     }
   }, [store.participants, dispatch]);
+
+  const fetchParticipants = useCallback(async () => {
+    try {
+      const response = await fetch('/api/participants');
+      if (!response.ok) throw new Error('Failed to fetch participants');
+      const data = await response.json();
+      dispatch({ participants: data });
+    } catch (error) {
+      console.error("Failed to fetch participants:", error);
+    }
+  }, [dispatch]);
 
   const addRole = useCallback(async (role: Omit<Role, 'id'>) => {
     try {
@@ -725,24 +726,51 @@ export const useStore = () => {
     }
   }, [store.workspaces, dispatch]);
 
-  const deleteWorkspace = useCallback(async (workspaceId: string) => {
-    const projectsInWorkspace = store.projects.filter(p => p.workspaceId === workspaceId);
-    if (projectsInWorkspace.length > 0) {
-      alert("Não é possível excluir um espaço de trabalho que contém projetos.");
-      return;
+  const updateWorkspaceInStore = useCallback((updatedWorkspace: Workspace) => {
+      dispatch({
+          workspaces: store.workspaces.map(w => w.id === updatedWorkspace.id ? updatedWorkspace : w)
+      });
+  }, [store.workspaces, dispatch]);
+
+  const removeWorkspaceFromStore = useCallback((workspaceId: string) => {
+    dispatch({
+        workspaces: store.workspaces.filter(w => w.id !== workspaceId)
+    });
+  }, [store.workspaces, dispatch]);
+
+  const addWorkspaceToStore = useCallback((workspace: Workspace) => {
+      dispatch({ workspaces: [...store.workspaces, workspace] });
+  }, [store.workspaces, dispatch]);
+
+  const archiveWorkspace = useCallback(async (workspaceId: string) => {
+    const projectsInWorkspace = getWorkspaceProjects(workspaceId);
+    const canArchive = projectsInWorkspace.every(p => p.status === 'Concluído' || p.status === 'Cancelado');
+
+    if (!canArchive) {
+        alert("Não é possível arquivar um espaço de trabalho que ainda contém projetos ativos, em planejamento ou pausados.");
+        return;
     }
+
     try {
       const response = await fetch(`/api/workspaces/${workspaceId}`, {
-        method: 'DELETE',
+        method: 'DELETE', // This endpoint now handles archiving (soft delete)
       });
-      if (!response.ok) throw new Error('Failed to delete workspace');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to archive workspace');
+      }
+
+      // Remove from the local state to update the UI immediately
       dispatch({
         workspaces: store.workspaces.filter(w => w.id !== workspaceId)
       });
     } catch (error) {
-      console.error("Failed to delete workspace:", error);
+      console.error("Failed to archive workspace:", error);
+      // Show error message to the user
+      alert((error as Error).message);
     }
-  }, [store.workspaces, store.projects, dispatch]);
+  }, [store.workspaces, getWorkspaceProjects, dispatch]);
 
   const getWorkbook = useCallback((workbookId: string) => {
     return store.workbooks.find(w => w.id === workbookId);
@@ -861,8 +889,6 @@ export const useStore = () => {
 
   return {
     ...store,
-    projects: visibleProjects,
-    allProjects: store.projects, // Expose all projects for lookups
     getWorkspaceProjects,
     getProject,
     getProjectTasks,
@@ -876,6 +902,7 @@ export const useStore = () => {
     addParticipant,
     updateParticipant,
     deleteParticipant,
+    fetchParticipants,
     getRole,
     addRole,
     updateRole,
@@ -895,7 +922,10 @@ export const useStore = () => {
     deleteProjectTemplate,
     addWorkspace,
     updateWorkspace,
-    deleteWorkspace,
+    updateWorkspaceInStore,
+    archiveWorkspace,
+    removeWorkspaceFromStore,
+    addWorkspaceToStore,
     getWorkbook,
     getWorkbooksByWorkspace,
     fetchWorkbooksByWorkspace,

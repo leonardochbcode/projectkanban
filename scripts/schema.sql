@@ -1,5 +1,5 @@
 -- Drop tables if they exist to ensure a clean slate
-DROP TABLE IF EXISTS project_workbooks, workbooks, template_tasks, project_templates, checklist_items, task_attachments, task_comments, tasks, project_participants, projects, opportunity_attachments, opportunity_comments, opportunities, workspaces, clients, participants, roles, company_info CASCADE;
+DROP TABLE IF EXISTS workspace_participants, project_workbooks, workbooks, template_tasks, project_templates, checklist_items, task_attachments, task_comments, tasks, project_participants, projects, opportunity_attachments, opportunity_comments, opportunities, workspaces, clients, participants, roles, company_info CASCADE;
 
 -- Company Information
 CREATE TABLE company_info (
@@ -50,7 +50,16 @@ CREATE TABLE workspaces (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL
+    client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL,
+    responsible_id VARCHAR(50) REFERENCES participants(id) ON DELETE SET NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Ativo' CHECK (status IN ('Ativo', 'Arquivado'))
+);
+
+-- Workspace Participants (Many-to-Many)
+CREATE TABLE workspace_participants (
+    workspace_id VARCHAR(50) REFERENCES workspaces(id) ON DELETE CASCADE,
+    participant_id VARCHAR(50) REFERENCES participants(id) ON DELETE CASCADE,
+    PRIMARY KEY (workspace_id, participant_id)
 );
 
 -- Workbooks
@@ -112,7 +121,7 @@ CREATE TABLE projects (
     description TEXT,
     start_date DATE,
     end_date DATE,
-    status VARCHAR(50),
+    status VARCHAR(50) CHECK (status IN ('Planejamento', 'Em Andamento', 'Pausado', 'Concluído', 'Cancelado')),
     workspace_id VARCHAR(50) REFERENCES workspaces(id) ON DELETE CASCADE,
     client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL,
     opportunity_id VARCHAR(50) REFERENCES opportunities(id) ON DELETE SET NULL,

@@ -243,7 +243,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
               <Select
                 value={status}
                 onValueChange={(
-                  value: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído'
+                  value: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído' | 'Cancelado'
                 ) => setStatus(value)}
               >
                 <SelectTrigger>
@@ -254,6 +254,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
                   <SelectItem value="Em Andamento">Em Andamento</SelectItem>
                   <SelectItem value="Pausado">Pausado</SelectItem>
                   <SelectItem value="Concluído">Concluído</SelectItem>
+                  <SelectItem value="Cancelado">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
             </div>

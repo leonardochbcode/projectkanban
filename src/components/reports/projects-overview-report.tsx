@@ -5,29 +5,33 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Skeleton } from '../ui/skeleton';
 import { Progress } from '../ui/progress';
 import Link from 'next/link';
+import { TaskChecklist } from '../dashboard/task-checklist';
 
 interface ProjectsOverviewReportProps {
   projects: Project[];
+  allProjects: Project[];
   tasks: Task[];
   clients: Client[];
   isLoaded: boolean;
 }
 
-export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: ProjectsOverviewReportProps) {
+export function ProjectsOverviewReport({ projects, allProjects, tasks, clients, isLoaded }: ProjectsOverviewReportProps) {
   const reportData = useMemo(() => {
     const statusCounts = {
       'Planejamento': 0,
       'Em Andamento': 0,
       'Concluído': 0,
       'Pausado': 0,
+      'Cancelado': 0,
     };
 
     const projectDetails = projects.map(project => {
-      statusCounts[project.status]++;
+      if (project.status in statusCounts) {
+        statusCounts[project.status as keyof typeof statusCounts]++;
+      }
       
       const projectTasks = tasks.filter(t => t.projectId === project.id);
       const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
@@ -42,29 +46,31 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
       };
     });
 
-    const pieData = Object.entries(statusCounts)
-      .map(([name, value]) => ({ name, value }))
-      .filter(item => item.value > 0);
-
     const totalProjects = projects.length;
     const concludedProjects = statusCounts['Concluído'];
     const planningProjects = statusCounts['Planejamento'];
 
-    return { totalProjects, concludedProjects, planningProjects, projectDetails, pieData };
-  }, [projects, tasks, clients]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sevenDaysFromNow = new Date(today);
+    sevenDaysFromNow.setDate(today.getDate() + 7);
 
-  const COLORS = {
-    'Em Andamento': 'hsl(var(--chart-1))',
-    'Planejamento': 'hsl(var(--chart-2))',
-    'Concluído': 'hsl(var(--chart-4))',
-    'Pausado': 'hsl(var(--chart-3))',
-  };
+    const upcomingTasks = tasks
+      .filter(task => {
+        const dueDate = new Date(task.dueDate);
+        return task.status !== 'Concluída' && dueDate <= sevenDaysFromNow;
+      })
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+    return { totalProjects, concludedProjects, planningProjects, projectDetails, upcomingTasks };
+  }, [projects, tasks, clients]);
 
   const statusColors: { [key: string]: string } = {
     'Em Andamento': 'bg-blue-500/20 text-blue-700',
     'Planejamento': 'bg-yellow-500/20 text-yellow-700',
     'Concluído': 'bg-green-500/20 text-green-700',
     'Pausado': 'bg-gray-500/20 text-gray-700',
+    'Cancelado': 'bg-red-500/20 text-red-700',
   };
 
   if (!isLoaded) {
@@ -108,82 +114,8 @@ export function ProjectsOverviewReport({ projects, tasks, clients, isLoaded }: P
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle>Tabela de Projetos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Projeto</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progresso</TableHead>
-                  <TableHead className="text-right">Tarefas</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportData.projectDetails.map(project => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">
-                       <Link href={`/projects/${project.id}`} className="hover:underline">
-                        {project.name}
-                       </Link>
-                    </TableCell>
-                    <TableCell>{project.clientName}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={cn(statusColors[project.status])}>
-                        {project.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                        <div className="flex items-center gap-2">
-                            <Progress value={project.progress} className="h-2 w-24" />
-                            <span className="text-xs text-muted-foreground">{project.progress}%</span>
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-right">{project.taskCount}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Projetos por Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={reportData.pieData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {reportData.pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    borderColor: 'hsl(var(--border))',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4">
+        <TaskChecklist tasks={reportData.upcomingTasks} projects={allProjects} />
       </div>
     </div>
   );

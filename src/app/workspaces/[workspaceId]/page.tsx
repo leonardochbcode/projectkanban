@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useStore } from '@/hooks/use-store';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useState, useEffect, useMemo } from 'react';
-import type { Workbook, Project } from '@/lib/types';
+import type { Workbook, Project, Workspace } from '@/lib/types';
 import { ManageWorkbookDialog } from '@/components/workbooks/manage-workbook-dialog';
 import { WorkbooksTable } from '@/components/workbooks/workbooks-table';
 import { ManageProjectDialog } from '@/components/projects/manage-project-dialog';
@@ -98,14 +98,43 @@ function ProjectsTab({ workspaceId }: { workspaceId: string }) {
 }
 
 
+import { Share2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { ShareWorkspaceDialog } from '@/components/workspaces/share-workspace-dialog';
+
 function WorkspacePageContent() {
     const { workspaceId } = useParams() as { workspaceId: string };
-    const { workspaces } = useStore();
-    const workspace = workspaces.find(w => w.id === workspaceId);
+    const { workspaces, updateWorkspaceInStore } = useStore();
+    const { data: session } = useSession();
+
+    // Use local state to manage the workspace object, allowing for dynamic updates
+    const [workspace, setWorkspace] = useState(() => workspaces.find(w => w.id === workspaceId));
+    const { isLoaded } = useStore();
+
+    useEffect(() => {
+        const foundWorkspace = workspaces.find(w => w.id === workspaceId);
+        setWorkspace(foundWorkspace);
+    }, [workspaceId, workspaces]);
+
+    if (!isLoaded) {
+        return (
+            <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Carregando...</h1>
+            </div>
+        );
+    }
 
     if (!workspace) {
+        // After data is loaded, if workspace is still not found, show 404.
         return notFound();
     }
+
+    const isOwner = session?.user?.id === workspace.responsibleId;
+
+    const handleParticipantsUpdate = (updatedWorkspace: Workspace) => {
+        setWorkspace(updatedWorkspace); // Update local state
+        updateWorkspaceInStore(updatedWorkspace); // Update global store
+    };
 
     return (
         <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
@@ -114,6 +143,14 @@ function WorkspacePageContent() {
                     <h1 className="text-3xl font-bold tracking-tight font-headline">{workspace.name}</h1>
                     <p className="text-muted-foreground">{workspace.description}</p>
                 </div>
+                {isOwner && (
+                    <ShareWorkspaceDialog workspace={workspace} onParticipantsUpdate={handleParticipantsUpdate}>
+                        <Button>
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Compartilhar
+                        </Button>
+                    </ShareWorkspaceDialog>
+                )}
             </div>
             <Tabs defaultValue="workbooks">
                 <TabsList>

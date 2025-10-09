@@ -1,13 +1,10 @@
 import type { Metadata } from 'next';
 import './global.css';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { StoreProvider } from '@/hooks/use-store';
 import { ThemeProvider } from '@/components/theme-provider';
 import NextAuthSessionProvider from '@/components/session-provider';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'CHB Planner',
@@ -20,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR" className="light">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -29,13 +26,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} font-body antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
+      <body className="font-body antialiased">
+        <ThemeProvider>
           <NextAuthSessionProvider>
             <StoreProvider>
                 {children}

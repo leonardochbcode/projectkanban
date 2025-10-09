@@ -27,7 +27,7 @@ interface ManageWorkspaceDialogProps {
 }
 
 export function ManageWorkspaceDialog({ children, workspace, open, onOpenChange }: ManageWorkspaceDialogProps) {
-  const { addWorkspace, updateWorkspace, clients } = useStore();
+  const { addWorkspace, updateWorkspace, clients, currentUser } = useStore();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [clientId, setClientId] = useState<string | undefined>();
@@ -51,18 +51,29 @@ export function ManageWorkspaceDialog({ children, workspace, open, onOpenChange 
       return;
     }
 
-    const workspaceData = {
-        name,
-        description,
-        clientId,
-    };
-
     if (workspace) {
+        const workspaceData = {
+            name,
+            description,
+            clientId,
+        };
       updateWorkspace({
         ...workspace,
         ...workspaceData,
       });
     } else {
+        if (!currentUser) {
+            alert('Você precisa estar logado para criar um espaço de trabalho.');
+            return;
+        }
+        const workspaceData = {
+            name,
+            description,
+            clientId,
+            responsibleId: currentUser.id,
+            participantIds: [],
+            status: 'Ativo' as const,
+        };
       addWorkspace(workspaceData);
     }
     

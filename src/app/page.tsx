@@ -11,7 +11,7 @@ import type { Project, Opportunity } from '@/lib/types';
 
 
 export default function DashboardPage() {
-  const { projects, isLoaded, tasks, clients, currentUser, getRole } = useStore();
+  const { projects, allProjects, isLoaded, tasks, clients, currentUser, getRole } = useStore();
 
   const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
@@ -22,10 +22,6 @@ export default function DashboardPage() {
   const canManageProjects = userRole?.permissions.includes('manage_projects') ?? false;
   const canManageOpportunities = userRole?.permissions.includes('manage_opportunities') ?? false;
 
-
-  const activeProjects = useMemo(() => {
-    return projects.filter(p => p.status === 'Em Andamento');
-  }, [projects]);
 
   const handleAddProject = () => {
     setEditingProject(undefined);
@@ -75,7 +71,8 @@ export default function DashboardPage() {
         </div>
       </div>
         <ProjectsOverviewReport
-          projects={activeProjects}
+          projects={projects}
+          allProjects={allProjects}
           tasks={tasks}
           clients={clients}
           isLoaded={isLoaded}

@@ -216,37 +216,202 @@ export async function deleteClient(id: string): Promise<{ success: boolean }> {
 
 
 // Workspaces
-export async function getWorkspaces(): Promise<Workspace[]> {
-    return queryMany<Workspace>('SELECT id, name, description, client_id as "clientId" FROM workspaces');
+export async function getWorkspaces(userId: string, page: number = 1, limit: number = 10): Promise<{ workspaces: Workspace[], total: number }> {
+    const offset = (page - 1) * limit;
+
+    const totalQuery = `
+        SELECT COUNT(DISTINCT w.id)
+        FROM workspaces w
+        LEFT JOIN workspace_participants wp_filter ON w.id = wp_filter.workspace_id
+        WHERE (w.responsible_id = $1 OR wp_filter.participant_id = $1) AND w.status = 'Ativo'
+    `;
+
+    const dataQuery = `
+        SELECT
+            w.id,
+            w.name,
+            w.description,
+            w.status,
+            w.client_id as "clientId",
+            w.responsible_id as "responsibleId",
+            (w.responsible_id = $1) as "isOwner",
+            COALESCE(
+                (SELECT json_agg(wp.participant_id) FROM workspace_participants wp WHERE wp.workspace_id = w.id),
+                '[]'::json
+            ) as "participantIds"
+        FROM
+            workspaces w
+        LEFT JOIN
+            workspace_participants wp_filter ON w.id = wp_filter.workspace_id
+        WHERE
+            (w.responsible_id = $1 OR wp_filter.participant_id = $1) AND w.status = 'Ativo'
+        GROUP BY
+            w.id
+        ORDER BY
+            w.name
+        LIMIT $2 OFFSET $3;
+    `;
+
+    const totalResult = await queryOne<{ count: string }>(totalQuery, [userId]);
+    const total = parseInt(totalResult?.count || '0', 10);
+    const workspaces = await queryMany<Workspace>(dataQuery, [userId, limit, offset]);
+
+    return { workspaces, total };
+}
+
+export async function getAllActiveWorkspaces(userId: string): Promise<Workspace[]> {
+    const sql = `
+        SELECT
+            w.id,
+            w.name,
+            w.description,
+            w.status,
+            w.client_id as "clientId",
+            w.responsible_id as "responsibleId",
+            (w.responsible_id = $1) as "isOwner",
+            COALESCE(
+                (SELECT json_agg(wp.participant_id) FROM workspace_participants wp WHERE wp.workspace_id = w.id),
+                '[]'::json
+            ) as "participantIds"
+        FROM
+            workspaces w
+        LEFT JOIN
+            workspace_participants wp_filter ON w.id = wp_filter.workspace_id
+        WHERE
+            (w.responsible_id = $1 OR wp_filter.participant_id = $1) AND w.status = 'Ativo'
+        GROUP BY
+            w.id
+        ORDER BY
+            w.name;
+    `;
+    return queryMany<Workspace>(sql, [userId]);
+}
+
+export async function getArchivedWorkspaces(userId: string, page: number = 1, limit: number = 10): Promise<{ workspaces: Workspace[], total: number }> {
+    const offset = (page - 1) * limit;
+
+    const totalQuery = `
+        SELECT COUNT(DISTINCT w.id)
+        FROM workspaces w
+        LEFT JOIN workspace_participants wp_filter ON w.id = wp_filter.workspace_id
+        WHERE (w.responsible_id = $1 OR wp_filter.participant_id = $1) AND w.status = 'Arquivado'
+    `;
+
+    const dataQuery = `
+        SELECT
+            w.id,
+            w.name,
+            w.description,
+            w.status,
+            w.client_id as "clientId",
+            w.responsible_id as "responsibleId",
+            (w.responsible_id = $1) as "isOwner",
+            COALESCE(
+                (SELECT json_agg(wp.participant_id) FROM workspace_participants wp WHERE wp.workspace_id = w.id),
+                '[]'::json
+            ) as "participantIds"
+        FROM
+            workspaces w
+        LEFT JOIN
+            workspace_participants wp_filter ON w.id = wp_filter.workspace_id
+        WHERE
+            (w.responsible_id = $1 OR wp_filter.participant_id = $1) AND w.status = 'Arquivado'
+        GROUP BY
+            w.id
+        ORDER BY
+            w.name
+        LIMIT $2 OFFSET $3;
+    `;
+
+    const totalResult = await queryOne<{ count: string }>(totalQuery, [userId]);
+    const total = parseInt(totalResult?.count || '0', 10);
+    const workspaces = await queryMany<Workspace>(dataQuery, [userId, limit, offset]);
+
+    return { workspaces, total };
 }
 
 export async function getWorkspaceById(id: string): Promise<Workspace | null> {
-    return queryOne<Workspace>('SELECT id, name, description, client_id as "clientId" FROM workspaces WHERE id = $1', [id]);
+    const workspace = await queryOne<any>('SELECT id, name, description, status, client_id as "clientId", responsible_id as "responsibleId" FROM workspaces WHERE id = $1', [id]);
+    if (!workspace) return null;
+
+    const participants = await queryMany<any>('SELECT participant_id FROM workspace_participants WHERE workspace_id = $1', [id]);
+    workspace.participantIds = participants.map(p => p.participant_id);
+
+    return workspace;
 }
 
-export async function createWorkspace(workspace: Omit<Workspace, 'id'>): Promise<Workspace> {
+export async function createWorkspace(workspace: Omit<Workspace, 'id' | 'participantIds' | 'isOwner' | 'status'>): Promise<Workspace> {
     const newId = `ws_${randomBytes(8).toString('hex')}`;
-    const { name, description, clientId } = workspace;
+    const { name, description, clientId, responsibleId } = workspace;
     const result = await queryOne<any>(
-        'INSERT INTO workspaces (id, name, description, client_id) VALUES ($1, $2, $3, $4) RETURNING *',
-        [newId, name, description, clientId]
+        'INSERT INTO workspaces (id, name, description, client_id, responsible_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [newId, name, description, clientId, responsibleId]
     );
-    return { ...result, clientId: result.client_id };
+    return {
+        ...result,
+        clientId: result.client_id,
+        responsibleId: result.responsible_id,
+        participantIds: []
+    };
 }
 
 export async function updateWorkspace(id: string, workspace: Partial<Omit<Workspace, 'id'>>): Promise<Workspace | null> {
-    const { name, description, clientId } = workspace;
-    const result = await queryOne<any>(
-        'UPDATE workspaces SET name = COALESCE($1, name), description = COALESCE($2, description), client_id = COALESCE($3, client_id) WHERE id = $4 RETURNING *',
-        [name, description, clientId, id]
+    const { name, description, clientId, status } = workspace;
+    const result = await pool.query(
+        'UPDATE workspaces SET name = COALESCE($1, name), description = COALESCE($2, description), client_id = COALESCE($3, client_id), status = COALESCE($4, status) WHERE id = $5',
+        [name, description, clientId, status, id]
     );
-    if (!result) return null;
-    return { ...result, clientId: result.client_id };
+    if (result.rowCount === 0) {
+        return null;
+    }
+    return getWorkspaceById(id);
 }
 
 export async function deleteWorkspace(id: string): Promise<{ success: boolean }> {
+    const projects = await queryMany<Project>('SELECT status FROM projects WHERE workspace_id = $1', [id]);
+    const canArchive = projects.every(p => p.status === 'Concluído' || p.status === 'Cancelado');
+
+    if (!canArchive) {
+        throw new Error('Não é possível arquivar um espaço de trabalho que ainda contém projetos ativos.');
+    }
+
+    // This now performs a soft delete by archiving the workspace
+    const result = await pool.query('UPDATE workspaces SET status = \'Arquivado\' WHERE id = $1', [id]);
+    return { success: result.rowCount > 0 };
+}
+
+export async function permanentlyDeleteWorkspace(id: string): Promise<{ success: boolean }> {
     const result = await pool.query('DELETE FROM workspaces WHERE id = $1', [id]);
     return { success: result.rowCount > 0 };
+}
+
+export async function updateWorkspaceParticipants(workspaceId: string, participantIds: string[]): Promise<{ success: boolean }> {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Clear existing participants for the workspace
+        await client.query('DELETE FROM workspace_participants WHERE workspace_id = $1', [workspaceId]);
+
+        // Insert the new participants
+        if (participantIds.length > 0) {
+            for (const participantId of participantIds) {
+                await client.query(
+                    'INSERT INTO workspace_participants (workspace_id, participant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                    [workspaceId, participantId]
+                );
+            }
+        }
+
+        await client.query('COMMIT');
+        return { success: true };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Failed to update workspace participants:', error);
+        throw error;
+    } finally {
+        client.release();
+    }
 }
 
 
@@ -456,28 +621,76 @@ export async function getProjectTemplates(): Promise<ProjectTemplate[]> {
     return templates;
 }
 
+export async function getAllProjects(): Promise<Project[]> {
+    const sql = `
+        SELECT
+            p.id,
+            p.name,
+            p.description,
+            p.start_date as "startDate",
+            p.end_date as "endDate",
+            p.status,
+            p.workspace_id as "workspaceId",
+            p.client_id as "clientId",
+            p.opportunity_id as "opportunityId",
+            p.pmo_id as "pmoId",
+            COALESCE(
+                (SELECT json_agg(pp.participant_id) FROM project_participants pp WHERE pp.project_id = p.id),
+                '[]'::json
+            ) as "participantIds",
+            COALESCE(
+                (SELECT json_agg(pw.workbook_id) FROM project_workbooks pw WHERE pw.project_id = p.id),
+                '[]'::json
+            ) as "workbookIds"
+        FROM
+            projects p
+        GROUP BY
+            p.id
+        ORDER BY
+            p.name;
+    `;
+    const projects = await queryMany<Project>(sql);
+    return projects;
+}
+
 // Projects
-export async function getProjects(): Promise<Project[]> {
-    const projects = await queryMany<any>('SELECT id, name, description, start_date, end_date, status, workspace_id, client_id, opportunity_id, pmo_id FROM projects');
-
-    for (const project of projects) {
-        const participants = await queryMany<any>('SELECT participant_id FROM project_participants WHERE project_id = $1', [project.id]);
-        project.participantIds = participants.map(p => p.participant_id);
-
-        const workbooks = await queryMany<any>('SELECT workbook_id FROM project_workbooks WHERE project_id = $1', [project.id]);
-        project.workbookIds = workbooks.map(w => w.workbook_id);
-    }
-
-    return projects.map(p => ({
-        ...p,
-        startDate: p.start_date,
-        endDate: p.end_date,
-        workspaceId: p.workspace_id,
-        clientId: p.client_id,
-        opportunityId: p.opportunity_id,
-        pmoId: p.pmo_id,
-        workbookIds: p.workbookIds || [],
-    }));
+export async function getProjects(userId: string): Promise<Project[]> {
+    const sql = `
+        SELECT
+            p.id,
+            p.name,
+            p.description,
+            p.start_date as "startDate",
+            p.end_date as "endDate",
+            p.status,
+            p.workspace_id as "workspaceId",
+            p.client_id as "clientId",
+            p.opportunity_id as "opportunityId",
+            p.pmo_id as "pmoId",
+            COALESCE(
+                (SELECT json_agg(pp.participant_id) FROM project_participants pp WHERE pp.project_id = p.id),
+                '[]'::json
+            ) as "participantIds",
+            COALESCE(
+                (SELECT json_agg(pw.workbook_id) FROM project_workbooks pw WHERE pw.project_id = p.id),
+                '[]'::json
+            ) as "workbookIds"
+        FROM
+            projects p
+        WHERE
+            p.workspace_id IN (
+                SELECT w.id
+                FROM workspaces w
+                LEFT JOIN workspace_participants wp ON w.id = wp.workspace_id
+                WHERE w.responsible_id = $1 OR wp.participant_id = $1
+            )
+        GROUP BY
+            p.id
+        ORDER BY
+            p.name;
+    `;
+    const projects = await queryMany<Project>(sql, [userId]);
+    return projects;
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
@@ -572,6 +785,11 @@ export async function updateProject(id: string, project: Partial<Omit<Project, '
             WHERE id = $10;
         `;
         await client.query(updateQuery, [name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, id]);
+
+        if (status === 'Concluído' || status === 'Cancelado') {
+            await client.query(`UPDATE tasks SET status = 'Concluída' WHERE project_id = $1`, [id]);
+            await client.query(`UPDATE checklist_items SET completed = true WHERE task_id IN (SELECT id FROM tasks WHERE project_id = $1)`, [id]);
+        }
 
         if (participantIds !== undefined) {
             await client.query('DELETE FROM project_participants WHERE project_id = $1', [id]);

@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { createProject, getProjects } from '@/lib/queries';
 import { projectSchema } from '@/lib/schemas';
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const projects = await getProjects();
+    const projects = await getProjects(session.user.id);
     return NextResponse.json(projects);
   } catch (error) {
     console.error('Failed to fetch projects:', error);

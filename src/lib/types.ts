@@ -124,7 +124,7 @@ export interface Project {
   description: string;
   startDate: string;
   endDate: string;
-  status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído';
+  status: 'Planejamento' | 'Em Andamento' | 'Pausado' | 'Concluído' | 'Cancelado';
   participantIds: string[];
   workspaceId: string;
   clientId?: string;
@@ -137,6 +137,10 @@ export interface Workspace {
   name: string;
   description: string;
   clientId?: string;
+  responsibleId: string;
+  participantIds: string[];
+  isOwner?: boolean;
+  status: 'Ativo' | 'Arquivado';
 }
 
 export interface Workbook {

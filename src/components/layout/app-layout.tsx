@@ -28,7 +28,6 @@ import { Skeleton } from '../ui/skeleton';
 import { CompanyHeaderInfo } from './company-header-info';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { ThemeSwitcher } from '../theme-switcher';
 import { useSession } from 'next-auth/react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -42,7 +41,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
   }, [status, router]);
-  
+
   // Show a loading skeleton while the session is loading or the store data is not yet ready.
   // We also wait for currentUser to be populated to prevent a flash of the loading screen
   // between the session being ready and the user object being found in the store.
@@ -52,7 +51,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="p-4 space-y-4 text-center">
           <div className="flex justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-12 w-12 fill-current animate-pulse">
-                <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
+              <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z" />
             </svg>
           </div>
           <p className="text-muted-foreground">Carregando...</p>
@@ -72,13 +71,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     // { href: '/schedule', label: 'Agenda(Em Construção)', icon: Calendar, permission: 'view_dashboard' as Permission },
     { href: '/projects', label: 'Projetos', icon: FolderKanban, permission: 'manage_projects' as Permission },
     // { href: '/gantt', label: 'Gantt(Em Construção)', icon: BarChartHorizontal, permission: 'view_dashboard' as Permission },
-    { href: '/opportunities', label: 'Oportunidades', icon: Lightbulb, permission: 'manage_opportunities' as Permission },
+    // { href: '/opportunities', label: 'Oportunidades', icon: Lightbulb, permission: 'manage_opportunities' as Permission },
     { href: '/clients', label: 'Clientes', icon: Briefcase, permission: 'manage_clients' as Permission },
     { href: '/team', label: 'Equipe', icon: Users, permission: 'manage_team' as Permission },
     // { href: '/reports', label: 'Relatórios', icon: LineChart, permission: 'view_reports' as Permission },
     { href: '/settings', label: 'Configurações', icon: Settings, permission: 'manage_settings' as Permission },
   ];
-  
+
   const accessibleMainNavItems = mainNavItems.filter(item => hasPermission(item.permission));
   const canManageWorkspaces = hasPermission('manage_workspaces');
 
@@ -100,7 +99,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {label}
         </Link>
       ))}
-      
+
       {canManageWorkspaces && (
         <Link
           href="/workspaces"
@@ -115,7 +114,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       )}
     </nav>
   );
-  
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted md:block">
@@ -126,7 +125,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Image src={companyInfo.logoUrl} alt="Company Logo" width={30} height={30} className="h-32 w-32" />
               ) : (
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
-                  <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
+                  <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z" />
                 </svg>
               )}
             </Link>
@@ -146,18 +145,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col bg-muted text-menu-foreground p-0">
-               <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                    <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary-foreground">
-                        {companyInfo?.logoUrl ? (
-                          <Image src={companyInfo.logoUrl} alt="Company Logo" width={24} height={24} className="h-6 w-6" />
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
-                              <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z"/>
-                          </svg>
-                        )}
-                        <span className="">CHBProject</span>
-                    </Link>
-                </div>
+              <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+                <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary-foreground">
+                  {companyInfo?.logoUrl ? (
+                    <Image src={companyInfo.logoUrl} alt="Company Logo" width={24} height={24} className="h-6 w-6" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className="h-6 w-6 fill-current">
+                      <path d="M228.4,89.35l-96-64a8,8,0,0,0-8.8,0l-96,64A8,8,0,0,0,24,96V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V96A8,8,0,0,0,228.4,89.35ZM128,42.22,203.1,88,128,133.78,52.9,88ZM40,107.51l88,58.67,88-58.67V200H40Z" />
+                    </svg>
+                  )}
+                  <span className="">CHBProject</span>
+                </Link>
+              </div>
               <div className="overflow-y-auto">
                 <NavLinks />
               </div>
@@ -166,11 +165,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="w-full flex-1">
             <CompanyHeaderInfo />
           </div>
-          <ThemeSwitcher />
           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 bg-background">
-            {children}
+          {children}
         </main>
       </div>
     </div>
