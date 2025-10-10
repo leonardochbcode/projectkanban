@@ -80,6 +80,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const accessibleMainNavItems = mainNavItems.filter(item => hasPermission(item.permission));
   const canManageWorkspaces = hasPermission('manage_workspaces');
+  const isGuest = currentUser?.userType === 'Convidado';
 
   const NavLinks = () => (
     <nav className="grid items-start gap-1 px-2 text-sm font-medium lg:px-4">
@@ -100,7 +101,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </Link>
       ))}
 
-      {canManageWorkspaces && (
+      {(canManageWorkspaces || isGuest) && (
         <Link
           href="/workspaces"
           className={cn(

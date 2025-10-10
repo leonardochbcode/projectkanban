@@ -5,6 +5,7 @@ import { AddTaskDialog } from '../tasks/add-task-dialog';
 import { ManageProjectDialog } from './manage-project-dialog';
 import type { Project } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
+import { useSession } from 'next-auth/react';
 import { Progress } from '@/components/ui/progress';
 import { PlusCircle, Briefcase, Edit, ClipboardList, LayoutGrid, List, ChevronsRight, Lightbulb } from 'lucide-react';
 import { OpportunityDetailsSheet } from '../opportunities/opportunity-details-sheet';
@@ -21,6 +22,7 @@ interface ProjectHeaderProps {
 
 
 export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderProps) {
+  const { data: session } = useSession();
   const { getProjectTasks, getClient, getOpportunity, workspaces } = useStore();
   const tasks = getProjectTasks(project.id);
   const client = project.clientId ? getClient(project.clientId) : null;
@@ -82,18 +84,22 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <ManageProjectDialog project={project}>
-            <Button variant="outline">
-              <Edit className="mr-2 h-4 w-4" />
-              Editar Projeto
-            </Button>
-          </ManageProjectDialog>
-          <AddTaskDialog projectId={project.id}>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Adicionar Tarefa
-            </Button>
-          </AddTaskDialog>
+          {session?.user?.userType !== 'Convidado' && (
+            <>
+              <ManageProjectDialog project={project}>
+                <Button variant="outline">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar Projeto
+                </Button>
+              </ManageProjectDialog>
+              <AddTaskDialog projectId={project.id}>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Adicionar Tarefa
+                </Button>
+              </AddTaskDialog>
+            </>
+          )}
         </div>
       </div>
       <div className="space-y-1">

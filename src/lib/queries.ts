@@ -71,7 +71,7 @@ export async function getParticipants(): Promise<Participant[]> {
 
 export async function getParticipantByEmail(email: string): Promise<(Participant & { password_hash: string | null, google_id: string | null, provider: string, email_verified: Date | null }) | null> {
     const sql = `
-        SELECT id, name, email, password_hash, role_id as "roleId", avatar, google_id, provider, email_verified
+        SELECT id, name, email, password_hash, role_id as "roleId", avatar, google_id, provider, email_verified, user_type
         FROM participants WHERE email = $1
     `;
     const user = await queryOne<any>(sql, [email]);
@@ -81,6 +81,7 @@ export async function getParticipantByEmail(email: string): Promise<(Participant
         password_hash: user.password_hash,
         google_id: user.google_id,
         email_verified: user.email_verified,
+        user_type: user.user_type,
     };
 }
 

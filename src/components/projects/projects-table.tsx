@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from '../ui/button';
 import Link from 'next/link';
 import { useStore } from '@/hooks/use-store';
+import { useSession } from 'next-auth/react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { TaskDetailsSheet } from '../tasks/task-details-sheet';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
@@ -94,6 +95,7 @@ function ProjectTasksRow({ project, tasks, isVisible }: { project: Project, task
 }
 
 export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
+  const { data: session } = useSession();
   const { duplicateProject, getProjectTasks, getParticipant, participants } = useStore();
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
@@ -170,23 +172,25 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
                         {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                        </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => onEdit(project)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleDuplicate(project)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Duplicar
-                        </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                      {session?.user?.userType !== 'Convidado' && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => onEdit(project)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDuplicate(project)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Duplicar
+                            </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                 </TableRow>
                 <ProjectTasksRow project={project} tasks={tasks} isVisible={isExpanded} />
