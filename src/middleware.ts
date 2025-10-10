@@ -9,8 +9,8 @@ export default withAuth(
 
     // If the user is a "Convidado" (Guest)
     if (token?.userType === 'Convidado') {
-      // And they are trying to access any page other than /workspaces
-      if (url.pathname !== '/workspaces') {
+      // And they are trying to access any page that does not start with /workspaces
+      if (!url.pathname.startsWith('/workspaces')) {
         // Redirect them to the /workspaces page
         return NextResponse.redirect(new URL('/workspaces', req.url));
       }
