@@ -101,6 +101,7 @@ export function ManageParticipantDialog({
         updateParticipant({
           ...participant,
           ...participantData,
+          ...(password && { password }),
         });
         toast({ description: 'Membro da equipe atualizado com sucesso.' });
       } else {
