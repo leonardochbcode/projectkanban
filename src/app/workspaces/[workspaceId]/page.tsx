@@ -15,6 +15,7 @@ import { notFound, useParams } from 'next/navigation';
 
 function WorkbooksTab({ workspaceId }: { workspaceId: string }) {
     const { getWorkbooksByWorkspace, fetchWorkbooksByWorkspace } = useStore();
+    const { data: session } = useSession();
     const [editingWorkbook, setEditingWorkbook] = useState<Workbook | undefined>(undefined);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -45,14 +46,16 @@ function WorkbooksTab({ workspaceId }: { workspaceId: string }) {
 
     return (
         <>
-            <div className="flex items-center justify-end space-y-2 py-4">
-                <ManageWorkbookDialog workbook={editingWorkbook} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
-                    <Button onClick={handleAdd}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar Pasta de Trabalho
-                    </Button>
-                </ManageWorkbookDialog>
-            </div>
+            {session?.user?.userType !== 'Convidado' && (
+                <div className="flex items-center justify-end space-y-2 py-4">
+                    <ManageWorkbookDialog workbook={editingWorkbook} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
+                        <Button onClick={handleAdd}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Criar Pasta de Trabalho
+                        </Button>
+                    </ManageWorkbookDialog>
+                </div>
+            )}
             <WorkbooksTable workbooks={workbooks} onEdit={handleEdit} />
         </>
     );
@@ -60,6 +63,7 @@ function WorkbooksTab({ workspaceId }: { workspaceId: string }) {
 
 function ProjectsTab({ workspaceId }: { workspaceId: string }) {
     const { getWorkspaceProjects } = useStore();
+    const { data: session } = useSession();
     const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -84,14 +88,16 @@ function ProjectsTab({ workspaceId }: { workspaceId: string }) {
 
     return (
         <>
-            <div className="flex items-center justify-end space-y-2 py-4">
-                <ManageProjectDialog project={editingProject} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
-                    <Button onClick={handleAdd}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar Projeto
-                    </Button>
-                </ManageProjectDialog>
-            </div>
+            {session?.user?.userType !== 'Convidado' && (
+                <div className="flex items-center justify-end space-y-2 py-4">
+                    <ManageProjectDialog project={editingProject} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
+                        <Button onClick={handleAdd}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Criar Projeto
+                        </Button>
+                    </ManageProjectDialog>
+                </div>
+            )}
             <ProjectsTable projects={projects} onEdit={handleEdit} />
         </>
     );

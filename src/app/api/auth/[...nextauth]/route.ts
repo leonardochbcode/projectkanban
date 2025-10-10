@@ -94,6 +94,7 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.roleId = (user as any).roleId; // Casting to any to access roleId
+        token.userType = (user as any).user_type;
       }
       if (account) {
         token.provider = account.provider;
@@ -106,6 +107,7 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         session.user.roleId = token.roleId as string;
         session.user.provider = token.provider as string;
+        session.user.userType = token.userType as string;
       }
       return session;
     },
