@@ -71,12 +71,6 @@ CREATE TABLE workbooks (
 );
 
 -- Join table for Projects and Workbooks (Many-to-Many)
-CREATE TABLE project_workbooks (
-    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE,
-    workbook_id VARCHAR(50) REFERENCES workbooks(id) ON DELETE CASCADE,
-    PRIMARY KEY (project_id, workbook_id)
-);
-
 -- Opportunities
 CREATE TABLE opportunities (
     id VARCHAR(50) PRIMARY KEY,
@@ -135,6 +129,13 @@ CREATE TABLE project_participants (
     PRIMARY KEY (project_id, participant_id)
 );
 
+-- Join table for Projects and Workbooks (Many-to-Many)
+CREATE TABLE project_workbooks (
+    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE,
+    workbook_id VARCHAR(50) REFERENCES workbooks(id) ON DELETE CASCADE,
+    PRIMARY KEY (project_id, workbook_id)
+);
+
 -- Tasks
 CREATE TABLE tasks (
     id VARCHAR(50) PRIMARY KEY,
@@ -144,7 +145,10 @@ CREATE TABLE tasks (
     priority VARCHAR(50),
     due_date DATE,
     assignee_id VARCHAR(50) REFERENCES participants(id) ON DELETE SET NULL,
-    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE
+    project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE,
+    creation_date TIMESTAMPTZ DEFAULT NOW(),
+    conclusion_date TIMESTAMPTZ,
+    creator_id VARCHAR(50) REFERENCES participants(id) ON DELETE SET NULL
 );
 
 -- Task Comments

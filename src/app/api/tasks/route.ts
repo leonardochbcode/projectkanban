@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createTask, getTasks } from '@/lib/queries';
 import { taskSchema } from '@/lib/schemas';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET() {
   try {
@@ -14,6 +16,11 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
     const json = await request.json();
     const parsed = await taskSchema.safeParse(json);
 
@@ -21,7 +28,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Invalid request body', errors: parsed.error.errors }, { status: 400 });
     }
 
-    const newTask = await createTask(parsed.data);
+    const newTaskData = {
+      ...parsed.data,
+      creatorId: session.user.id,
+    };
+
+    const newTask = await createTask(newTaskData);
 
     return NextResponse.json(newTask, { status: 201 });
   } catch (error) {

@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import NextAuthSessionProvider from '@/components/session-provider';
 
 export const metadata: Metadata = {
-  title: 'CHB Planner',
+  title: 'CHB Kanvus',
   description: 'Sistema de gerenciamento de projetos moderno e responsivo.',
 };
 
@@ -30,8 +30,8 @@ export default function RootLayout({
         <ThemeProvider>
           <NextAuthSessionProvider>
             <StoreProvider>
-                {children}
-                <Toaster />
+              {children}
+              <Toaster />
             </StoreProvider>
           </NextAuthSessionProvider>
         </ThemeProvider>

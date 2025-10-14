@@ -10,7 +10,7 @@
     "start": "next start -p 9005",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "db:schema": "node -e \"(async () => { const { readFileSync } = require('fs'); const { Pool } = require('pg'); const pool = new Pool({ connectionString: process.env.POSTGRES_URL }); const client = await pool.connect(); try { const sql = readFileSync('./scripts/schema.sql', 'utf8'); await client.query(sql); console.log('Schema applied successfully.'); } catch (err) { console.error('Error applying schema:', err); } finally { client.release(); await pool.end(); } })()\" dotenv/config",
+    "db:schema": "node scripts/apply-schema.js",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {

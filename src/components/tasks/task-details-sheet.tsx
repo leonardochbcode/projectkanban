@@ -51,7 +51,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = openProp !== undefined && onOpenChangeProp !== undefined;
   const open = isControlled ? openProp : internalOpen;
-  
+
   const setOpen = (newOpen: boolean) => {
     if (isControlled) {
       onOpenChangeProp(newOpen);
@@ -117,7 +117,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
   const handleAssigneeChange = (assigneeId: string) => {
     updateTask({ assigneeId });
   };
-  
+
   const handleRemoveAttachment = async (attachmentId: string) => {
     // Optimistic UI update
     const originalAttachments = task.attachments || [];
@@ -153,7 +153,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
       });
     }
   };
-  
+
   const Trigger = children ? <SheetTrigger asChild>{children}</SheetTrigger> : null;
 
   return (
@@ -257,34 +257,67 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
               </Select>
             </div>
             <div className="flex items-start gap-4">
-                <div className="flex items-center gap-2 text-muted-foreground w-32 pt-2">
-                    <User className="h-4 w-4" />
-                    <span>Responsável</span>
-                </div>
-                 <div className="flex flex-col gap-2 w-48">
-                    <Select value={assignee?.id || 'unassigned'} onValueChange={handleAssigneeChange}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Não atribuído" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="unassigned">Não atribuído</SelectItem>
-                            {participants.map(p => (
-                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    {assignee && <p className="text-sm text-muted-foreground">Analista: {assignee.name}</p>}
-                 </div>
+              <div className="flex items-center gap-2 text-muted-foreground w-32 pt-2">
+                <User className="h-4 w-4" />
+                <span>Responsável</span>
+              </div>
+              <div className="flex flex-col gap-2 w-48">
+                <Select value={assignee?.id || 'unassigned'} onValueChange={handleAssigneeChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Não atribuído" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Não atribuído</SelectItem>
+                    {participants.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mt-6">
               <div className="flex items-center gap-2 text-muted-foreground w-32">
                 <CalendarIcon className="h-4 w-4" />
                 <span>Data de Prazo</span>
               </div>
               <p>{new Date(task.dueDate).toLocaleDateString()}</p>
             </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-muted-foreground w-32">
+                <CalendarIcon className="h-4 w-4" />
+                <span>Data da Criação</span>
+              </div>
+              <p>{new Date(task.creationDate).toLocaleDateString()}</p>
+            </div>
+            {task.conclusionDate && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-muted-foreground w-32">
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>Data de Conclusão</span>
+                </div>
+                <p>{new Date(task.conclusionDate).toLocaleDateString()}</p>
+              </div>
+            )}
+            <div className="flex items-start gap-4">
+              <div className="flex items-center gap-2 text-muted-foreground w-32 pt-2">
+                <User className="h-4 w-4" />
+                <span>Criador</span>
+              </div>
+              <div className="flex flex-col gap-2 w-48">
+                <p>{participants.find((p) => p.id === task.creatorId)?.name}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-muted-foreground w-32">
+                <CalendarIcon className="h-4 w-4" />
+                <span>Dias de Atraso</span>
+              </div>
+              <p>
+                {Math.max(0, Math.floor((new Date().getTime() - new Date(task.dueDate).getTime()) / (1000 * 60 * 60 * 24)))}
+              </p>
+            </div>
           </div>
-                    
+
           <Separator />
 
           <div>
@@ -294,37 +327,37 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
 
           <Separator />
 
-           <div>
+          <div>
             <h3 className="font-semibold mb-2 font-headline">Anexos</h3>
-             <div className="space-y-2">
-                {(task.attachments || []).map((attachment) => (
-                  <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
-                    <a
-                      href={attachment.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 overflow-hidden flex-1 group"
-                    >
-                      <Paperclip className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-                      <div className="truncate">
-                        <p className="font-medium truncate group-hover:underline">{attachment.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatBytes(attachment.size)}</p>
-                      </div>
-                    </a>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleRemoveAttachment(attachment.id)}>
-                      <X className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
-                {(!task.attachments || task.attachments.length === 0) && (
-                    <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
-                )}
-             </div>
-             <TaskAttachmentForm task={task} onAttachmentAdded={fetchTask} />
+            <div className="space-y-2">
+              {(task.attachments || []).map((attachment) => (
+                <div key={attachment.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
+                  <a
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 overflow-hidden flex-1 group"
+                  >
+                    <Paperclip className="h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <div className="truncate">
+                      <p className="font-medium truncate group-hover:underline">{attachment.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatBytes(attachment.size)}</p>
+                    </div>
+                  </a>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0" onClick={() => handleRemoveAttachment(attachment.id)}>
+                    <X className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+              {(!task.attachments || task.attachments.length === 0) && (
+                <p className="text-sm text-muted-foreground">Nenhum anexo ainda.</p>
+              )}
+            </div>
+            <TaskAttachmentForm task={task} onAttachmentAdded={fetchTask} />
           </div>
 
           <Separator />
-          
+
           <div>
             <h3 className="font-semibold mb-4 font-headline">Comentários</h3>
             <div className="space-y-4">
@@ -333,20 +366,20 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                 return (
                   <div key={comment.id} className="flex items-start gap-3">
                     <Avatar className="h-8 w-8">
-                        <AvatarImage src={author?.avatar} />
-                        <AvatarFallback>{author?.name[0]}</AvatarFallback>
+                      <AvatarImage src={author?.avatar} />
+                      <AvatarFallback>{author?.name[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                           <p className="font-semibold text-sm">{author?.name}</p>
-                           <p className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleString()}</p>
-                        </div>
-                        <p className="text-sm bg-muted/50 p-2 rounded-md mt-1">{comment.content}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">{author?.name}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleString()}</p>
+                      </div>
+                      <p className="text-sm bg-muted/50 p-2 rounded-md mt-1">{comment.content}</p>
                     </div>
                   </div>
                 )
               })}
-               {(!task.comments || task.comments.length === 0) && (
+              {(!task.comments || task.comments.length === 0) && (
                 <p className="text-sm text-muted-foreground">Nenhum comentário ainda.</p>
               )}
             </div>

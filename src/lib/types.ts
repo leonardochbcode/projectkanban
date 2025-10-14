@@ -116,6 +116,9 @@ export interface Task {
   comments: TaskComment[];
   attachments: TaskAttachment[];
   checklist: ChecklistItem[];
+  creationDate: string;
+  conclusionDate?: string;
+  creatorId: string;
 }
 
 export interface Project {

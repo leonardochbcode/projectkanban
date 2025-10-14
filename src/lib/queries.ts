@@ -834,7 +834,7 @@ export async function deleteProject(id: string): Promise<{ success: boolean }> {
 // Tasks
 export async function getTasks(): Promise<Task[]> {
     const tasks = await queryMany<any>(`
-        SELECT t.id, t.title, t.description, t.status, t.priority, t.due_date, t.assignee_id, t.project_id
+        SELECT t.id, t.title, t.description, t.status, t.priority, t.due_date, t.assignee_id, t.project_id, t.creation_date, t.conclusion_date, t.creator_id
         FROM tasks t
     `);
 
@@ -849,12 +849,15 @@ export async function getTasks(): Promise<Task[]> {
         dueDate: t.due_date,
         assigneeId: t.assignee_id,
         projectId: t.project_id,
+        creationDate: t.creation_date,
+        conclusionDate: t.conclusion_date,
+        creatorId: t.creator_id,
     }));
 }
 
 export async function getTaskById(id: string): Promise<Task | null> {
     const task = await queryOne<any>(`
-        SELECT id, title, description, status, priority, due_date, assignee_id, project_id
+        SELECT id, title, description, status, priority, due_date, assignee_id, project_id, creation_date, conclusion_date, creator_id
         FROM tasks WHERE id = $1
     `, [id]);
     if (!task) return null;
@@ -868,21 +871,27 @@ export async function getTaskById(id: string): Promise<Task | null> {
         dueDate: task.due_date,
         assigneeId: task.assignee_id,
         projectId: task.project_id,
+        creationDate: task.creation_date,
+        conclusionDate: task.conclusion_date,
+        creatorId: task.creator_id,
     };
 }
 
-export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments'>): Promise<Task> {
+export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments' | 'creationDate'>): Promise<Task> {
     const newId = `task_${randomBytes(8).toString('hex')}`;
-    const { title, description, status, priority, dueDate, assigneeId, projectId } = task;
+    const { title, description, status, priority, dueDate, assigneeId, projectId, creatorId } = task;
     const result = await queryOne<any>(
-        'INSERT INTO tasks (id, title, description, status, priority, due_date, assignee_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-        [newId, title, description, status, priority, dueDate, assigneeId, projectId]
+        'INSERT INTO tasks (id, title, description, status, priority, due_date, assignee_id, project_id, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+        [newId, title, description, status, priority, dueDate, assigneeId, projectId, creatorId]
     );
     return {
         ...result,
         dueDate: result.due_date,
         assigneeId: result.assignee_id,
         projectId: result.project_id,
+        creationDate: result.creation_date,
+        conclusionDate: result.conclusion_date,
+        creatorId: result.creator_id,
         comments: [],
         checklist: [],
         attachments: [],
@@ -891,25 +900,65 @@ export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist
 
 export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments'>>): Promise<Task | null> {
     const { title, description, status, priority, dueDate, assigneeId, projectId } = task;
-    const result = await queryOne<any>(
-        'UPDATE tasks SET title = COALESCE($1, title), description = COALESCE($2, description), status = COALESCE($3, status), priority = COALESCE($4, priority), due_date = COALESCE($5, due_date), assignee_id = COALESCE($6, assignee_id), project_id = COALESCE($7, project_id) WHERE id = $8 RETURNING *',
-        [title, description, status, priority, dueDate, assigneeId, projectId, id]
-    );
+
+    let conclusionDateUpdate = '';
+    if (status) {
+        conclusionDateUpdate = status === 'Concluída'
+            ? ', conclusion_date = NOW()'
+            : ', conclusion_date = NULL';
+    }
+
+    const query = `
+        UPDATE tasks
+        SET
+            title = COALESCE($1, title),
+            description = COALESCE($2, description),
+            status = COALESCE($3, status),
+            priority = COALESCE($4, priority),
+            due_date = COALESCE($5, due_date),
+            assignee_id = COALESCE($6, assignee_id),
+            project_id = COALESCE($7, project_id)
+            ${conclusionDateUpdate}
+        WHERE id = $8
+        RETURNING *`;
+
+    const result = await queryOne<any>(query, [title, description, status, priority, dueDate, assigneeId, projectId, id]);
+
     if (!result) return null;
-    return {
-        ...result,
-        dueDate: result.due_date,
-        assigneeId: result.assignee_id,
-        projectId: result.project_id,
-        comments: [], // These should be fetched separately if needed
-        checklist: [],
-        attachments: [],
-    };
+
+    // After updating, we need to fetch the full task details
+    // because the simple RETURNING * won't include comments, checklist, etc.
+    return getTaskById(id);
 }
 
 export async function deleteTask(id: string): Promise<{ success: boolean }> {
     const result = await pool.query('DELETE FROM tasks WHERE id = $1', [id]);
     return { success: result.rowCount > 0 };
+}
+
+export async function getMyPendingTasks(userId: string): Promise<Task[]> {
+    const sql = `
+        SELECT
+            t.id, t.title, t.description, t.status, t.priority, t.due_date,
+            t.assignee_id, t.project_id, t.creation_date, t.conclusion_date, t.creator_id
+        FROM tasks t
+        WHERE t.assignee_id = $1
+          AND t.status NOT IN ('Concluída', 'Cancelado')
+        ORDER BY t.due_date ASC;
+    `;
+    const tasks = await queryMany<any>(sql, [userId]);
+    return tasks.map(t => ({
+        ...t,
+        dueDate: t.due_date,
+        assigneeId: t.assignee_id,
+        projectId: t.project_id,
+        creationDate: t.creation_date,
+        conclusionDate: t.conclusion_date,
+        creatorId: t.creator_id,
+        comments: [],
+        checklist: [],
+        attachments: [],
+    }));
 }
 
 // Checklist Items
@@ -926,11 +975,61 @@ export async function createChecklistItem(taskId: string, text: string): Promise
 }
 
 export async function updateChecklistItem(id: string, completed: boolean): Promise<ChecklistItem | null> {
-    const result = await queryOne<ChecklistItem>(
-        'UPDATE checklist_items SET completed = $1 WHERE id = $2 RETURNING *',
-        [completed, id]
-    );
-    return result;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const updatedItemResult = await client.query(
+            'UPDATE checklist_items SET completed = $1 WHERE id = $2 RETURNING *',
+            [completed, id]
+        );
+
+        const updatedItem = updatedItemResult.rows[0];
+        if (!updatedItem) {
+            await client.query('ROLLBACK');
+            return null;
+        }
+
+        const taskId = updatedItem.task_id;
+
+        // If the item was marked as complete, check if all other items for the task are also complete
+        if (completed) {
+            const allItemsResult = await client.query(
+                'SELECT COUNT(*) as total, SUM(CASE WHEN completed THEN 1 ELSE 0 END) as completed_count FROM checklist_items WHERE task_id = $1',
+                [taskId]
+            );
+            const counts = allItemsResult.rows[0];
+            const total = parseInt(counts.total, 10);
+            const completedCount = parseInt(counts.completed_count, 10);
+
+            if (total > 0 && total === completedCount) {
+                // All items are completed, update the task's conclusion date
+                await client.query(
+                    'UPDATE tasks SET conclusion_date = NOW(), status = \'Concluída\' WHERE id = $1',
+                    [taskId]
+                );
+            }
+        } else {
+            // If an item is unchecked, the task is no longer concluded.
+            await client.query(
+                'UPDATE tasks SET conclusion_date = NULL, status = \'Em Andamento\' WHERE id = $1',
+                [taskId]
+            );
+        }
+
+        await client.query('COMMIT');
+        return {
+            id: updatedItem.id,
+            text: updatedItem.text,
+            completed: updatedItem.completed,
+        };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error("Failed to update checklist item:", error);
+        throw error;
+    } finally {
+        client.release();
+    }
 }
 
 export async function deleteChecklistItem(id: string): Promise<{ success: boolean }> {

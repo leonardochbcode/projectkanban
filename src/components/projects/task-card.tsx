@@ -22,6 +22,8 @@ export function TaskCard({ task }: TaskCardProps) {
   const { getParticipant } = useStore();
   const assignee = task.assigneeId ? getParticipant(task.assigneeId) : null;
 
+  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'Concluída' && task.status !== 'Cancelado';
+
   const priorityColors: { [key: string]: string } = {
     Alta: 'bg-destructive text-destructive-foreground',
     Média: 'bg-secondary text-secondary-foreground',
@@ -43,6 +45,7 @@ export function TaskCard({ task }: TaskCardProps) {
           <div className="flex justify-between items-center">
             <div className="text-xs text-muted-foreground">
                 Prazo: {new Date(task.dueDate).toLocaleDateString()}
+                {isOverdue && <span className="text-destructive font-bold ml-2">Atrasado</span>}
             </div>
             {assignee && (
               <TooltipProvider>

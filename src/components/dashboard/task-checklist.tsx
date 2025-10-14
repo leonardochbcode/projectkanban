@@ -1,21 +1,41 @@
 'use client';
-import type { Task, Project } from '@/lib/types';
+import type { Task } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Pagination } from '../ui/pagination';
-
-interface TaskChecklistProps {
-  tasks: Task[];
-  projects: Project[];
-}
+import { useStore } from '@/hooks/use-store';
 
 const ITEMS_PER_PAGE = 6;
 
-export function TaskChecklist({ tasks, projects }: TaskChecklistProps) {
+export function TaskChecklist() {
+    const { projects } = useStore();
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
+
+    useEffect(() => {
+        const fetchTasks = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('/api/my-tasks');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tasks');
+                }
+                const data = await response.json();
+                setTasks(data);
+            } catch (error) {
+                console.error(error);
+                // Handle error state in UI if needed
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchTasks();
+    }, []);
 
     const paginatedTasks = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
