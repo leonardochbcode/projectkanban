@@ -13,11 +13,13 @@ import { ManageTemplates } from '@/components/projects/manage-templates';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { notFound, useParams } from 'next/navigation';
 
-function WorkbooksTab({ workspaceId }: { workspaceId: string }) {
-    const { getWorkbooksByWorkspace, fetchWorkbooksByWorkspace } = useStore();
+function ActivitiesTab({ workspaceId }: { workspaceId: string }) {
+    const { getWorkbooksByWorkspace, fetchWorkbooksByWorkspace, getWorkspaceProjects, projects: allProjects } = useStore();
     const { data: session } = useSession();
     const [editingWorkbook, setEditingWorkbook] = useState<Workbook | undefined>(undefined);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isWorkbookDialogOpen, setIsWorkbookDialogOpen] = useState(false);
+    const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
+    const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
 
     useEffect(() => {
         if (workspaceId) {
@@ -25,80 +27,84 @@ function WorkbooksTab({ workspaceId }: { workspaceId: string }) {
         }
     }, [workspaceId, fetchWorkbooksByWorkspace]);
 
-    const workbooks = getWorkbooksByWorkspace(workspaceId);
-
-    const handleAdd = () => {
+    const handleAddWorkbook = () => {
         setEditingWorkbook(undefined);
-        setIsDialogOpen(true);
+        setIsWorkbookDialogOpen(true);
     }
 
-    const handleEdit = (workbook: Workbook) => {
+    const handleEditWorkbook = (workbook: Workbook) => {
         setEditingWorkbook(workbook);
-        setIsDialogOpen(true);
+        setIsWorkbookDialogOpen(true);
     };
 
-    const handleDialogClose = (open: boolean) => {
+    const handleWorkbookDialogClose = (open: boolean) => {
         if (!open) {
             setEditingWorkbook(undefined);
         }
-        setIsDialogOpen(open);
+        setIsWorkbookDialogOpen(open);
     };
+
+    const handleAddProject = () => {
+        setEditingProject(undefined);
+        setIsProjectDialogOpen(true);
+    }
+
+    const handleProjectDialogClose = (open: boolean) => {
+        if (!open) {
+            setEditingProject(undefined);
+        }
+        setIsProjectDialogOpen(open);
+    };
+
+    const { workbooksToDisplay, handleEditProject } = useMemo(() => {
+        const workbooks = getWorkbooksByWorkspace(workspaceId);
+        const projects = getWorkspaceProjects(workspaceId);
+        const assignedProjectIds = new Set(workbooks.flatMap(wb => wb.projectIds));
+        const unassignedProjects = projects.filter(p => !assignedProjectIds.has(p.id));
+
+        let allWorkbooks = [...workbooks];
+
+        if (unassignedProjects.length > 0) {
+            const unassignedWorkbook: Workbook = {
+                id: 'unassigned-projects',
+                name: 'Projetos sem Pasta',
+                description: 'Projetos que não estão vinculados a nenhuma pasta de trabalho.',
+                projectIds: unassignedProjects.map(p => p.id),
+                workspaceId: workspaceId,
+                isUnassigned: true,
+            };
+            allWorkbooks.push(unassignedWorkbook);
+        }
+
+        const handleEditProject = (project: Project) => {
+            setEditingProject(project);
+            setIsProjectDialogOpen(true);
+        };
+
+        return { workbooksToDisplay: allWorkbooks, handleEditProject };
+    }, [workspaceId, getWorkbooksByWorkspace, getWorkspaceProjects]);
 
     return (
         <>
             {session?.user?.userType !== 'Convidado' && (
-                <div className="flex items-center justify-end space-y-2 py-4">
-                    <ManageWorkbookDialog workbook={editingWorkbook} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
-                        <Button onClick={handleAdd}>
+                <div className="flex items-center justify-end space-x-2 py-4">
+                    <ManageWorkbookDialog workbook={editingWorkbook} open={isWorkbookDialogOpen} onOpenChange={handleWorkbookDialogClose} workspaceId={workspaceId}>
+                        <Button onClick={handleAddWorkbook}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Criar Pasta de Trabalho
                         </Button>
                     </ManageWorkbookDialog>
-                </div>
-            )}
-            <WorkbooksTable workbooks={workbooks} onEdit={handleEdit} />
-        </>
-    );
-}
-
-function ProjectsTab({ workspaceId }: { workspaceId: string }) {
-    const { getWorkspaceProjects } = useStore();
-    const { data: session } = useSession();
-    const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-    const projects = getWorkspaceProjects(workspaceId);
-
-    const handleAdd = () => {
-        setEditingProject(undefined);
-        setIsDialogOpen(true);
-    }
-
-    const handleEdit = (project: Project) => {
-        setEditingProject(project);
-        setIsDialogOpen(true);
-    };
-
-    const handleDialogClose = (open: boolean) => {
-        if (!open) {
-            setEditingProject(undefined);
-        }
-        setIsDialogOpen(open);
-    };
-
-    return (
-        <>
-            {session?.user?.userType !== 'Convidado' && (
-                <div className="flex items-center justify-end space-y-2 py-4">
-                    <ManageProjectDialog project={editingProject} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
-                        <Button onClick={handleAdd}>
+                    <ManageProjectDialog project={editingProject} open={isProjectDialogOpen} onOpenChange={handleProjectDialogClose} workspaceId={workspaceId}>
+                        <Button onClick={handleAddProject}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Criar Projeto
                         </Button>
                     </ManageProjectDialog>
                 </div>
             )}
-            <ProjectsTable projects={projects} onEdit={handleEdit} />
+            {workbooksToDisplay.length > 0 && (
+                <WorkbooksTable workbooks={workbooksToDisplay} onEdit={handleEditWorkbook} onEditProject={handleEditProject} />
+            )}
         </>
     );
 }
@@ -158,17 +164,13 @@ function WorkspacePageContent() {
                     </ShareWorkspaceDialog>
                 )}
             </div>
-            <Tabs defaultValue="workbooks">
+            <Tabs defaultValue="activities">
                 <TabsList>
-                    <TabsTrigger value="workbooks">Pastas de Trabalho</TabsTrigger>
-                    <TabsTrigger value="projects">Projetos</TabsTrigger>
+                    <TabsTrigger value="activities">Atividades</TabsTrigger>
                     <TabsTrigger value="templates">Templates</TabsTrigger>
                 </TabsList>
-                <TabsContent value="workbooks">
-                    <WorkbooksTab workspaceId={workspaceId} />
-                </TabsContent>
-                <TabsContent value="projects">
-                    <ProjectsTab workspaceId={workspaceId} />
+                <TabsContent value="activities">
+                    <ActivitiesTab workspaceId={workspaceId} />
                 </TabsContent>
                 <TabsContent value="templates">
                     <ManageTemplates />

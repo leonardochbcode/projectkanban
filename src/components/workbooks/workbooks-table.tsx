@@ -17,6 +17,7 @@ import Link from 'next/link';
 interface WorkbooksTableProps {
   workbooks: Workbook[];
   onEdit: (workbook: Workbook) => void;
+  onEditProject: (project: Project) => void;
 }
 
 const priorityIcons = {
@@ -39,7 +40,7 @@ function TaskItem({ task, getParticipant }: { task: Task, getParticipant: (id?: 
   return (
     <div className="flex items-center justify-between p-2 border-b last:border-b-0">
       <Link href={`/projects/${task.projectId}?taskId=${task.id}`} className="hover:underline text-sm">
-        {task.title}
+        Tarefa: {task.title}
       </Link>
       <div className="flex items-center gap-4">
         <Badge variant="outline" className="flex items-center gap-1">
@@ -61,10 +62,16 @@ function TaskItem({ task, getParticipant }: { task: Task, getParticipant: (id?: 
   );
 }
 
-function ProjectItem({ project, getProjectTasks, getParticipant }: { project: Project, getProjectTasks: (id: string) => Task[], getParticipant: (id?: string) => Participant | undefined }) {
+function ProjectItem({ project, getProjectTasks, getParticipant, onEditProject }: { project: Project, getProjectTasks: (id: string) => Task[], getParticipant: (id?: string) => Participant | undefined, onEditProject: (project: Project) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const tasks = getProjectTasks(project.id);
   const participants = project.participantIds.map(id => getParticipant(id)).filter(Boolean) as Participant[];
+  const { duplicateProject } = useStore();
+
+  const handleDuplicate = () => {
+    const newProject = duplicateProject(project);
+    onEditProject(newProject);
+  };
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -76,7 +83,7 @@ function ProjectItem({ project, getProjectTasks, getParticipant }: { project: Pr
             </Button>
           </CollapsibleTrigger>
           <Link href={`/projects/${project.id}`} className="font-semibold hover:underline">
-            {project.name}
+            Projeto: {project.name}
           </Link>
         </div>
         <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -92,6 +99,23 @@ function ProjectItem({ project, getProjectTasks, getParticipant }: { project: Pr
             <Calendar className="h-4 w-4" />
             <span>{format(new Date(project.endDate), 'dd/MM/yyyy')}</span>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => onEditProject(project)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleDuplicate}>
+                <MoreVertical className="mr-2 h-4 w-4" />
+                Duplicar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       <CollapsibleContent className="p-0 pl-12">
@@ -107,7 +131,7 @@ function ProjectItem({ project, getProjectTasks, getParticipant }: { project: Pr
   );
 }
 
-export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
+export function WorkbooksTable({ workbooks, onEdit, onEditProject }: WorkbooksTableProps) {
   const { getProject, deleteWorkbook, getProjectTasks, getParticipant } = useStore();
   const [isProjectsDialogOpen, setIsProjectsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -132,39 +156,36 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {workbooks.map((workbook) => {
         const projects = workbook.projectIds.map(id => getProject(id)).filter(Boolean) as Project[];
         const completedProjects = projects.filter(p => p.status === 'Concluído').length;
         const progress = projects.length > 0 ? (completedProjects / projects.length) * 100 : 0;
 
         return (
-          <Accordion key={workbook.id} type="single" collapsible className="border rounded-lg px-4">
+          <Accordion key={workbook.id} type="single" collapsible className="border rounded-lg p-4">
             <AccordionItem value={workbook.id} className="border-b-0">
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-4">
                     <Folder className="h-6 w-6 text-primary" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-left">{workbook.name}</h3>
-                      <p className="text-sm text-muted-foreground text-left">{workbook.description}</p>
+                    <div className="flex-grow">
+                      <h3 className="text-lg font-semibold text-left">Pasta: {workbook.name}</h3>
+                      <p className="text-sm text-muted-foreground text-left mt-2">{workbook.description}</p>
+                      <div className="mt-5 w-full">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            {completedProjects} de {projects.length} projetos concluídos
+                          </span>
+                        </div>
+                        <Progress value={progress} className="h-2" />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6 pr-4">
-                    <div className="flex flex-col items-center">
-                      <span className="text-2xl font-bold">{projects.length}</span>
-                      <span className="text-xs text-muted-foreground">PROJETOS</span>
-                    </div>
-                    <div className="w-40">
-                       <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-muted-foreground flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> Concluídos</span>
-                          <span className="text-sm font-semibold">{Math.round(progress)}%</span>
-                        </div>
-                      <Progress value={progress} className="h-2" />
-                    </div>
+                  <div className="flex items-center gap-2 pr-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" disabled={workbook.isUnassigned}>
                           <MoreVertical className="h-5 w-5" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -190,11 +211,11 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
               <AccordionContent className="pt-4 pb-2">
                 <div className="space-y-3">
                   {projects.length > 0 ? (
-                    projects.map(project => <ProjectItem key={project.id} project={project} getProjectTasks={getProjectTasks} getParticipant={getParticipant} />)
+                    projects.map(project => <ProjectItem key={project.id} project={project} getProjectTasks={getProjectTasks} getParticipant={getParticipant} onEditProject={onEditProject} />)
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>Nenhum projeto foi adicionado a esta pasta de trabalho.</p>
-                      <Button variant="link" onClick={() => handleManageProjects(workbook)}>Adicionar Projetos</Button>
+                      {!workbook.isUnassigned && <Button variant="link" onClick={() => handleManageProjects(workbook)}>Adicionar Projetos</Button>}
                     </div>
                   )}
                 </div>
