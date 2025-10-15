@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { notFound, useParams } from 'next/navigation';
 
 function ActivitiesTab({ workspaceId }: { workspaceId: string }) {
-    const { getWorkbooksByWorkspace, fetchWorkbooksByWorkspace, getWorkspaceProjects } = useStore();
+    const { getWorkbooksByWorkspace, fetchWorkbooksByWorkspace, getWorkspaceProjects, projects: allProjects } = useStore();
     const { data: session } = useSession();
     const [editingWorkbook, setEditingWorkbook] = useState<Workbook | undefined>(undefined);
     const [isWorkbookDialogOpen, setIsWorkbookDialogOpen] = useState(false);
@@ -26,9 +26,6 @@ function ActivitiesTab({ workspaceId }: { workspaceId: string }) {
             fetchWorkbooksByWorkspace(workspaceId);
         }
     }, [workspaceId, fetchWorkbooksByWorkspace]);
-
-    const workbooks = getWorkbooksByWorkspace(workspaceId);
-    const projects = getWorkspaceProjects(workspaceId);
 
     const handleAddWorkbook = () => {
         setEditingWorkbook(undefined);
@@ -52,17 +49,40 @@ function ActivitiesTab({ workspaceId }: { workspaceId: string }) {
         setIsProjectDialogOpen(true);
     }
 
-    const handleEditProject = (project: Project) => {
-        setEditingProject(project);
-        setIsProjectDialogOpen(true);
-    };
-
     const handleProjectDialogClose = (open: boolean) => {
         if (!open) {
             setEditingProject(undefined);
         }
         setIsProjectDialogOpen(open);
     };
+
+    const { workbooksToDisplay, handleEditProject } = useMemo(() => {
+        const workbooks = getWorkbooksByWorkspace(workspaceId);
+        const projects = getWorkspaceProjects(workspaceId);
+        const assignedProjectIds = new Set(workbooks.flatMap(wb => wb.projectIds));
+        const unassignedProjects = projects.filter(p => !assignedProjectIds.has(p.id));
+
+        let allWorkbooks = [...workbooks];
+
+        if (unassignedProjects.length > 0) {
+            const unassignedWorkbook: Workbook = {
+                id: 'unassigned-projects',
+                name: 'Projetos sem Pasta',
+                description: 'Projetos que não estão vinculados a nenhuma pasta de trabalho.',
+                projectIds: unassignedProjects.map(p => p.id),
+                workspaceId: workspaceId,
+                isUnassigned: true,
+            };
+            allWorkbooks.push(unassignedWorkbook);
+        }
+
+        const handleEditProject = (project: Project) => {
+            setEditingProject(project);
+            setIsProjectDialogOpen(true);
+        };
+
+        return { workbooksToDisplay: allWorkbooks, handleEditProject };
+    }, [workspaceId, getWorkbooksByWorkspace, getWorkspaceProjects]);
 
     return (
         <>
@@ -82,11 +102,8 @@ function ActivitiesTab({ workspaceId }: { workspaceId: string }) {
                     </ManageProjectDialog>
                 </div>
             )}
-            {workbooks && workbooks.length > 0 && (
-                <WorkbooksTable workbooks={workbooks} onEdit={handleEditWorkbook} />
-            )}
-            {projects && projects.length > 0 && (
-                <ProjectsTable projects={projects} onEdit={handleEditProject} />
+            {workbooksToDisplay.length > 0 && (
+                <WorkbooksTable workbooks={workbooksToDisplay} onEdit={handleEditWorkbook} onEditProject={handleEditProject} />
             )}
         </>
     );
