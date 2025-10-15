@@ -141,7 +141,7 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
                     </TableCell>
                     <TableCell className="font-medium">
                     <Link href={`/projects/${project.id}`} className="hover:underline">
-                        {project.name}
+                        Projeto: {project.name}
                     </Link>
                     </TableCell>
                     <TableCell>

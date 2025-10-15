@@ -145,23 +145,20 @@ export function WorkbooksTable({ workbooks, onEdit }: WorkbooksTableProps) {
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-4">
                     <Folder className="h-6 w-6 text-primary" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-left">{workbook.name}</h3>
+                    <div className="flex-grow">
+                      <h3 className="text-lg font-semibold text-left">Pasta: {workbook.name}</h3>
                       <p className="text-sm text-muted-foreground text-left">{workbook.description}</p>
+                      <div className="mt-2 w-full">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            {completedProjects} de {projects.length} projetos concluídos
+                          </span>
+                        </div>
+                        <Progress value={progress} className="h-2" />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6 pr-4">
-                    <div className="flex flex-col items-center">
-                      <span className="text-2xl font-bold">{projects.length}</span>
-                      <span className="text-xs text-muted-foreground">PROJETOS</span>
-                    </div>
-                    <div className="w-40">
-                       <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-muted-foreground flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" /> Concluídos</span>
-                          <span className="text-sm font-semibold">{Math.round(progress)}%</span>
-                        </div>
-                      <Progress value={progress} className="h-2" />
-                    </div>
+                  <div className="flex items-center gap-2 pr-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
