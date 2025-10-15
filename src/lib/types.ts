@@ -119,8 +119,6 @@ export interface Task {
   creationDate: string;
   conclusionDate?: string;
   creatorId: string;
-  startDate?: string;
-  endDate?: string;
 }
 
 export interface Project {

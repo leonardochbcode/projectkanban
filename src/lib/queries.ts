@@ -857,7 +857,7 @@ export async function getTasks(): Promise<Task[]> {
 
 export async function getTaskById(id: string): Promise<Task | null> {
     const task = await queryOne<any>(`
-        SELECT id, title, description, status, priority, due_date, assignee_id, project_id, creation_date, conclusion_date, creator_id, start_date, end_date
+        SELECT id, title, description, status, priority, due_date, assignee_id, project_id, creation_date, conclusion_date, creator_id
         FROM tasks WHERE id = $1
     `, [id]);
     if (!task) return null;
@@ -874,8 +874,6 @@ export async function getTaskById(id: string): Promise<Task | null> {
         creationDate: task.creation_date,
         conclusionDate: task.conclusion_date,
         creatorId: task.creator_id,
-        startDate: task.start_date,
-        endDate: task.end_date,
     };
 }
 
@@ -892,9 +890,7 @@ export async function getTasksByProjectId(projectId: string): Promise<Task[]> {
             t.project_id as "projectId",
             t.creation_date as "creationDate",
             t.conclusion_date as "conclusionDate",
-            t.creator_id as "creatorId",
-            t.start_date as "startDate",
-            t.end_date as "endDate"
+            t.creator_id as "creatorId"
         FROM tasks t
         WHERE t.project_id = $1
         ORDER BY t.creation_date ASC;

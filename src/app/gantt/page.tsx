@@ -74,8 +74,8 @@ function GanttPageContent() {
             const ganttTasks = tasks.map(task => ({
                 id: task.id,
                 name: task.title,
-                start: formatDate(task.startDate || task.creationDate),
-                end: formatDate(task.endDate || task.dueDate),
+                start: formatDate(task.creationDate),
+                end: formatDate(task.conclusionDate || task.dueDate),
                 progress: task.status === 'Concluída' ? 100 : 0, // Simplified progress
                 dependencies: '', // Dependencies can be added later
             }));
