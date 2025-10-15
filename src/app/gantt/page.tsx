@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Gantt from 'frappe-gantt';
 import type { Task } from '@/lib/types';
-import { PageHeader, PageHeaderHeading } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AppLayout } from '@/components/layout/app-layout';
 
 // Helper to format date to YYYY-MM-DD
 const formatDate = (date: Date | string | undefined) => {
@@ -22,8 +22,7 @@ const formatDate = (date: Date | string | undefined) => {
     return `${year}-${month}-${day}`;
 };
 
-
-export default function GanttPage() {
+function GanttPageContent() {
     const { projects } = useStore();
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -116,10 +115,10 @@ export default function GanttPage() {
     }, [tasks]);
 
     return (
-        <div className="container mx-auto p-4 md:p-6 lg:p-8">
-            <PageHeader>
-                <PageHeaderHeading>Gráfico de Gantt</PageHeaderHeading>
-            </PageHeader>
+        <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2 mb-4">
+                <h1 className="text-3xl font-bold tracking-tight font-headline">Gráfico de Gantt</h1>
+            </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Filtro de Projetos</CardTitle>
@@ -167,4 +166,12 @@ export default function GanttPage() {
             </div>
         </div>
     );
+}
+
+export default function GanttPage() {
+  return (
+    <AppLayout>
+      <GanttPageContent />
+    </AppLayout>
+  )
 }
