@@ -857,7 +857,7 @@ export async function getTasks(): Promise<Task[]> {
 
 export async function getTaskById(id: string): Promise<Task | null> {
     const task = await queryOne<any>(`
-        SELECT id, title, description, status, priority, due_date, assignee_id, project_id, creation_date, conclusion_date, creator_id
+        SELECT id, title, description, status, priority, due_date, assignee_id, project_id, creation_date, conclusion_date, creator_id, start_date, end_date
         FROM tasks WHERE id = $1
     `, [id]);
     if (!task) return null;
@@ -874,7 +874,40 @@ export async function getTaskById(id: string): Promise<Task | null> {
         creationDate: task.creation_date,
         conclusionDate: task.conclusion_date,
         creatorId: task.creator_id,
+        startDate: task.start_date,
+        endDate: task.end_date,
     };
+}
+
+export async function getTasksByProjectId(projectId: string): Promise<Task[]> {
+    const sql = `
+        SELECT
+            t.id,
+            t.title,
+            t.description,
+            t.status,
+            t.priority,
+            t.due_date as "dueDate",
+            t.assignee_id as "assigneeId",
+            t.project_id as "projectId",
+            t.creation_date as "creationDate",
+            t.conclusion_date as "conclusionDate",
+            t.creator_id as "creatorId",
+            t.start_date as "startDate",
+            t.end_date as "endDate"
+        FROM tasks t
+        WHERE t.project_id = $1
+        ORDER BY t.creation_date ASC;
+    `;
+    const tasks = await queryMany<Task>(sql, [projectId]);
+    // The query result already matches the Task type for the most part,
+    // but we need to initialize comments, checklist, and attachments as empty arrays.
+    return tasks.map(task => ({
+        ...task,
+        comments: [],
+        checklist: [],
+        attachments: [],
+    }));
 }
 
 export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments' | 'creationDate'>): Promise<Task> {
