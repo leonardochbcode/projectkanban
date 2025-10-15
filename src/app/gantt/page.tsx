@@ -39,7 +39,7 @@ export default function GanttPage() {
 
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/tasks/${selectedProject}`);
+            const response = await fetch(`/api/projects/${selectedProject}/tasks`);
             if (!response.ok) {
                 throw new Error('Falha ao buscar tarefas do projeto.');
             }
