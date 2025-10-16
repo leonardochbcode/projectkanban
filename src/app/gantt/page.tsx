@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { Maximize } from 'lucide-react';
 import { useStore } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Gantt from 'frappe-gantt';
+import './frappe-gantt.css';
 import type { Task } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -29,19 +31,20 @@ function GanttPageContent() {
     const [isLoading, setIsLoading] = useState(false);
     const ganttRef = useRef<SVGSVGElement | null>(null);
     const ganttInstance = useRef<Gantt | null>(null);
+    const chartContainerRef = useRef<HTMLDivElement | null>(null);
 
-    useEffect(() => {
-        // Dynamically insert the stylesheet into the document head
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = '/frappe-gantt.css'; // We'll need to move the file to the public directory
-        document.head.appendChild(link);
+    const handleToggleFullScreen = () => {
+        const element = chartContainerRef.current;
+        if (!element) return;
 
-        return () => {
-            // Clean up the link when the component unmounts
-            document.head.removeChild(link);
-        };
-    }, []);
+        if (!document.fullscreenElement) {
+            element.requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    };
 
     const handleGenerateChart = async () => {
         if (!selectedProject) {
@@ -161,12 +164,19 @@ function GanttPageContent() {
 
             <div className="mt-6">
                 <Card>
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Cronograma do Projeto</CardTitle>
+                        <Button variant="outline" size="icon" onClick={handleToggleFullScreen} title="Ver em Tela Cheia">
+                            <Maximize className="h-4 w-4" />
+                        </Button>
                     </CardHeader>
                     <CardContent>
                         {tasks.length > 0 ? (
-                            <div className="gantt-container overflow-x-auto">
+                            <div
+                                ref={chartContainerRef}
+                                className="gantt-container overflow-x-auto bg-background"
+                                style={{ maxWidth: '82vw', height: '600px' }}
+                            >
                                 <svg ref={ganttRef}></svg>
                             </div>
                         ) : (
@@ -182,9 +192,9 @@ function GanttPageContent() {
 }
 
 export default function GanttPage() {
-  return (
-    <AppLayout>
-      <GanttPageContent />
-    </AppLayout>
-  )
+    return (
+        <AppLayout>
+            <GanttPageContent />
+        </AppLayout>
+    )
 }
