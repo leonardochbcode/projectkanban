@@ -8,6 +8,23 @@
   }
 }
 
+/* Custom Frappe Gantt Colors */
+.gantt .bar-blue .bar {
+  fill: hsl(204 100% 40%);
+}
+.gantt .bar-orange .bar {
+  fill: hsl(30 100% 45%);
+}
+.gantt .bar-green .bar {
+  fill: hsl(140 100% 30%);
+}
+.gantt .bar-red .bar {
+  fill: hsl(0 100% 45%);
+}
+.gantt .bar-progress {
+  fill: rgba(255, 255, 255, 0.4);
+}
+
 @layer base {
   :root {
     --background: #ffffff;
