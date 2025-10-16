@@ -30,6 +30,19 @@ function GanttPageContent() {
     const ganttRef = useRef<SVGSVGElement | null>(null);
     const ganttInstance = useRef<Gantt | null>(null);
 
+    useEffect(() => {
+        // Dynamically insert the stylesheet into the document head
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/frappe-gantt.css'; // We'll need to move the file to the public directory
+        document.head.appendChild(link);
+
+        return () => {
+            // Clean up the link when the component unmounts
+            document.head.removeChild(link);
+        };
+    }, []);
+
     const handleGenerateChart = async () => {
         if (!selectedProject) {
             alert('Por favor, selecione um projeto.');
