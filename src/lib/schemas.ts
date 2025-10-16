@@ -37,6 +37,7 @@ export const taskSchema = z.object({
   description: z.string().optional(),
   status: z.string().optional(),
   priority: z.string().optional(),
+  startDate: z.string().optional(),
   dueDate: z.string().optional(),
   assigneeId: z.string().optional(),
   projectId: z.string().min(1, { message: "Project ID is required." }),

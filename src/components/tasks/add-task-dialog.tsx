@@ -29,6 +29,7 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
   const { addTask, participants } = useStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [status, setStatus] = useState<Task['status']>('A Fazer');
   const [priority, setPriority] = useState<Task['priority']>('Média');
@@ -46,12 +47,14 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
       description,
       status,
       priority,
+      startDate,
       dueDate,
       assigneeId,
     });
     // Reset form
     setTitle('');
     setDescription('');
+    setStartDate('');
     setDueDate('');
     setStatus('A Fazer');
     setPriority('Média');
@@ -91,6 +94,18 @@ export function AddTaskDialog({ children, projectId }: { children: ReactNode; pr
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="start-date" className="text-right">
+                Data de Início
+              </Label>
+              <Input
+                id="start-date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="col-span-3"
               />
             </div>

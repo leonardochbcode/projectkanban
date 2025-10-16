@@ -834,7 +834,7 @@ export async function deleteProject(id: string): Promise<{ success: boolean }> {
 // Tasks
 export async function getTasks(): Promise<Task[]> {
     const tasks = await queryMany<any>(`
-        SELECT t.id, t.title, t.description, t.status, t.priority, t.due_date, t.assignee_id, t.project_id, t.creation_date, t.conclusion_date, t.creator_id
+        SELECT t.id, t.title, t.description, t.status, t.priority, t.start_date, t.due_date, t.assignee_id, t.project_id, t.creation_date, t.conclusion_date, t.creator_id
         FROM tasks t
     `);
 
@@ -846,6 +846,7 @@ export async function getTasks(): Promise<Task[]> {
 
     return tasks.map(t => ({
         ...t,
+        startDate: t.start_date,
         dueDate: t.due_date,
         assigneeId: t.assignee_id,
         projectId: t.project_id,
@@ -857,7 +858,7 @@ export async function getTasks(): Promise<Task[]> {
 
 export async function getTaskById(id: string): Promise<Task | null> {
     const task = await queryOne<any>(`
-        SELECT id, title, description, status, priority, due_date, assignee_id, project_id, creation_date, conclusion_date, creator_id
+        SELECT id, title, description, status, priority, start_date, due_date, assignee_id, project_id, creation_date, conclusion_date, creator_id
         FROM tasks WHERE id = $1
     `, [id]);
     if (!task) return null;
@@ -868,6 +869,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
 
     return {
         ...task,
+        startDate: task.start_date,
         dueDate: task.due_date,
         assigneeId: task.assignee_id,
         projectId: task.project_id,
@@ -877,15 +879,46 @@ export async function getTaskById(id: string): Promise<Task | null> {
     };
 }
 
+export async function getTasksByProjectId(projectId: string): Promise<Task[]> {
+    const sql = `
+        SELECT
+            t.id,
+            t.title,
+            t.description,
+            t.status,
+            t.priority,
+            t.start_date as "startDate",
+            t.due_date as "dueDate",
+            t.assignee_id as "assigneeId",
+            t.project_id as "projectId",
+            t.creation_date as "creationDate",
+            t.conclusion_date as "conclusionDate",
+            t.creator_id as "creatorId"
+        FROM tasks t
+        WHERE t.project_id = $1
+        ORDER BY t.creation_date ASC;
+    `;
+    const tasks = await queryMany<Task>(sql, [projectId]);
+    // The query result already matches the Task type for the most part,
+    // but we need to initialize comments, checklist, and attachments as empty arrays.
+    return tasks.map(task => ({
+        ...task,
+        comments: [],
+        checklist: [],
+        attachments: [],
+    }));
+}
+
 export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments' | 'creationDate'>): Promise<Task> {
     const newId = `task_${randomBytes(8).toString('hex')}`;
-    const { title, description, status, priority, dueDate, assigneeId, projectId, creatorId } = task;
+    const { title, description, status, priority, startDate, dueDate, assigneeId, projectId, creatorId } = task;
     const result = await queryOne<any>(
-        'INSERT INTO tasks (id, title, description, status, priority, due_date, assignee_id, project_id, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-        [newId, title, description, status, priority, dueDate, assigneeId, projectId, creatorId]
+        'INSERT INTO tasks (id, title, description, status, priority, start_date, due_date, assignee_id, project_id, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+        [newId, title, description, status, priority, startDate, dueDate, assigneeId, projectId, creatorId]
     );
     return {
         ...result,
+        startDate: result.start_date,
         dueDate: result.due_date,
         assigneeId: result.assignee_id,
         projectId: result.project_id,
@@ -899,7 +932,7 @@ export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist
 }
 
 export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments'>>): Promise<Task | null> {
-    const { title, description, status, priority, dueDate, assigneeId, projectId } = task;
+    const { title, description, status, priority, startDate, dueDate, assigneeId, projectId } = task;
 
     let conclusionDateUpdate = '';
     if (status) {
@@ -915,14 +948,15 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
             description = COALESCE($2, description),
             status = COALESCE($3, status),
             priority = COALESCE($4, priority),
-            due_date = COALESCE($5, due_date),
-            assignee_id = COALESCE($6, assignee_id),
-            project_id = COALESCE($7, project_id)
+            start_date = COALESCE($5, start_date),
+            due_date = COALESCE($6, due_date),
+            assignee_id = COALESCE($7, assignee_id),
+            project_id = COALESCE($8, project_id)
             ${conclusionDateUpdate}
-        WHERE id = $8
+        WHERE id = $9
         RETURNING *`;
 
-    const result = await queryOne<any>(query, [title, description, status, priority, dueDate, assigneeId, projectId, id]);
+    const result = await queryOne<any>(query, [title, description, status, priority, startDate, dueDate, assigneeId, projectId, id]);
 
     if (!result) return null;
 

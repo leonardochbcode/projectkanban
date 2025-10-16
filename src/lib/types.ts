@@ -110,6 +110,7 @@ export interface Task {
   description: string;
   status: 'A Fazer' | 'Em Andamento' | 'Concluída' | 'Cancelado';
   priority: 'Baixa' | 'Média' | 'Alta';
+  startDate?: string;
   dueDate: string;
   assigneeId?: string;
   projectId: string;
