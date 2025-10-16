@@ -43,8 +43,11 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
   const [isLoading, setIsLoading] = useState(false);
   const [title, setTitle] = useState(initialTask.title);
   const [description, setDescription] = useState(initialTask.description);
+  const [startDate, setStartDate] = useState(initialTask.startDate);
+
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingStartDate, setIsEditingStartDate] = useState(false);
 
   const assignee = participants.find((p) => p.id === task.assigneeId);
 
@@ -70,6 +73,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
       setTask(freshTask);
       setTitle(freshTask.title);
       setDescription(freshTask.description);
+      setStartDate(freshTask.startDate);
     } catch (error) {
       console.error("Error fetching task details:", error);
       // Optionally, show a toast to the user
@@ -280,7 +284,25 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                 <CalendarIcon className="h-4 w-4" />
                 <span>Data de Início</span>
               </div>
-              <p>{task.startDate ? new Date(task.startDate).toLocaleDateString() : 'Não definida'}</p>
+              {isEditingStartDate ? (
+                <Input
+                  type="date"
+                  value={startDate ? new Date(startDate).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  onBlur={() => {
+                    if (startDate !== task.startDate) {
+                      updateTask({ startDate });
+                    }
+                    setIsEditingStartDate(false);
+                  }}
+                  autoFocus
+                  className="w-48"
+                />
+              ) : (
+                <div onClick={() => setIsEditingStartDate(true)} className="w-48 cursor-pointer">
+                  <p>{task.startDate ? new Date(task.startDate).toLocaleDateString() : 'Não definida'}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-4 mt-2">
               <div className="flex items-center gap-2 text-muted-foreground w-32">
