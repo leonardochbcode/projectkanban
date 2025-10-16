@@ -153,7 +153,7 @@ function GanttPageContent() {
                 }
             });
         }
-    }, [tasks, viewMode]);
+    }, [tasks]);
 
 
     return (
