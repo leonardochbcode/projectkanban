@@ -143,6 +143,7 @@ CREATE TABLE tasks (
     description TEXT,
     status VARCHAR(50),
     priority VARCHAR(50),
+    start_date DATE,
     due_date DATE,
     assignee_id VARCHAR(50) REFERENCES participants(id) ON DELETE SET NULL,
     project_id VARCHAR(50) REFERENCES projects(id) ON DELETE CASCADE,

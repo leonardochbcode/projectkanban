@@ -275,7 +275,14 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                 </Select>
               </div>
             </div>
-            <div className="flex items-center gap-4 mt-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-muted-foreground w-32">
+                <CalendarIcon className="h-4 w-4" />
+                <span>Data de Início</span>
+              </div>
+              <p>{task.startDate ? new Date(task.startDate).toLocaleDateString() : 'Não definida'}</p>
+            </div>
+            <div className="flex items-center gap-4 mt-2">
               <div className="flex items-center gap-2 text-muted-foreground w-32">
                 <CalendarIcon className="h-4 w-4" />
                 <span>Data de Prazo</span>
