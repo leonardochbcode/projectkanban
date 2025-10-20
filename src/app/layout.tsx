@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './global.css';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import './gantt/frappe-gantt.css';
 import { Toaster } from '@/components/ui/toaster';
 import { StoreProvider } from '@/hooks/use-store';
 import { ThemeProvider } from '@/components/theme-provider';
