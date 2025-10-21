@@ -248,6 +248,10 @@ export const useStore = () => {
     return store.projects.find(p => p.id === projectId);
   }, [store.projects]);
 
+  const getProjectName = useCallback((projectId: string) => {
+    return store.allProjects?.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
+  }, [store.allProjects]);
+
   const addProject = useCallback(async (project: Omit<Project, 'id'>, templateId?: string) => {
     try {
       const response = await fetch('/api/projects', {
@@ -891,6 +895,7 @@ export const useStore = () => {
     ...store,
     getWorkspaceProjects,
     getProject,
+    getProjectName,
     getProjectTasks,
     addProject,
     updateProject,

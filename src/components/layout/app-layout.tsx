@@ -168,7 +168,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <UserNav />
         </header>
-        <main className="flex flex-1 flex-col gap-4 bg-background max-w-[1600px]">
+        <main className="flex flex-1 flex-col gap-4 bg-background max-w-[84vw]">
           {children}
         </main>
       </div>

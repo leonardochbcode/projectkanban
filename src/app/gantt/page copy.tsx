@@ -70,12 +70,6 @@ function GanttPageContent() {
     };
 
     const handleGenerateChart = async () => {
-        if (ganttRef.current) {
-            ganttRef.current.innerHTML = '';
-            ganttInstance.current = null;
-        }
-        setTasks([]);
-
         if (!selectedProject) {
             alert('Por favor, selecione um projeto.');
             return;
@@ -100,6 +94,8 @@ function GanttPageContent() {
 
             if (projectTasks.length === 0) {
                 alert('Nenhuma tarefa encontrada para os filtros aplicados.');
+                ganttInstance.current?.clear();
+                ganttRef.current.innerHTML = '';
                 setTasks([]);
             } else {
                 setTasks(projectTasks);
@@ -115,6 +111,8 @@ function GanttPageContent() {
 
     useEffect(() => {
         if (tasks.length > 0 && ganttRef.current) {
+            ganttInstance.current?.clear();
+
             const ganttTasks = tasks.map(task => ({
                 id: task.id,
                 name: `Tarefa: ${task.title}`,
