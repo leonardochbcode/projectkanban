@@ -137,7 +137,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-auto items-center gap-4 border-b bg-muted/40 px-4 lg:h-auto lg:px-6 py-2">
+        <header className="sticky top-0 z-10 flex h-auto items-center gap-4 border-b bg-muted px-4 py-2 lg:h-auto lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0 md:hidden">
@@ -168,7 +168,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <UserNav />
         </header>
-        <main className="flex flex-1 flex-col gap-4 bg-background">
+        <main className="flex flex-1 flex-col gap-4 bg-background max-w-[1600px]">
           {children}
         </main>
       </div>

@@ -23,9 +23,6 @@ export function CompanyHeaderInfo() {
       <p className="text-xs text-muted-foreground">
         {userName} | {companyInfo.name} | {companyInfo.cnpj}
       </p>
-      <p className="text-xs text-muted-foreground mt-1">
-        Recentes: Início
-      </p>
     </div>
   );
 }

@@ -140,6 +140,7 @@ function GanttPageContent() {
                 view_mode: viewMode,
                 date_format: 'YYYY-MM-DD',
                 language: 'pt',
+                scroll_to: 'start',
                 custom_popup_html: task => {
                     const ganttTask = tasks.find(t => t.id === task.id);
                     return `
