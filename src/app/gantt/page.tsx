@@ -133,7 +133,7 @@ function GanttPageContent() {
                 column_width: 30,
                 step: 24,
                 view_modes: viewModes,
-                bar_height: 28,
+                bar_height: 30,
                 bar_corner_radius: 6,
                 arrow_curve: 10,
                 padding: 35,
@@ -230,7 +230,6 @@ function GanttPageContent() {
                             <div
                                 ref={chartContainerRef}
                                 className="gantt-container overflow-x-auto bg-background"
-                                style={{ maxWidth: '78vw', maxHeight: '50vh' }}
                             >
                                 <svg ref={ganttRef}></svg>
                             </div>
