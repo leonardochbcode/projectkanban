@@ -16,7 +16,6 @@ export function CompanyHeaderInfo() {
   }
 
   const userName = currentUser.name.split(' ')[0].toUpperCase();
-  const appVersion = '202506'; // Static version for now
 
   return (
     <div className="flex-1 text-sm text-foreground">
