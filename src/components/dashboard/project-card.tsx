@@ -31,7 +31,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project }: ProjectCardProps) {
   const { getProjectTasks, participants, getClient, getParticipant } = useStore();
   const tasks = getProjectTasks(project.id);
-  const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
+  const completedTasks = tasks.filter((task) => task.status === 'Concluída' || task.status === 'Cancelado').length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
 
   const projectParticipants = project.participantIds

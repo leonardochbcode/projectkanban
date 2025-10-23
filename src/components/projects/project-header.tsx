@@ -31,7 +31,7 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
 
   const [isOpportunitySheetOpen, setIsOpportunitySheetOpen] = useState(false);
 
-  const completedTasks = tasks.filter((task) => task.status === 'Concluída').length;
+  const completedTasks = tasks.filter((task) => task.status === 'Concluída' || task.status === 'Cancelado').length;
   const progress = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0;
 
   const handleEditOpportunity = (opportunityToEdit: Opportunity) => {

@@ -104,46 +104,30 @@ export function KanbanBoard({ tasks: initialTasks, projectId }: KanbanBoardProps
     setActiveTask(task || null);
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const activeTask = tasks.find(t => t.id === active.id);
-    if (!activeTask) return;
-
-    const overId = over.id as string;
-    const overIsColumn = statuses.includes(overId as Task['status']);
-
-    setTasks(currentTasks => {
-      const activeIndex = currentTasks.findIndex(t => t.id === active.id);
-
-      if (overIsColumn) {
-        const newStatus = overId as Task['status'];
-        if (activeTask.status === newStatus) return currentTasks; // No change if status is same
-
-        currentTasks[activeIndex].status = newStatus;
-        return arrayMove(currentTasks, activeIndex, activeIndex); // Trigger re-render
-      }
-
-      const overTask = currentTasks.find(t => t.id === overId);
-      if (!overTask || activeTask.status !== overTask.status) return currentTasks;
-
-      const overIndex = currentTasks.findIndex(t => t.id === overId);
-      return arrayMove(currentTasks, activeIndex, overIndex);
-    });
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
 
-    if (!over) return;
+    if (over && active.id !== over.id) {
+      const activeTask = tasks.find(t => t.id === active.id);
+      if (!activeTask) return;
 
-    const originalTask = initialTasks.find(t => t.id === active.id);
-    const updatedTask = tasks.find(t => t.id === active.id);
+      const overId = over.id as string;
+      const newStatus = statuses.includes(overId as Task['status'])
+        ? (overId as Task['status'])
+        : tasks.find(t => t.id === overId)?.status;
 
-    if (originalTask && updatedTask && (originalTask.status !== updatedTask.status)) {
-      updateTask({ id: updatedTask.id, status: updatedTask.status });
+      if (newStatus && activeTask.status !== newStatus) {
+        setTasks(currentTasks => {
+          const activeIndex = currentTasks.findIndex(t => t.id === active.id);
+          if (activeIndex === -1) return currentTasks;
+          const updatedTask = { ...currentTasks[activeIndex], status: newStatus };
+          const newTasks = [...currentTasks];
+          newTasks[activeIndex] = updatedTask;
+          return newTasks;
+        });
+        updateTask({ id: activeTask.id, status: newStatus });
+      }
     }
   };
 
@@ -152,7 +136,6 @@ export function KanbanBoard({ tasks: initialTasks, projectId }: KanbanBoardProps
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

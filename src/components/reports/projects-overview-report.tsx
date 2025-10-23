@@ -34,7 +34,7 @@ export function ProjectsOverviewReport({ projects, allProjects, tasks, clients, 
       }
       
       const projectTasks = tasks.filter(t => t.projectId === project.id);
-      const completedTasks = projectTasks.filter(t => t.status === 'Concluída').length;
+      const completedTasks = projectTasks.filter(t => t.status === 'Concluída' || t.status === 'Cancelado').length;
       const progress = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
       const client = clients.find(c => c.id === project.clientId);
 
