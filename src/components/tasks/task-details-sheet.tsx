@@ -44,10 +44,12 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
   const [title, setTitle] = useState(initialTask.title);
   const [description, setDescription] = useState(initialTask.description);
   const [startDate, setStartDate] = useState(initialTask.startDate);
+  const [dueDate, setDueDate] = useState(initialTask.dueDate);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingStartDate, setIsEditingStartDate] = useState(false);
+  const [isEditingDueDate, setIsEditingDueDate] = useState(false);
 
   const assignee = participants.find((p) => p.id === task.assigneeId);
 
@@ -74,6 +76,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
       setTitle(freshTask.title);
       setDescription(freshTask.description);
       setStartDate(freshTask.startDate);
+      setDueDate(freshTask.dueDate);
     } catch (error) {
       console.error("Error fetching task details:", error);
       // Optionally, show a toast to the user
@@ -304,12 +307,30 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-4 mt-2">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-muted-foreground w-32">
                 <CalendarIcon className="h-4 w-4" />
                 <span>Data de Prazo</span>
               </div>
-              <p>{new Date(task.dueDate).toLocaleDateString()}</p>
+              {isEditingDueDate ? (
+                <Input
+                  type="date"
+                  value={dueDate ? new Date(dueDate).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  onBlur={() => {
+                    if (dueDate !== task.dueDate) {
+                      updateTask({ dueDate });
+                    }
+                    setIsEditingDueDate(false);
+                  }}
+                  autoFocus
+                  className="w-48"
+                />
+              ) : (
+                <div onClick={() => setIsEditingDueDate(true)} className="w-48 cursor-pointer">
+                  <p>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Não definida'}</p>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-muted-foreground w-32">

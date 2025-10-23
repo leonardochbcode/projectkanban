@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TasksTable } from '@/components/projects/tasks-table';
 import { useState, useEffect } from 'react';
+import { MultiSelect } from '@/components/ui/multi-select';
 
 // Este componente agora recebe `projectId` como uma prop simples.
 export function ProjectDetailsPageContent({ projectId }: { projectId: string }) {
@@ -18,6 +19,7 @@ export function ProjectDetailsPageContent({ projectId }: { projectId: string }) 
     }
     return 'kanban';
   });
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -67,14 +69,50 @@ export function ProjectDetailsPageContent({ projectId }: { projectId: string }) 
 
   const tasks = getProjectTasks(project.id);
 
+  const statusOptions = [
+    { label: 'A Fazer', value: 'A Fazer' },
+    { label: 'Em Andamento', value: 'Em Andamento' },
+    { label: 'Concluída', value: 'Concluída' },
+    { label: 'Cancelado', value: 'Cancelado' },
+  ];
+
+  const filteredTasks = selectedStatuses.length > 0
+    ? tasks.filter(task => selectedStatuses.includes(task.status))
+    : tasks;
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    const aDueDate = new Date(a.dueDate).getTime();
+    const bDueDate = new Date(b.dueDate).getTime();
+    const now = new Date().getTime();
+
+    const aIsOverdue = aDueDate < now && a.status !== 'Concluída' && a.status !== 'Cancelado';
+    const bIsOverdue = bDueDate < now && b.status !== 'Concluída' && b.status !== 'Cancelado';
+
+    if (aIsOverdue && !bIsOverdue) return -1;
+    if (!aIsOverdue && bIsOverdue) return 1;
+
+    return aDueDate - bDueDate;
+  });
+
   return (
     <div className="flex flex-col h-full">
       <ProjectHeader project={project} viewMode={viewMode} setViewMode={setViewMode} />
       <div className="flex-1 overflow-x-auto p-4 sm:p-6">
+        {viewMode === 'list' && (
+          <div className="mb-4">
+            <MultiSelect
+              options={statusOptions}
+              onValueChange={setSelectedStatuses}
+              defaultValue={selectedStatuses}
+              placeholder="Filtrar por status..."
+              className="w-full sm:w-64"
+            />
+          </div>
+        )}
         {viewMode === 'kanban' ? (
           <KanbanBoard tasks={tasks} projectId={project.id} />
         ) : (
-          <TasksTable tasks={tasks} />
+          <TasksTable tasks={sortedTasks} />
         )}
       </div>
     </div>
