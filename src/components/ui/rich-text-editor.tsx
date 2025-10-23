@@ -1,6 +1,9 @@
 'use client';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import React, { useMemo, useCallback } from 'react';
+import { createEditor, Descendant } from 'slate';
+import { Slate, Editable, withReact } from 'slate-react';
+import { withHistory } from 'slate-history';
+import { Toolbar } from './toolbar';
 
 interface RichTextEditorProps {
   value: string;
@@ -8,25 +11,38 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-const modules = {
-  toolbar: [
-    [{ 'header': [1, 2, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ 'color': [] }],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-    ['link'],
-    ['clean']
-  ],
-};
-
 export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
+  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
+  const initialValue = useMemo((): Descendant[] => {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch (e) {
+      // Fallback for plain text or invalid JSON
+    }
+    return [{ type: 'paragraph', children: [{ text: value || '' }] }];
+  }, [value]);
+
+  const handleChange = useCallback((newValue: Descendant[]) => {
+    const isAstChange = editor.operations.some(
+      op => 'set_selection' !== op.type
+    );
+    if (isAstChange) {
+      const content = JSON.stringify(newValue);
+      onChange(content);
+    }
+  }, [editor, onChange]);
+
   return (
-    <ReactQuill
-      theme="snow"
-      value={value}
-      onChange={onChange}
-      modules={modules}
-      placeholder={placeholder}
-    />
+    <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>
+      <Toolbar />
+      <Editable
+        placeholder={placeholder}
+        className="border p-2 rounded-b"
+        style={{ minHeight: '150px' }}
+      />
+    </Slate>
   );
 }
