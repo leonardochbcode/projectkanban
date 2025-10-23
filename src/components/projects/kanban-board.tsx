@@ -28,13 +28,12 @@ function KanbanColumn({ id, status, tasks }: KanbanColumnProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`bg-muted/50 rounded-lg p-4 transition-colors min-h-[150px] ${
-        isOver ? 'bg-muted' : ''
-      }`}
+      className={`bg-muted/50 rounded-lg p-4 transition-colors min-h-[150px] ${isOver ? 'bg-muted' : ''
+        }`}
     >
-      <h2 className="text-lg font-semibold mb-4 font-headline">{status}</h2>
+      <h2 className="text-xs font-semibold mb-4 font-headline">{status}</h2>
       <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-4">
+        <div className="space-y-4 text-xs">
           {tasks.map((task) => (
             <DraggableTaskCard key={task.id} task={task} />
           ))}
@@ -144,7 +143,7 @@ export function KanbanBoard({ tasks: initialTasks, projectId }: KanbanBoardProps
     const updatedTask = tasks.find(t => t.id === active.id);
 
     if (originalTask && updatedTask && (originalTask.status !== updatedTask.status)) {
-       updateTask({ id: updatedTask.id, status: updatedTask.status });
+      updateTask({ id: updatedTask.id, status: updatedTask.status });
     }
   };
 
@@ -156,7 +155,7 @@ export function KanbanBoard({ tasks: initialTasks, projectId }: KanbanBoardProps
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 min-w-max">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {statuses.map((status) => (
           <KanbanColumn
             key={status}

@@ -77,7 +77,7 @@ function ProjectsPageContent() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2 mb-4">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Todos os Projetos</h1>
+        <h1 className="text-2xl font-bold tracking-tight font-headline">Todos os Projetos</h1>
         <div className="flex items-center space-x-2">
           <ManageProjectDialog project={editingProject} open={isDialogOpen} onOpenChange={handleDialogClose}>
             <Button onClick={handleAdd}>
@@ -92,7 +92,7 @@ function ProjectsPageContent() {
           <CardTitle>Lista de Projetos</CardTitle>
           <CardDescription>Uma visão geral de todos os projetos em todos os espaços de trabalho.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className='text-xs'>
           <div className="flex items-center gap-2 mb-4">
             <Input
               placeholder="Filtrar por nome..."

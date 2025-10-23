@@ -48,7 +48,7 @@ function ClientsPageContent() {
     setEditingClient(undefined);
     setIsDialogOpen(true);
   };
-  
+
   const handleDialogClose = (open: boolean) => {
     if (!open) {
       setEditingClient(undefined);
@@ -78,7 +78,7 @@ function ClientsPageContent() {
   return (
     <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight font-headline">Clientes</h1>
+        <h1 className="text-2xl font-bold tracking-tight font-headline">Clientes</h1>
         <div className="flex items-center space-x-2">
           <ManageClientDialog
             client={editingClient}
@@ -127,7 +127,7 @@ function ClientsPageContent() {
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className='text-xs'>
               {paginatedClients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell>
@@ -143,9 +143,9 @@ function ClientsPageContent() {
                   <TableCell>{client.cnpj || 'N/A'}</TableCell>
                   <TableCell>
                     {client.suportewebCode ? (
-                        <Badge variant="outline">{client.suportewebCode}</Badge>
+                      <Badge variant="outline">{client.suportewebCode}</Badge>
                     ) : (
-                        'N/A'
+                      'N/A'
                     )}
                   </TableCell>
                   <TableCell>{client.email}</TableCell>
@@ -203,9 +203,9 @@ function ClientsPageContent() {
 }
 
 export default function ClientsPage() {
-    return (
-        <AppLayout>
-            <ClientsPageContent />
-        </AppLayout>
-    )
+  return (
+    <AppLayout>
+      <ClientsPageContent />
+    </AppLayout>
+  )
 }

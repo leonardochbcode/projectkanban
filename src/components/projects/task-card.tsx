@@ -35,7 +35,7 @@ export function TaskCard({ task }: TaskCardProps) {
       <Card className="hover:bg-card/90 cursor-pointer transition-colors">
         <CardHeader className="p-4">
           <div className="flex justify-between items-start gap-2">
-            <CardTitle className="text-base leading-snug">{task.title}</CardTitle>
+            <CardTitle className="text-sm leading-snug">{task.title}</CardTitle>
             <Badge variant="outline" className={cn('text-xs', priorityColors[task.priority])}>
               {task.priority}
             </Badge>
@@ -44,8 +44,8 @@ export function TaskCard({ task }: TaskCardProps) {
         <CardContent className="p-4 pt-0">
           <div className="flex justify-between items-center">
             <div className="text-xs text-muted-foreground">
-                Prazo: {new Date(task.dueDate).toLocaleDateString()}
-                {isOverdue && <span className="text-destructive font-bold ml-2">Atrasado</span>}
+              Prazo: {new Date(task.dueDate).toLocaleDateString()}
+              {isOverdue && <span className="text-destructive font-bold ml-2">Atrasado</span>}
             </div>
             {assignee && (
               <TooltipProvider>

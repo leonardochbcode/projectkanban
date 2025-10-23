@@ -8,16 +8,16 @@ import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import type { ProjectTemplate } from '@/lib/types';
 import { ManageTemplateDialog } from './manage-template-dialog';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-  } from '@/components/ui/alert-dialog';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export function ManageTemplates() {
   const { data: session } = useSession();
@@ -67,7 +67,7 @@ export function ManageTemplates() {
             <div key={template.id} className="flex items-center justify-between p-3 rounded-md border bg-muted/50">
               <div>
                 <p className="font-semibold">{template.name}</p>
-                <p className="text-sm text-muted-foreground">{template.description}</p>
+                <p className="text-xs text-muted-foreground">{template.description}</p>
                 <p className="text-xs text-muted-foreground mt-1">{template.tasks.length} tarefas pré-definidas</p>
               </div>
               {session?.user?.userType !== 'Convidado' && (
@@ -76,25 +76,25 @@ export function ManageTemplates() {
                     <Edit className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                          <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. Isso excluirá permanentemente o template.
-                          </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteProjectTemplate(template.id)}>
-                              Continuar
-                          </AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o template.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteProjectTemplate(template.id)}>
+                          Continuar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
                   </AlertDialog>
                 </div>
               )}

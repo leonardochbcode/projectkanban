@@ -39,7 +39,7 @@ export function UserNav() {
 
   // If the full user object is not found yet, show skeleton
   if (!user) {
-     return <Skeleton className="h-8 w-8 rounded-full" />;
+    return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
   return (
@@ -62,9 +62,9 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-             <Link href="/team">Perfil</Link>
+            <Link href="/team">Perfil</Link>
           </DropdownMenuItem>
-           <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild>
             <Link href="/settings">Configurações</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>

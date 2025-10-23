@@ -211,7 +211,7 @@ function WorkspacesPageContent() {
     return (
         <div className="flex-1 space-y-4 p-4 sm:p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Espaços de Trabalho</h1>
+                <h1 className="text-2xl font-bold tracking-tight font-headline">Espaços de Trabalho</h1>
                 <div className="flex items-center space-x-2">
                     <Link href="/workspaces/archived" passHref>
                         <Button variant="outline">
@@ -233,7 +233,7 @@ function WorkspacesPageContent() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Filtros</CardTitle>
+                    <CardTitle className='text-base'>Filtros</CardTitle>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
                         <Input
                             placeholder="Filtrar por nome..."
@@ -266,7 +266,7 @@ function WorkspacesPageContent() {
 
             {(filters.responsibility === 'all' || filters.responsibility === 'owner') && allOwnedWorkspaces.length > 0 && (
                 <div className="space-y-4 mt-6">
-                    <h2 className="text-xl font-bold tracking-tight">Espaços que sou o responsável...</h2>
+                    <h2 className="text-lg font-bold tracking-tight">Espaços que sou o responsável...</h2>
                     {renderWorkspaceGrid(paginatedOwnedWorkspaces)}
                     {ownedTotalPages > 1 && (
                         <Pagination
@@ -280,7 +280,7 @@ function WorkspacesPageContent() {
 
             {(filters.responsibility === 'all' || filters.responsibility === 'participant') && allParticipatingWorkspaces.length > 0 && (
                 <div className="space-y-4 mt-8">
-                    <h2 className="text-xl font-bold tracking-tight">Espaços que eu participo...</h2>
+                    <h2 className="text-lg font-bold tracking-tight">Espaços que eu participo...</h2>
                     {renderWorkspaceGrid(paginatedParticipatingWorkspaces)}
                     {participatingTotalPages > 1 && (
                         <Pagination

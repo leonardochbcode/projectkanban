@@ -30,7 +30,7 @@ export function TasksTable({ tasks }: TasksTableProps) {
   };
 
   return (
-    <Table>
+    <Table className='text-xs'>
       <TableHeader>
         <TableRow>
           <TableHead>Título</TableHead>
@@ -45,39 +45,39 @@ export function TasksTable({ tasks }: TasksTableProps) {
           const assignee = task.assigneeId ? getParticipant(task.assigneeId) : null;
           return (
             <TaskDetailsSheet key={task.id} task={task}>
-                <TableRow className="cursor-pointer">
+              <TableRow className="cursor-pointer">
                 <TableCell className="font-medium">{task.title}</TableCell>
                 <TableCell>
-                    <Badge variant="outline" className={cn(statusColors[task.status])}>
+                  <Badge variant="outline" className={cn(statusColors[task.status])}>
                     {task.status}
-                    </Badge>
+                  </Badge>
                 </TableCell>
                 <TableCell>
-                    <Badge variant="outline" className={cn(priorityColors[task.priority])}>
+                  <Badge variant="outline" className={cn(priorityColors[task.priority])}>
                     {task.priority}
-                    </Badge>
+                  </Badge>
                 </TableCell>
                 <TableCell>{new Date(task.dueDate).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
-                    {assignee ? (
+                  {assignee ? (
                     <TooltipProvider>
-                        <Tooltip>
+                      <Tooltip>
                         <TooltipTrigger asChild>
-                             <Avatar className="h-7 w-7 inline-block">
-                                <AvatarImage src={assignee.avatar} />
-                                <AvatarFallback>{assignee.name[0]}</AvatarFallback>
-                            </Avatar>
+                          <Avatar className="h-7 w-7 inline-block">
+                            <AvatarImage src={assignee.avatar} />
+                            <AvatarFallback>{assignee.name[0]}</AvatarFallback>
+                          </Avatar>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p>{assignee.name}</p>
+                          <p>{assignee.name}</p>
                         </TooltipContent>
-                        </Tooltip>
+                      </Tooltip>
                     </TooltipProvider>
-                    ) : (
+                  ) : (
                     <span className="text-xs text-muted-foreground">N/A</span>
-                    )}
+                  )}
                 </TableCell>
-                </TableRow>
+              </TableRow>
             </TaskDetailsSheet>
           );
         })}

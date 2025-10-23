@@ -134,7 +134,7 @@ function TeamPageContent() {
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className='text-xs'>
                   {paginatedParticipants.map((participant) => {
                     const role = getRole(participant.roleId);
                     const isCurrentUser = participant.id === currentUser?.id;

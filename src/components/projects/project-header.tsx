@@ -46,9 +46,9 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
   }
 
   return (
-    <div className="p-4 sm:p-6 border-b">
+    <div className="p-4 sm:p-6 border-b text-xs">
       {workspace && (
-        <div className="text-sm text-muted-foreground flex items-center gap-1.5 mb-2">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5 mb-2">
           <Link href="/workspaces" className="hover:text-primary">Espaços de Trabalho</Link>
           <ChevronsRight className="h-4 w-4" />
           <Link href={`/workspaces/${workspace.id}/`} className="hover:text-primary">{workspace.name}</Link>
@@ -56,7 +56,7 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
       )}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline">{project.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight font-headline">{project.name}</h1>
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <p className="text-muted-foreground">{project.description}</p>
             {client && (
@@ -103,7 +103,7 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
         </div>
       </div>
       <div className="space-y-1">
-        <div className="flex justify-between text-sm text-muted-foreground">
+        <div className="flex justify-between text-xs text-muted-foreground">
           <span>Progresso</span>
           <span>{Math.round(progress)}%</span>
         </div>
