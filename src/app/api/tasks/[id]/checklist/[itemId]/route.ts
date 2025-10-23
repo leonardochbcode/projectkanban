@@ -10,14 +10,15 @@ type RouteParams = {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { itemId } = await params;
-    const { completed } = await request.json();
+    const { itemId } = params;
+    const body = await request.json();
+    const { completed, text } = body;
 
-    if (typeof completed !== 'boolean') {
-      return NextResponse.json({ message: 'Completed status is required' }, { status: 400 });
+    if (typeof completed !== 'boolean' && typeof text !== 'string') {
+      return NextResponse.json({ message: 'A valid completed status or text is required' }, { status: 400 });
     }
 
-    const updatedItem = await updateChecklistItem(itemId, completed);
+    const updatedItem = await updateChecklistItem(itemId, { completed, text });
 
     if (!updatedItem) {
       return NextResponse.json({ message: 'Checklist item not found' }, { status: 404 });

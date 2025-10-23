@@ -1013,15 +1013,38 @@ export async function createChecklistItem(taskId: string, text: string): Promise
     return result!; // We are sure it's not null because of RETURNING *
 }
 
-export async function updateChecklistItem(id: string, completed: boolean): Promise<ChecklistItem | null> {
+export async function updateChecklistItem(id: string, data: { completed?: boolean; text?: string }): Promise<ChecklistItem | null> {
+    const { completed, text } = data;
+
+    if (completed === undefined && text === undefined) {
+        // Nothing to update
+        const currentItem = await queryOne<any>('SELECT id, text, completed FROM checklist_items WHERE id = $1', [id]);
+        return currentItem;
+    }
+
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        const updatedItemResult = await client.query(
-            'UPDATE checklist_items SET completed = $1 WHERE id = $2 RETURNING *',
-            [completed, id]
-        );
+        // Build the query dynamically
+        const updates: string[] = [];
+        const values: any[] = [];
+        let paramIndex = 1;
+
+        if (completed !== undefined) {
+            updates.push(`completed = $${paramIndex++}`);
+            values.push(completed);
+        }
+
+        if (text !== undefined) {
+            updates.push(`text = $${paramIndex++}`);
+            values.push(text);
+        }
+
+        values.push(id);
+        const updateQuery = `UPDATE checklist_items SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+
+        const updatedItemResult = await client.query(updateQuery, values);
 
         const updatedItem = updatedItemResult.rows[0];
         if (!updatedItem) {
@@ -1089,6 +1112,25 @@ export async function createTaskComment(taskId: string, authorId: string, conten
         authorId: result.author_id,
         createdAt: result.created_at,
     };
+}
+
+export async function updateTaskComment(id: string, content: string): Promise<TaskComment | null> {
+    const result = await queryOne<any>(
+        'UPDATE task_comments SET content = $1 WHERE id = $2 RETURNING id, content, author_id, created_at',
+        [content, id]
+    );
+    if (!result) return null;
+    return {
+        id: result.id,
+        content: result.content,
+        authorId: result.author_id,
+        createdAt: result.created_at,
+    };
+}
+
+export async function deleteTaskComment(id: string): Promise<{ success: boolean }> {
+    const result = await pool.query('DELETE FROM task_comments WHERE id = $1', [id]);
+    return { success: result.rowCount > 0 };
 }
 
 // Task Attachments
