@@ -15,17 +15,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { Task } from '@/lib/types';
+import type { Task, Comment } from '@/lib/types';
 import { useStore } from '@/hooks/use-store';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon, User, Flag, ChevronsUpDown, Paperclip, X, Edit } from 'lucide-react';
+import { CalendarIcon, User, Flag, ChevronsUpDown, Paperclip, X, Edit, Trash2 } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { TaskCommentForm } from './task-comment-form';
 import { TaskAttachmentForm } from './task-attachment-form';
 import { Button } from '../ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { formatBytes } from '@/lib/utils';
 import { TaskChecklist } from './task-checklist';
 
@@ -50,6 +61,9 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingStartDate, setIsEditingStartDate] = useState(false);
   const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
+  const [editingComment, setEditingComment] = useState<Comment | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
 
   const assignee = participants.find((p) => p.id === task.assigneeId);
 
@@ -156,6 +170,84 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
       toast({
         title: 'Erro',
         description: 'Não foi possível remover o anexo. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateComment = async () => {
+    if (!editingComment || !editingCommentText.trim()) return;
+
+    // Optimistic UI update
+    const originalComments = task.comments || [];
+    const updatedComments = originalComments.map(c =>
+      c.id === editingComment.id ? { ...c, content: editingCommentText.trim() } : c
+    );
+    setTask(prevTask => ({ ...prevTask, comments: updatedComments }));
+    setEditingComment(null);
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/comments/${editingComment.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editingCommentText.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update comment');
+      }
+
+      toast({
+        title: 'Comentário atualizado',
+        description: 'O comentário foi atualizado com sucesso.',
+      });
+
+      await fetchTask(); // Refresh data
+
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      // Revert on failure
+      setTask(prevTask => ({ ...prevTask, comments: originalComments }));
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar o comentário. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteComment = async () => {
+    if (!commentToDelete) return;
+
+    // Optimistic UI update
+    const originalComments = task.comments || [];
+    const updatedComments = originalComments.filter(c => c.id !== commentToDelete.id);
+    setTask(prevTask => ({ ...prevTask, comments: updatedComments }));
+    setCommentToDelete(null);
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/comments/${commentToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete comment');
+      }
+
+      toast({
+        title: 'Comentário removido',
+        description: 'O comentário foi removido com sucesso.',
+      });
+
+      await fetchTask(); // Refresh data
+
+    } catch (error) {
+      console.error("Error removing comment:", error);
+      // Revert on failure
+      setTask(prevTask => ({ ...prevTask, comments: originalComments }));
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível remover o comentário. Tente novamente.',
         variant: 'destructive',
       });
     }
@@ -414,17 +506,46 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
               {(task.comments || []).map((comment) => {
                 const author = participants.find(p => p.id === comment.authorId);
                 return (
-                  <div key={comment.id} className="flex items-start gap-3">
+                  <div key={comment.id} className="flex items-start gap-3 group">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={author?.avatar} />
                       <AvatarFallback>{author?.name[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm">{author?.name}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleString()}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{author?.name}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleString()}</p>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 flex items-center">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                            setEditingComment(comment);
+                            setEditingCommentText(comment.content);
+                          }}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCommentToDelete(comment)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-sm bg-muted/50 p-2 rounded-md mt-1">{comment.content}</p>
+                      {editingComment?.id === comment.id ? (
+                        <div className="mt-2">
+                          <RichTextEditor
+                            value={editingCommentText}
+                            onChange={setEditingCommentText}
+                          />
+                          <div className="flex justify-end gap-2 mt-2">
+                            <Button variant="ghost" size="sm" onClick={() => setEditingComment(null)}>Cancelar</Button>
+                            <Button size="sm" onClick={handleUpdateComment}>Salvar</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          className="text-sm bg-muted/50 p-2 rounded-md mt-1"
+                          dangerouslySetInnerHTML={{ __html: comment.content }}
+                        />
+                      )}
                     </div>
                   </div>
                 )
@@ -438,6 +559,20 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
           </div>
         </div>
       </SheetContent>
+      <AlertDialog open={!!commentToDelete} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o comentário.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteComment}>Continuar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

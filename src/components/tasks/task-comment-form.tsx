@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { type Task, type TaskComment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -52,11 +52,10 @@ export function TaskCommentForm({ task, onCommentAdded }: TaskCommentFormProps) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Textarea
+      <RichTextEditor
         placeholder="Digite seu comentário ou atualização aqui..."
         value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        disabled={isSubmitting}
+        onChange={setComment}
       />
       <Button type="submit" disabled={isSubmitting || !comment.trim()}>
         {isSubmitting ? 'Adicionando...' : 'Adicionar Comentário'}
