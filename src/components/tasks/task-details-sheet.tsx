@@ -36,9 +36,7 @@ import { TaskAttachmentForm } from './task-attachment-form';
 import { Button } from '../ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { formatBytes } from '@/lib/utils';
-import { serializeSlateValue } from '@/lib/slate-utils';
 import { TaskChecklist } from './task-checklist';
 
 interface TaskDetailsSheetProps {
@@ -532,9 +530,10 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                       </div>
                       {editingComment?.id === comment.id ? (
                         <div className="mt-2">
-                          <RichTextEditor
+                          <Textarea
                             value={editingCommentText}
-                            onChange={setEditingCommentText}
+                            onChange={(e) => setEditingCommentText(e.target.value)}
+                            className="text-sm"
                           />
                           <div className="flex justify-end gap-2 mt-2">
                             <Button variant="ghost" size="sm" onClick={() => setEditingComment(null)}>Cancelar</Button>
@@ -542,10 +541,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                           </div>
                         </div>
                       ) : (
-                        <div
-                          className="text-sm bg-muted/50 p-2 rounded-md mt-1"
-                          dangerouslySetInnerHTML={{ __html: serializeSlateValue(comment.content) }}
-                        />
+                        <p className="text-sm bg-muted/50 p-2 rounded-md mt-1">{comment.content}</p>
                       )}
                     </div>
                   </div>
