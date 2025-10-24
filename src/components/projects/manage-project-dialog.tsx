@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, type ReactNode, useEffect } from 'react';
+import { useState, type ReactNode, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -122,7 +122,9 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
 
   const Trigger = children ? <DialogTrigger asChild>{children}</DialogTrigger> : null;
 
-  const participantOptions = participants.map(p => ({ label: p.name, value: p.id }));
+  const participantOptions = useMemo(() => {
+    return participants.map(p => ({ label: p.name, value: p.id }));
+  }, [participants]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

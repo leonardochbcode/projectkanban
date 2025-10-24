@@ -975,17 +975,43 @@ export async function deleteTask(id: string): Promise<{ success: boolean }> {
     return { success: result.rowCount > 0 };
 }
 
-export async function getMyPendingTasks(userId: string): Promise<Task[]> {
+export async function getMyPendingTasks(
+    userId: string,
+    filters: { projectId?: string; statuses?: string[]; priorities?: string[] } = {}
+): Promise<Task[]> {
+    const { projectId, statuses, priorities } = filters;
+    const params: any[] = [userId];
+    let whereClauses = ['t.assignee_id = $1'];
+    let paramIndex = 2;
+
+    if (projectId) {
+        whereClauses.push(`t.project_id = $${paramIndex++}`);
+        params.push(projectId);
+    }
+
+    if (statuses && statuses.length > 0) {
+        whereClauses.push(`t.status = ANY($${paramIndex++}::text[])`);
+        params.push(statuses);
+    } else {
+        whereClauses.push(`t.status NOT IN ('Concluída', 'Cancelado')`);
+    }
+
+    if (priorities && priorities.length > 0) {
+        whereClauses.push(`t.priority = ANY($${paramIndex++}::text[])`);
+        params.push(priorities);
+    }
+
     const sql = `
         SELECT
             t.id, t.title, t.description, t.status, t.priority, t.due_date,
             t.assignee_id, t.project_id, t.creation_date, t.conclusion_date, t.creator_id
         FROM tasks t
-        WHERE t.assignee_id = $1
-          AND t.status NOT IN ('Concluída', 'Cancelado')
-        ORDER BY t.due_date ASC;
+        WHERE ${whereClauses.join(' AND ')}
+        ORDER BY
+            CASE WHEN t.due_date < NOW() AND t.status NOT IN ('Concluída', 'Cancelado') THEN 0 ELSE 1 END,
+            t.due_date ASC;
     `;
-    const tasks = await queryMany<any>(sql, [userId]);
+    const tasks = await queryMany<any>(sql, params);
     return tasks.map(t => ({
         ...t,
         dueDate: t.due_date,

@@ -44,10 +44,9 @@ interface MultiSelectProps
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
+  value: string[];
   onValueChange: (value: string[]) => void;
-  defaultValue?: string[];
   placeholder?: string;
-  animation?: number;
   maxCount?: number;
   asChild?: boolean;
   className?: string;
@@ -61,10 +60,9 @@ const MultiSelect = React.forwardRef<
     {
       variant,
       options,
+      value = [],
       onValueChange,
-      defaultValue = [],
       placeholder = 'Select options',
-      animation = 0,
       maxCount = 3,
       asChild = false,
       className,
@@ -72,13 +70,7 @@ const MultiSelect = React.forwardRef<
     },
     ref,
   ) => {
-    const [selectedValues, setSelectedValues] =
-      React.useState<string[]>(defaultValue);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
-
-    React.useEffect(() => {
-      setSelectedValues(defaultValue);
-    }, [defaultValue]);
 
     const handleInputKeyDown = (
       event: React.KeyboardEvent<HTMLInputElement>,
@@ -86,18 +78,16 @@ const MultiSelect = React.forwardRef<
       if (event.key === 'Enter') {
         setIsPopoverOpen(true);
       } else if (event.key === 'Backspace' && !event.currentTarget.value) {
-        const newSelectedValues = [...selectedValues];
+        const newSelectedValues = [...value];
         newSelectedValues.pop();
-        setSelectedValues(newSelectedValues);
         onValueChange(newSelectedValues);
       }
     };
 
-    const toggleOption = (value: string) => {
-      const newSelectedValues = selectedValues.includes(value)
-        ? selectedValues.filter((v) => v !== value)
-        : [...selectedValues, value];
-      setSelectedValues(newSelectedValues);
+    const toggleOption = (optionValue: string) => {
+      const newSelectedValues = value.includes(optionValue)
+        ? value.filter((v) => v !== optionValue)
+        : [...value, optionValue];
       onValueChange(newSelectedValues);
     };
 
@@ -110,14 +100,14 @@ const MultiSelect = React.forwardRef<
             onClick={() => setIsPopoverOpen(!isPopoverOpen)}
             className={cn(multiSelectTriggerVariants({ variant, className }))}
           >
-            {selectedValues.length > 0 ? (
+            {value.length > 0 ? (
               <div className="flex w-full items-center gap-1">
-                {selectedValues.slice(0, maxCount).map((value) => {
-                  const option = options.find((o) => o.value === value);
+                {value.slice(0, maxCount).map((selectedValue) => {
+                  const option = options.find((o) => o.value === selectedValue);
                   if (!option) return null;
                   return (
                     <Badge
-                      key={value}
+                      key={selectedValue}
                       variant="secondary"
                       className="whitespace-nowrap"
                     >
@@ -125,12 +115,12 @@ const MultiSelect = React.forwardRef<
                     </Badge>
                   );
                 })}
-                {selectedValues.length > maxCount && (
+                {value.length > maxCount && (
                   <Badge
                     variant="secondary"
                     className="whitespace-nowrap"
                   >
-                    {`+${selectedValues.length - maxCount}`}
+                    {`+${value.length - maxCount}`}
                   </Badge>
                 )}
               </div>
@@ -162,7 +152,7 @@ const MultiSelect = React.forwardRef<
                     <div
                       className={cn(
                         'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                        selectedValues.includes(option.value)
+                        value.includes(option.value)
                           ? 'bg-primary text-primary-foreground'
                           : 'opacity-50 [&_svg]:invisible',
                       )}
@@ -176,15 +166,12 @@ const MultiSelect = React.forwardRef<
                   </CommandItem>
                 ))}
               </CommandGroup>
-              {selectedValues.length > 0 && (
+              {value.length > 0 && (
                 <>
                   <CommandSeparator />
                   <CommandGroup>
                     <CommandItem
-                      onSelect={() => {
-                        setSelectedValues([]);
-                        onValueChange([]);
-                      }}
+                      onSelect={() => onValueChange([])}
                       style={{
                         pointerEvents: 'auto',
                         opacity: 1,
