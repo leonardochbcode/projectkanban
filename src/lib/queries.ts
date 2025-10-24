@@ -1174,3 +1174,50 @@ export async function deleteTaskAttachment(attachmentId: string): Promise<{ succ
     const result = await pool.query('DELETE FROM task_attachments WHERE id = $1', [attachmentId]);
     return { success: result.rowCount > 0 };
 }
+
+export async function duplicateProject(projectId: string) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Get the original project
+        const originalProject = await getProjectById(projectId);
+        if (!originalProject) {
+            throw new Error('Project not found');
+        }
+
+        // 2. Create the new project
+        const newProject = await createProject({
+            ...originalProject,
+            name: `${originalProject.name} (Cópia)`,
+            participantIds: originalProject.participantIds,
+            workbookIds: originalProject.workbookIds,
+        });
+
+        // 3. Get the original tasks
+        const originalTasks = await getTasksByProjectId(projectId);
+
+        // 4. Create new tasks for the new project
+        const newTasks = [];
+        for (const task of originalTasks) {
+            const newTask = await createTask({
+                ...task,
+                projectId: newProject.id,
+            });
+            newTasks.push(newTask);
+        }
+
+        await client.query('COMMIT');
+
+        return {
+            newProject,
+            newTasks
+        };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Failed to duplicate project:', error);
+        throw error;
+    } finally {
+        client.release();
+    }
+}

@@ -652,25 +652,38 @@ export const useStore = () => {
     dispatch({ companyInfo: info });
   }, [dispatch]);
 
-  const duplicateProject = useCallback((projectToDuplicate: Project) => {
-    const newProject: Project = {
-      ...projectToDuplicate,
-      id: `proj-${Date.now()}`,
-      name: `${projectToDuplicate.name} (Cópia)`,
-    };
-    const originalTasks = getProjectTasks(projectToDuplicate.id);
-    const newTasks: Task[] = originalTasks.map(task => ({
-      ...task,
-      id: `task-${Date.now()}-${Math.random()}`,
-      projectId: newProject.id,
-    }));
+  const duplicateProject = useCallback(async (projectToDuplicate: Project) => {
+    try {
+      const response = await fetch(`/api/projects/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: projectToDuplicate.id
+        }),
+      });
 
-    dispatch({
-      projects: [...store.projects, newProject],
-      tasks: [...store.tasks, ...newTasks]
-    });
-    return newProject;
-  }, [store.projects, store.tasks, getProjectTasks, dispatch]);
+      if (!response.ok) {
+        throw new Error('Failed to duplicate project');
+      }
+
+      const {
+        newProject,
+        newTasks
+      } = await response.json();
+
+      dispatch({
+        projects: [...store.projects, newProject],
+        tasks: [...store.tasks, ...newTasks],
+      });
+
+      return newProject;
+    } catch (error) {
+      console.error(error);
+      // Handle error appropriately in the UI
+    }
+  }, [store.projects, store.tasks, dispatch]);
 
   const addProjectTemplate = useCallback((template: Omit<ProjectTemplate, 'id'>) => {
     const newTemplate: ProjectTemplate = {
@@ -701,7 +714,11 @@ export const useStore = () => {
       });
       if (!response.ok) throw new Error('Failed to create workspace');
       const newWorkspace = await response.json();
-      dispatch({ workspaces: [...store.workspaces, newWorkspace] });
+
+      // Manually add the isOwner flag to the new workspace client-side
+      const workspaceWithOwner = { ...newWorkspace, isOwner: true };
+
+      dispatch({ workspaces: [...store.workspaces, workspaceWithOwner] });
       return newWorkspace;
     } catch (error) {
       console.error("Failed to add workspace:", error);
