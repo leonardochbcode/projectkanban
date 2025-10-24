@@ -43,10 +43,14 @@ export function TasksTable({ tasks }: TasksTableProps) {
       <TableBody>
         {tasks.map((task) => {
           const assignee = task.assigneeId ? getParticipant(task.assigneeId) : null;
+          const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'Concluída' && task.status !== 'Cancelado';
           return (
             <TaskDetailsSheet key={task.id} task={task}>
               <TableRow className="cursor-pointer">
-                <TableCell className="font-medium">{task.title}</TableCell>
+                <TableCell className="font-medium flex items-center gap-2">
+                  {task.title}
+                  {isOverdue && <Badge variant="destructive" className="text-xs">Atrasada</Badge>}
+                </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={cn(statusColors[task.status])}>
                     {task.status}
