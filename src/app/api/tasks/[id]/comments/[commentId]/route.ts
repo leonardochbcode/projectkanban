@@ -10,7 +10,7 @@ type RouteParams = {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { commentId } = params;
+    const { commentId } = await params;
     const { content } = await request.json();
 
     if (!content) {
@@ -32,7 +32,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
 export async function DELETE(request: Request, { params }: RouteParams) {
   try {
-    const { commentId } = params;
+    const { commentId } = await params;
     const result = await deleteTaskComment(commentId);
 
     if (!result.success) {

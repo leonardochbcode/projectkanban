@@ -10,7 +10,7 @@ type RouteParams = {
 
 export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { itemId } = params;
+    const { itemId } = await params;
     const body = await request.json();
     const { completed, text } = body;
 

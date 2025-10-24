@@ -67,7 +67,7 @@ export function ProjectDetailsPageContent({ projectId }: { projectId: string }) 
     return notFound();
   }
 
-  const tasks = getProjectTasks(project.id);
+  const tasks = getProjectTasks(project.id) || [];
 
   const statusOptions = [
     { label: 'A Fazer', value: 'A Fazer' },
@@ -101,11 +101,15 @@ export function ProjectDetailsPageContent({ projectId }: { projectId: string }) 
         {viewMode === 'list' && (
           <div className="mb-4">
             <MultiSelect
-              options={statusOptions}
+              options={[
+                { label: 'A Fazer', value: 'A Fazer' },
+                { label: 'Em Andamento', value: 'Em Andamento' },
+                { label: 'Concluída', value: 'Concluída' },
+                { label: 'Cancelado', value: 'Cancelado' },
+              ]}
+              value={selectedStatuses}
               onValueChange={setSelectedStatuses}
-              defaultValue={selectedStatuses}
               placeholder="Filtrar por status..."
-              className="w-full sm:w-64"
             />
           </div>
         )}

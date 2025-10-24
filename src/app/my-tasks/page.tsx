@@ -9,7 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Pagination } from '@/components/ui/pagination';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Task } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -28,32 +31,47 @@ const priorityColors: { [key: string]: string } = {
 
 
 function MyTasksPageContent() {
-    const { tasks, currentUser, allProjects } = useStore();
+    const { currentUser, projects } = useStore();
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const myTasks = useMemo(() => {
-        if (!currentUser) return [];
+    const [selectedProject, setSelectedProject] = useState<string | undefined>(undefined);
+    const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['A Fazer', 'Em Andamento']);
+    const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
 
-        const filteredTasks = tasks.filter(task => task.assigneeId === currentUser.id);
+    useEffect(() => {
+        const fetchTasks = async () => {
+            if (!currentUser) return;
+            setIsLoading(true);
+            const params = new URLSearchParams();
+            if (selectedProject) params.append('projectId', selectedProject);
+            if (selectedStatuses.length > 0) params.append('status', selectedStatuses.join(','));
+            if (selectedPriorities.length > 0) params.append('priority', selectedPriorities.join(','));
 
-        // Sort by due date (ascending)
-        const sortedTasks = filteredTasks.sort((a, b) =>
-            new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-        );
+            try {
+                const response = await fetch(`/api/my-tasks?${params.toString()}`);
+                if (!response.ok) throw new Error('Failed to fetch tasks');
+                const data = await response.json();
+                setTasks(data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-        return sortedTasks;
-    }, [tasks, currentUser]);
+        fetchTasks();
+    }, [currentUser, selectedProject, selectedStatuses, selectedPriorities]);
 
-    const totalPages = Math.ceil(myTasks.length / ITEMS_PER_PAGE);
+    const totalPages = Math.ceil(tasks.length / ITEMS_PER_PAGE);
     const paginatedTasks = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        return myTasks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [myTasks, currentPage]);
+        return tasks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [tasks, currentPage]);
 
     const getProjectName = (projectId: string) => {
-        // We need to use the raw projects from the store, not the visible ones,
-        // so we can show the project name even if the user doesn't have direct access to it.
-        return allProjects?.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
+        return projects?.find(p => p.id === projectId)?.name || 'Projeto não encontrado';
     }
 
     return (
@@ -61,9 +79,41 @@ function MyTasksPageContent() {
             <div className="flex items-center justify-between space-y-2">
                 <h1 className="text-2xl font-bold tracking-tight font-headline">Minhas Tarefas</h1>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                <Select value={selectedProject} onValueChange={(value) => setSelectedProject(value === 'all' ? undefined : value)}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Filtrar por projeto..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos os Projetos</SelectItem>
+                        {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <MultiSelect
+                    options={[
+                        { label: 'A Fazer', value: 'A Fazer' },
+                        { label: 'Em Andamento', value: 'Em Andamento' },
+                        { label: 'Concluída', value: 'Concluída' },
+                        { label: 'Cancelado', value: 'Cancelado' },
+                    ]}
+                    value={selectedStatuses}
+                    onValueChange={setSelectedStatuses}
+                    placeholder="Filtrar por status..."
+                />
+                <MultiSelect
+                    options={[
+                        { label: 'Baixa', value: 'Baixa' },
+                        { label: 'Média', value: 'Média' },
+                        { label: 'Alta', value: 'Alta' },
+                    ]}
+                    value={selectedPriorities}
+                    onValueChange={setSelectedPriorities}
+                    placeholder="Filtrar por prioridade..."
+                />
+            </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Lista de Tarefas Atribuídas</CardTitle>
+                    <CardTitle>Lista de Tarefas</CardTitle>
                     <CardDescription>
                         Todas as tarefas que foram atribuídas a você, ordenadas por prazo.
                     </CardDescription>
@@ -83,7 +133,12 @@ function MyTasksPageContent() {
                             {paginatedTasks.map(task => (
                                 <TaskDetailsSheet key={task.id} task={task}>
                                     <TableRow className="cursor-pointer text-xs">
-                                        <TableCell className="font-medium">{task.title}</TableCell>
+                                        <TableCell className="font-medium flex items-center gap-2">
+                                            {task.title}
+                                            {new Date(task.dueDate) < new Date() && task.status !== 'Concluída' && task.status !== 'Cancelado' && (
+                                                <Badge variant="destructive" className="text-xs">Atrasada</Badge>
+                                            )}
+                                        </TableCell>
                                         <TableCell>
                                             <Link href={`/projects/${task.projectId}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
                                                 {getProjectName(task.projectId)}
