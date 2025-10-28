@@ -62,7 +62,7 @@ export default function LoginPageClient() {
     <div className="flex items-center justify-center min-h-screen bg-primary">
       <Card className="w-full max-w-sm shadow-2xl shadow-black-950">
         <CardHeader>
-          <Image src="/avatars/LOGO_CHB.svg" alt="LOGO" width={220} height={210} className="mx-auto p-0 mt-[-30px]" />
+          <Image src="/avatars/LOGO_CHB.svg" alt="LOGO" width={220} height={210} className="mx-auto p-0 mt-[-25px]" />
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
           <CardDescription>
             Entre com seu email e senha para acessar o painel.

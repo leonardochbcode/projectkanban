@@ -652,25 +652,33 @@ export const useStore = () => {
     dispatch({ companyInfo: info });
   }, [dispatch]);
 
-  const duplicateProject = useCallback((projectToDuplicate: Project) => {
-    const newProject: Project = {
-      ...projectToDuplicate,
-      id: `proj-${Date.now()}`,
-      name: `${projectToDuplicate.name} (Cópia)`,
-    };
-    const originalTasks = getProjectTasks(projectToDuplicate.id);
-    const newTasks: Task[] = originalTasks.map(task => ({
-      ...task,
-      id: `task-${Date.now()}-${Math.random()}`,
-      projectId: newProject.id,
-    }));
+  const duplicateProject = useCallback(async (projectToDuplicate: any) => {
+    try {
+        const response = await fetch('/api/projects/duplicate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(projectToDuplicate),
+        });
 
-    dispatch({
-      projects: [...store.projects, newProject],
-      tasks: [...store.tasks, ...newTasks]
-    });
-    return newProject;
-  }, [store.projects, store.tasks, getProjectTasks, dispatch]);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to duplicate project');
+        }
+
+        const { newProject, newTasks } = await response.json();
+
+        // Update the local state with the newly created project and its tasks
+        dispatch({
+            projects: [...store.projects, newProject],
+            tasks: [...store.tasks, ...newTasks],
+        });
+
+        return newProject;
+    } catch (error) {
+        console.error("Failed to duplicate project:", error);
+        throw error; // Re-throw to be handled by the component
+    }
+  }, [store.projects, store.tasks, dispatch]);
 
   const addProjectTemplate = useCallback((template: Omit<ProjectTemplate, 'id'>) => {
     const newTemplate: ProjectTemplate = {

@@ -68,9 +68,9 @@ function ProjectItem({ project, getProjectTasks, getParticipant, onEditProject }
   const participants = project.participantIds.map(id => getParticipant(id)).filter(Boolean) as Participant[];
   const { duplicateProject } = useStore();
 
-  const handleDuplicate = () => {
+  const handleDuplicate = async () => {
     const newProject = duplicateProject(project);
-    onEditProject(newProject);
+    onEditProject(await newProject);
   };
 
   return (
@@ -163,7 +163,7 @@ export function WorkbooksTable({ workbooks, onEdit, onEditProject }: WorkbooksTa
         const progress = projects.length > 0 ? (completedProjects / projects.length) * 100 : 0;
 
         return (
-          <Accordion key={workbook.id} type="single" collapsible className="border rounded-lg p-4">
+          <Accordion key={workbook.id} type="single" collapsible className="border rounded-lg p-4 bg-background">
             <AccordionItem value={workbook.id} className="border-b-0">
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center justify-between w-full">

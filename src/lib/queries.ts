@@ -1,6 +1,6 @@
 import pool from './db';
 import type {
-  Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, Workspace, Workbook, ProjectTemplate, TaskComment, ChecklistItem
+    Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, Workspace, Workbook, ProjectTemplate, TaskComment, ChecklistItem
 } from './types';
 
 import { randomBytes } from 'crypto';
@@ -617,7 +617,7 @@ export async function getProjectTemplates(): Promise<ProjectTemplate[]> {
     const templates = await queryMany<ProjectTemplate>('SELECT * FROM project_templates');
     for (const template of templates) {
         const tasks = await queryMany<any>('SELECT title, description, priority, due_day_offset FROM template_tasks WHERE template_id = $1', [template.id]);
-        template.tasks = tasks.map(t => ({...t, dueDayOffset: t.due_day_offset}));
+        template.tasks = tasks.map(t => ({ ...t, dueDayOffset: t.due_day_offset }));
     }
     return templates;
 }
@@ -1173,4 +1173,101 @@ export async function createTaskAttachment(taskId: string, attachment: Omit<Task
 export async function deleteTaskAttachment(attachmentId: string): Promise<{ success: boolean }> {
     const result = await pool.query('DELETE FROM task_attachments WHERE id = $1', [attachmentId]);
     return { success: result.rowCount > 0 };
+}
+
+export async function duplicateProject(projectData: any) {
+    const { id, ...newProjectData } = projectData;
+    const { name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId, participantIds, workbookIds } = newProjectData;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        console.log(`Starting duplication for project ID: ${id}`);
+
+        // 1. Get original tasks before creating the new project
+        const originalTasks = await getTasksByProjectId(id);
+        console.log(`Found ${originalTasks.length} tasks to duplicate.`);
+
+        // 2. Create the new project record
+        const newProjectId = `prj_${randomBytes(8).toString('hex')}`;
+        const projectInsertQuery = `
+            INSERT INTO projects (id, name, description, start_date, end_date, status, workspace_id, client_id, opportunity_id, pmo_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *;
+        `;
+        const projectResult = await client.query(projectInsertQuery, [newProjectId, name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId]);
+        const newProject = projectResult.rows[0];
+        console.log(`New project created with ID: ${newProject.id}`);
+
+        // 3. Copy participant associations
+        if (participantIds && participantIds.length > 0) {
+            for (const participantId of participantIds) {
+                await client.query('INSERT INTO project_participants (project_id, participant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [newProjectId, participantId]);
+            }
+            console.log(`Copied ${participantIds.length} participant associations.`);
+        }
+
+        // 4. Copy workbook associations
+        if (workbookIds && workbookIds.length > 0) {
+            for (const workbookId of workbookIds) {
+                await client.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [newProjectId, workbookId]);
+            }
+            console.log(`Copied ${workbookIds.length} workbook associations.`);
+        }
+
+        // 5. Create new tasks for the new project
+        const newTasks = [];
+        for (const task of originalTasks) {
+            const newTaskId = `task_${randomBytes(8).toString('hex')}`;
+            const { title, description, status, priority, startDate, dueDate, assigneeId, creatorId } = task;
+            const taskInsertQuery = `
+                INSERT INTO tasks (id, title, description, status, priority, start_date, due_date, assignee_id, project_id, creator_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                RETURNING *;
+            `;
+            const taskResult = await client.query(taskInsertQuery, [newTaskId, title, description, status, priority, startDate, dueDate, assigneeId, newProjectId, creatorId]);
+            newTasks.push(taskResult.rows[0]);
+        }
+        console.log(`Successfully created ${newTasks.length} new tasks.`);
+
+        await client.query('COMMIT');
+        console.log('Transaction committed successfully.');
+
+        // 6. Construct the final objects to return
+        const finalProject = {
+            ...newProject,
+            startDate: newProject.start_date,
+            endDate: newProject.end_date,
+            workspaceId: newProject.workspace_id,
+            clientId: newProject.client_id,
+            opportunityId: newProject.opportunity_id,
+            pmoId: newProject.pmo_id,
+            participantIds: participantIds || [],
+            workbookIds: workbookIds || [],
+        };
+
+        const finalTasks = newTasks.map(t => ({
+            ...t,
+            startDate: t.start_date,
+            dueDate: t.due_date,
+            assigneeId: t.assignee_id,
+            projectId: t.project_id,
+            creationDate: t.creation_date,
+            conclusionDate: t.conclusion_date,
+            creatorId: t.creator_id,
+            comments: [],
+            checklist: [],
+            attachments: [],
+        }));
+
+        return { newProject: finalProject, newTasks: finalTasks };
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Failed to duplicate project inside transaction:', error);
+        throw new Error(`Failed to duplicate project: ${error instanceof Error ? error.message : 'Unknown database error'}`);
+    } finally {
+        client.release();
+        console.log('Database client released.');
+    }
 }

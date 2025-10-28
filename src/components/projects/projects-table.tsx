@@ -100,8 +100,14 @@ export function ProjectsTable({ projects, onEdit }: ProjectsTableProps) {
     const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
     const handleDuplicate = (project: Project) => {
-        const newProject = duplicateProject(project);
-        onEdit(newProject);
+        const { id, ...projectWithoutId } = project;
+        const newProject = {
+            ...projectWithoutId,
+            name: `${project.name} (Cópia)`,
+            isDuplicate: true,
+            id: project.id,
+        };
+        onEdit(newProject as any);
     };
 
     const toggleRow = (projectId: string) => {

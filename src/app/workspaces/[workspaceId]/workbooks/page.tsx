@@ -54,7 +54,7 @@ function WorkbooksPageContent() {
           <h1 className="text-3xl font-bold tracking-tight font-headline">Workbooks: {workspace.name}</h1>
           <p className="text-muted-foreground">{workspace.description}</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 bg-background">
           <ManageWorkbookDialog workbook={editingWorkbook} open={isDialogOpen} onOpenChange={handleDialogClose} workspaceId={workspaceId}>
             <Button onClick={handleAdd}>
               <PlusCircle className="mr-2 h-4 w-4" />

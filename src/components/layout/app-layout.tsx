@@ -83,13 +83,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isGuest = currentUser?.userType === 'Convidado';
 
   const NavLinks = () => (
-    <nav className="grid items-start gap-1 px-4 py-8 text-xs font-medium lg:px-1 fixed max-w-[15em]">
+    <nav className="grid items-start gap-1 px-4 py-8 text-xs font-medium lg:px-1 fixed max-w-[16em]">
       {accessibleMainNavItems.map(({ href, label, icon: Icon }) => (
         <Link
           key={label}
           href={href}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-2 py-3 text-[var(--header-foreground)] transition-all hover:text-[var(--header-foreground)]/80',
+            'flex items-center gap-3 rounded-lg px-8 py-3 text-[var(--header-foreground)] transition-all hover:text-[var(--header-foreground)]/80',
             { 'bg-accent text-accent-foreground': pathname.startsWith(href) && href !== '/' },
             { 'bg-accent text-accent-foreground': pathname === '/' && href === '/' },
             { 'bg-accent text-accent-foreground': pathname.startsWith('/opportunities') && href.startsWith('/opportunities') },
@@ -105,7 +105,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <Link
           href="/workspaces"
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-[var(--header-foreground)] transition-all hover:text-[var(--header-foreground)]/80',
+            'flex items-center gap-3 rounded-lg px-8 py-3 text-[var(--header-foreground)] transition-all hover:text-[var(--header-foreground)]/80',
             { 'bg-accent text-accent-foreground': pathname.startsWith('/workspaces') },
           )}
         >
@@ -117,8 +117,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden bg-[var(--header-background)] md:block w-[11em]">
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] bg-sky-50">
+      <div className="hidden bg-[var(--header-background)] md:block w-[15em]">
         <div className="flex h-full max-h-screen flex-col gap-2 fixed">
           <div className="flex h-10">
             <Link href="/" className="sticky top-0 w-[300px] flex items-center gap-2 font-semibold font-headline text-[var(--header-foreground)] bg-[var(--header-background)]">
@@ -167,7 +167,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
           <UserNav />
         </header>
-        <main className="flex flex-1 flex-col gap-4 bg-background max-w-[1650px] mx-[-40px]">
+        <main className="flex flex-1 flex-col gap-4max-w-[95.6em] p-2 overflow-x-hidden">
           {children}
         </main>
       </div>

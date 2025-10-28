@@ -29,7 +29,7 @@ import { format, parseISO } from 'date-fns';
 
 interface ManageProjectDialogProps {
   children?: ReactNode; // Tornando children opcional
-  project?: Project;
+  project?: Project & { isDuplicate?: boolean, id?: string };
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   workspaceId?: string; // Tornando opcional, já que agora podemos editar de qualquer lugar
@@ -44,7 +44,7 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
   const open = isControlled ? openProp : internalOpen;
   const setOpen = isControlled ? onOpenChangeProp! : setInternalOpen;
 
-  const { addProject, updateProject, projectTemplates, workspaces, clients, participants, currentUser } = useStore();
+  const { addProject, updateProject, duplicateProject, projectTemplates, workspaces, clients, participants, currentUser } = useStore();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -106,17 +106,18 @@ export function ManageProjectDialog({ children, project, open: openProp, onOpenC
     };
 
     try {
-      if (project) {
+      if (project?.isDuplicate && project?.id) {
+        await duplicateProject({ ...projectData, id: project.id });
+      } else if (project?.id) {
         await updateProject({ id: project.id, ...projectData });
       } else {
-        // On creation, include the workbookId to associate the project
         await addProject(projectData, templateId);
       }
       setOpen(false);
     } catch (error) {
       console.error("Failed to save project:", error);
       // Optionally, show an error message to the user
-      alert("Falha ao salvar o projeto. Tente novamente.");
+      alert(`Falha ao salvar o projeto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 
