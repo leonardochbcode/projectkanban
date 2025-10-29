@@ -46,7 +46,7 @@ export function ProjectHeader({ project, viewMode, setViewMode }: ProjectHeaderP
   }
 
   return (
-    <div className="p-4 sm:p-6 border-b text-xs">
+    <div className="p-4 sm:p-6 text-xs">
       {workspace && (
         <div className="text-xs text-muted-foreground flex items-center gap-1.5 mb-2">
           <Link href="/workspaces" className="hover:text-primary">Espaços de Trabalho</Link>

@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 const multiSelectTriggerVariants = cva(
-  'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background [&>span]:line-clamp-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+  'flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background [&>span]:line-clamp-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -101,7 +101,7 @@ const MultiSelect = React.forwardRef<
             className={cn(multiSelectTriggerVariants({ variant, className }))}
           >
             {value.length > 0 ? (
-              <div className="flex w-full items-center gap-1">
+              <div className="flex w-full items-center gap-1 flex-wrap">
                 {value.slice(0, maxCount).map((selectedValue) => {
                   const option = options.find((o) => o.value === selectedValue);
                   if (!option) return null;

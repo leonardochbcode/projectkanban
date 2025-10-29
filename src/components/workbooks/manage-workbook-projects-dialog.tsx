@@ -87,6 +87,7 @@ export function ManageWorkbookProjectsDialog({ workbook, open, onOpenChange }: M
             onValueChange={setSelectedProjectIds}
             placeholder="Selecione os projetos..."
             maxCount={100} // A large number to allow many projects
+            className=''
           />
         </div>
         <DialogFooter>

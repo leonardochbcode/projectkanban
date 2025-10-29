@@ -28,7 +28,7 @@ function KanbanColumn({ id, status, tasks }: KanbanColumnProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`bg-muted/50 rounded-lg p-4 transition-colors min-h-[150px] ${isOver ? 'bg-muted' : ''
+      className={`bg-sky-100/70 rounded-lg p-4 transition-colors min-h-[150px] ${isOver ? 'bg-muted' : ''
         }`}
     >
       <h2 className="text-xs font-semibold mb-4 font-headline">{status}</h2>

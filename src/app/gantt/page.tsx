@@ -33,6 +33,8 @@ function GanttPageContent() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [viewMode, setViewMode] = useState<ViewMode>('Day');
+    const [chartKey, setChartKey] = useState(0);
+
 
     const ganttRef = useRef<SVGSVGElement | null>(null);
     const ganttInstance = useRef<Gantt | null>(null);
@@ -69,6 +71,7 @@ function GanttPageContent() {
         }
     };
 
+
     const handleGenerateChart = async () => {
         if (!selectedProject) {
             alert('Por favor, selecione um projeto.');
@@ -76,6 +79,10 @@ function GanttPageContent() {
         }
 
         setIsLoading(true);
+
+        setChartKey(k => k + 1);
+        ganttInstance.current = null
+
         try {
             const response = await fetch(`/api/projects/${selectedProject}/tasks`);
             if (!response.ok) throw new Error('Falha ao buscar tarefas do projeto.');
@@ -94,7 +101,7 @@ function GanttPageContent() {
 
             if (projectTasks.length === 0) {
                 alert('Nenhuma tarefa encontrada para os filtros aplicados.');
-                ganttInstance.current?.clear();
+                ganttInstance.current = null;
                 setTasks([]);
             } else {
                 setTasks(projectTasks);
@@ -109,52 +116,63 @@ function GanttPageContent() {
     };
 
     useEffect(() => {
-        if (tasks.length > 0 && ganttRef.current) {
-            ganttInstance.current?.clear();
+        if (tasks.length === 0 || !chartContainerRef.current) return;
 
-            const ganttTasks = tasks.map(task => ({
-                id: task.id,
-                name: `Tarefa: ${task.title}`,
-                start: formatDate(task.startDate || task.creationDate),
-                end: formatDate(task.conclusionDate || task.dueDate),
-                progress: task.status === 'Concluída' ? 100 : 0,
-                dependencies: '',
-            }));
+        // 🔹 Limpa completamente o container anterior
+        chartContainerRef.current.innerHTML = '';
 
-            const validGanttTasks = ganttTasks.filter(t => t.start && t.end);
+        // 🔹 Destroi qualquer instância antiga
+        ganttInstance.current = null;
 
-            if (validGanttTasks.length === 0) {
-                alert('Nenhuma das tarefas filtradas tem datas válidas para exibir.');
-                return;
-            }
+        // 🔹 Cria o gráfico diretamente dentro do container
+        const ganttTasks = tasks.map(task => ({
+            id: task.id,
+            name: `Tarefa: ${task.title}`,
+            start: formatDate(task.startDate || task.creationDate),
+            end: formatDate(task.conclusionDate || task.dueDate),
+            progress: task.status === 'Concluída' ? 100 : 0,
+            dependencies: '',
+        }));
 
-            ganttInstance.current = new Gantt(ganttRef.current, validGanttTasks, {
-                header_height: 60,
-                column_width: 30,
-                step: 24,
-                view_modes: viewModes,
-                bar_height: 30,
-                bar_corner_radius: 6,
-                arrow_curve: 10,
-                padding: 35,
-                view_mode: viewMode,
-                date_format: 'YYYY-MM-DD',
-                language: 'pt',
-                scroll_to: 'start',
-                custom_popup_html: task => {
-                    const ganttTask = tasks.find(t => t.id === task.id);
-                    return `
-                        <div class="p-3 bg-white shadow-lg rounded-lg border text-base">
-                            <h4 class="font-bold text-lg mb-2">${task.name}</h4>
-                            <p class="text-muted-foreground">Início: ${formatDate(ganttTask?.startDate)}</p>
-                            <p class="text-muted-foreground">Fim: ${formatDate(ganttTask?.dueDate)}</p>
-                            <p class="text-muted-foreground mt-1">Status: ${ganttTask?.status}</p>
-                        </div>
-                    `;
-                }
-            });
+        const validGanttTasks = ganttTasks.filter(t => t.start && t.end);
+        if (validGanttTasks.length === 0) {
+            alert('Nenhuma das tarefas filtradas tem datas válidas para exibir.');
+            return;
         }
-    }, [tasks]);
+
+        // 🔹 O frappe-gantt criará o <svg> automaticamente dentro do div
+        ganttInstance.current = new Gantt(chartContainerRef.current, validGanttTasks, {
+            header_height: 60,
+            column_width: 30,
+            bar_height: 30,
+            bar_corner_radius: 6,
+            view_mode: viewMode,
+            date_format: 'YYYY-MM-DD',
+            language: 'pt',
+            padding: 35,
+            scroll_to: 'start',
+            custom_popup_html: task => {
+                const ganttTask = tasks.find(t => t.id === task.id);
+                return `
+              <div class="p-3 bg-white shadow-lg rounded-lg border text-base">
+                <h4 class="font-bold text-lg mb-2">${task.name}</h4>
+                <p class="text-muted-foreground">Início: ${formatDate(ganttTask?.startDate)}</p>
+                <p class="text-muted-foreground">Fim: ${formatDate(ganttTask?.dueDate)}</p>
+                <p class="text-muted-foreground mt-1">Status: ${ganttTask?.status}</p>
+              </div>
+            `;
+            }
+        });
+
+        // 🔹 Cleanup para quando o componente desmontar
+        return () => {
+            if (chartContainerRef.current) {
+                chartContainerRef.current.innerHTML = '';
+            }
+            ganttInstance.current = null;
+        };
+    }, [tasks, viewMode]);
+
 
 
     return (
@@ -226,7 +244,7 @@ function GanttPageContent() {
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className='max-w-[76em]'>
                         {tasks.length > 0 ? (
                             <div
                                 ref={chartContainerRef}
@@ -234,6 +252,7 @@ function GanttPageContent() {
                             >
                                 <svg ref={ganttRef}></svg>
                             </div>
+
                         ) : (
                             <p className="text-center text-muted-foreground py-8">
                                 Selecione um projeto e clique em "Gerar Gráfico" para visualizar o cronograma.
