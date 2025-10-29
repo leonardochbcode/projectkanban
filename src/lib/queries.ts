@@ -1182,11 +1182,11 @@ export async function duplicateProject(projectData: any) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        console.log(`Starting duplication for project ID: ${id}`);
+        // console.log(`Starting duplication for project ID: ${id}`);
 
         // 1. Get original tasks before creating the new project
         const originalTasks = await getTasksByProjectId(id);
-        console.log(`Found ${originalTasks.length} tasks to duplicate.`);
+        // console.log(`Found ${originalTasks.length} tasks to duplicate.`);
 
         // 2. Create the new project record
         const newProjectId = `prj_${randomBytes(8).toString('hex')}`;
@@ -1197,14 +1197,14 @@ export async function duplicateProject(projectData: any) {
         `;
         const projectResult = await client.query(projectInsertQuery, [newProjectId, name, description, startDate, endDate, status, workspaceId, clientId, opportunityId, pmoId]);
         const newProject = projectResult.rows[0];
-        console.log(`New project created with ID: ${newProject.id}`);
+        // console.log(`New project created with ID: ${newProject.id}`);
 
         // 3. Copy participant associations
         if (participantIds && participantIds.length > 0) {
             for (const participantId of participantIds) {
                 await client.query('INSERT INTO project_participants (project_id, participant_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [newProjectId, participantId]);
             }
-            console.log(`Copied ${participantIds.length} participant associations.`);
+            // console.log(`Copied ${participantIds.length} participant associations.`);
         }
 
         // 4. Copy workbook associations
@@ -1212,7 +1212,7 @@ export async function duplicateProject(projectData: any) {
             for (const workbookId of workbookIds) {
                 await client.query('INSERT INTO project_workbooks (project_id, workbook_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [newProjectId, workbookId]);
             }
-            console.log(`Copied ${workbookIds.length} workbook associations.`);
+            // console.log(`Copied ${workbookIds.length} workbook associations.`);
         }
 
         // 5. Create new tasks for the new project
@@ -1228,10 +1228,10 @@ export async function duplicateProject(projectData: any) {
             const taskResult = await client.query(taskInsertQuery, [newTaskId, title, description, status, priority, startDate, dueDate, assigneeId, newProjectId, creatorId]);
             newTasks.push(taskResult.rows[0]);
         }
-        console.log(`Successfully created ${newTasks.length} new tasks.`);
+        // console.log(`Successfully created ${newTasks.length} new tasks.`);
 
         await client.query('COMMIT');
-        console.log('Transaction committed successfully.');
+        // console.log('Transaction committed successfully.');
 
         // 6. Construct the final objects to return
         const finalProject = {
@@ -1268,6 +1268,6 @@ export async function duplicateProject(projectData: any) {
         throw new Error(`Failed to duplicate project: ${error instanceof Error ? error.message : 'Unknown database error'}`);
     } finally {
         client.release();
-        console.log('Database client released.');
+        // console.log('Database client released.');
     }
 }

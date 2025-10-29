@@ -140,7 +140,10 @@ function GanttPageContent() {
             return;
         }
 
-        // 🔹 O frappe-gantt criará o <svg> automaticamente dentro do div
+        const hoje = new Date();
+        const DiasAtras = new Date(hoje);
+        DiasAtras.setDate(hoje.getDate() - 25);
+
         ganttInstance.current = new Gantt(chartContainerRef.current, validGanttTasks, {
             header_height: 60,
             column_width: 30,
@@ -150,7 +153,7 @@ function GanttPageContent() {
             date_format: 'YYYY-MM-DD',
             language: 'pt',
             padding: 35,
-            scroll_to: 'start',
+            scroll_to: DiasAtras,
             custom_popup_html: task => {
                 const ganttTask = tasks.find(t => t.id === task.id);
                 return `
@@ -244,7 +247,7 @@ function GanttPageContent() {
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent className='max-w-[76em]'>
+                    <CardContent className='max-w-[80vw]'>
                         {tasks.length > 0 ? (
                             <div
                                 ref={chartContainerRef}

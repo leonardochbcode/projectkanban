@@ -62,72 +62,129 @@ function TaskItem({ task, getParticipant }: { task: Task, getParticipant: (id?: 
   );
 }
 
+import { useSession } from 'next-auth/react';
+import { useToast } from '@/hooks/use-toast';
+
 function ProjectItem({ project, getProjectTasks, getParticipant, onEditProject }: { project: Project, getProjectTasks: (id: string) => Task[], getParticipant: (id?: string) => Participant | undefined, onEditProject: (project: Project) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const tasks = getProjectTasks(project.id);
   const participants = project.participantIds.map(id => getParticipant(id)).filter(Boolean) as Participant[];
-  const { duplicateProject } = useStore();
+  const { duplicateProject, deleteProject } = useStore();
+  const { data: session } = useSession();
+  const { toast } = useToast();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleDuplicate = async () => {
     const newProject = duplicateProject(project);
     onEditProject(await newProject);
   };
 
+  const handleDeleteClick = () => {
+    if (project.status !== 'Cancelado') {
+      toast({
+        title: 'Ação não permitida',
+        description: 'Somente projetos cancelados podem ser excluídos.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteProject(project.id);
+      toast({
+        title: 'Projeto excluído',
+        description: 'O projeto foi excluído com sucesso.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao excluir projeto',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
+    setIsDeleteDialogOpen(false);
+  };
+
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="flex items-center justify-between p-3 border rounded-md">
-        <div className="flex items-center gap-3">
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-          <Link href={`/projects/${project.id}`} className="font-semibold hover:underline">
-            Projeto: {project.name}
-          </Link>
-        </div>
-        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Users className="h-4 w-4" />
-            <span>{participants.length} Participante(s)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className={`h-2 w-2 rounded-full ${statusColors[project.status] || 'bg-gray-400'}`} />
-            <span>{project.status}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-4 w-4" />
-            <span>{format(new Date(project.endDate), 'dd/MM/yyyy')}</span>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-5 w-5" />
+    <>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex items-center justify-between p-3 border rounded-md">
+          <div className="flex items-center gap-3">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onSelect={() => onEditProject(project)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={handleDuplicate}>
-                <MoreVertical className="mr-2 h-4 w-4" />
-                Duplicar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </CollapsibleTrigger>
+            <Link href={`/projects/${project.id}`} className="font-semibold hover:underline">
+              Projeto: {project.name}
+            </Link>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Users className="h-4 w-4" />
+              <span>{participants.length} Participante(s)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className={`h-2 w-2 rounded-full ${statusColors[project.status] || 'bg-gray-400'}`} />
+              <span>{project.status}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4" />
+              <span>{format(new Date(project.endDate), 'dd/MM/yyyy')}</span>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onSelect={() => onEditProject(project)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleDuplicate}>
+                  <MoreVertical className="mr-2 h-4 w-4" />
+                  Duplicar
+                </DropdownMenuItem>
+                {session?.user?.id === project.pmoId && (
+                  <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleDeleteClick(); }} className="text-red-600">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Deletar
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
-      <CollapsibleContent className="p-0 pl-12">
-        <div className="mt-2 border-l-2">
-          {tasks.length > 0 ? (
-            tasks.map(task => <TaskItem key={task.id} task={task} getParticipant={getParticipant} />)
-          ) : (
-            <p className="p-4 text-sm text-muted-foreground">Nenhuma tarefa neste projeto.</p>
-          )}
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+        <CollapsibleContent className="p-0 pl-12">
+          <div className="mt-2 border-l-2">
+            {tasks.length > 0 ? (
+              tasks.map(task => <TaskItem key={task.id} task={task} getParticipant={getParticipant} />)
+            ) : (
+              <p className="p-4 text-sm text-muted-foreground">Nenhuma tarefa neste projeto.</p>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza que deseja excluir esse projeto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. Isso excluirá permanentemente o projeto e todos os seus dados associados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Sim</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

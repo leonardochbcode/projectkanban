@@ -340,19 +340,24 @@ export const useStore = () => {
   }, [store.projects, dispatch]);
 
   const deleteProject = useCallback(async (projectId: string) => {
+    const originalProjects = [...store.projects];
+    const originalTasks = [...store.tasks];
+    dispatch({
+      projects: store.projects.filter(p => p.id !== projectId),
+      tasks: store.tasks.filter(t => t.projectId !== projectId)
+    });
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Failed to delete project');
-
-      dispatch({
-        projects: store.projects.filter(p => p.id !== projectId),
-        tasks: store.tasks.filter(t => t.projectId !== projectId) // Also remove tasks locally
-      });
-
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete project');
+      }
     } catch (error) {
       console.error("Failed to delete project:", error);
+      dispatch({ projects: originalProjects, tasks: originalTasks });
+      throw error;
     }
   }, [store.projects, store.tasks, dispatch]);
 
