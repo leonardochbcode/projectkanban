@@ -685,24 +685,69 @@ export const useStore = () => {
     }
   }, [store.projects, store.tasks, dispatch]);
 
-  const addProjectTemplate = useCallback((template: Omit<ProjectTemplate, 'id'>) => {
-    const newTemplate: ProjectTemplate = {
-      id: `template-${Date.now()}`,
-      ...template,
-    };
-    dispatch({ projectTemplates: [...store.projectTemplates, newTemplate] });
+  const addProjectTemplate = useCallback(async (template: Omit<ProjectTemplate, 'id'>) => {
+    try {
+      const response = await fetch('/api/project-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(template),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create template');
+      }
+      const newTemplate = await response.json();
+      dispatch({ projectTemplates: [...store.projectTemplates, newTemplate] });
+    } catch (error) {
+      console.error("Failed to add project template:", error);
+      throw error;
+    }
   }, [store.projectTemplates, dispatch]);
 
-  const updateProjectTemplate = useCallback((updatedTemplate: ProjectTemplate) => {
+  const updateProjectTemplate = useCallback(async (updatedTemplate: ProjectTemplate) => {
+    const originalTemplates = [...store.projectTemplates];
     dispatch({
       projectTemplates: store.projectTemplates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t)
     });
+    try {
+      const response = await fetch(`/api/project-templates/${updatedTemplate.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTemplate),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update template');
+      }
+      const returnedTemplate = await response.json();
+      dispatch({
+        projectTemplates: store.projectTemplates.map(t => t.id === returnedTemplate.id ? returnedTemplate : t)
+      });
+    } catch (error) {
+      console.error("Failed to update project template:", error);
+      dispatch({ projectTemplates: originalTemplates });
+      throw error;
+    }
   }, [store.projectTemplates, dispatch]);
 
-  const deleteProjectTemplate = useCallback((templateId: string) => {
+  const deleteProjectTemplate = useCallback(async (templateId: string) => {
+    const originalTemplates = [...store.projectTemplates];
     dispatch({
       projectTemplates: store.projectTemplates.filter(t => t.id !== templateId)
     });
+    try {
+      const response = await fetch(`/api/project-templates/${templateId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete template');
+      }
+    } catch (error) {
+      console.error("Failed to delete project template:", error);
+      dispatch({ projectTemplates: originalTemplates });
+      throw error;
+    }
   }, [store.projectTemplates, dispatch]);
 
   const addWorkspace = useCallback(async (workspace: Omit<Workspace, 'id'>) => {

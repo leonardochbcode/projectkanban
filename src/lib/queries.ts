@@ -614,13 +614,143 @@ export async function deleteOpportunity(id: string): Promise<{ success: boolean 
 
 // Project Templates
 export async function getProjectTemplates(): Promise<ProjectTemplate[]> {
-    const templates = await queryMany<ProjectTemplate>('SELECT * FROM project_templates');
-    for (const template of templates) {
-        const tasks = await queryMany<any>('SELECT title, description, priority, due_day_offset FROM template_tasks WHERE template_id = $1', [template.id]);
-        template.tasks = tasks.map(t => ({ ...t, dueDayOffset: t.due_day_offset }));
-    }
-    return templates;
+    const sql = `
+        SELECT
+            pt.id,
+            pt.name,
+            pt.description,
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'title', tt.title,
+                        'description', tt.description,
+                        'priority', tt.priority,
+                        'dueDayOffset', tt.due_day_offset
+                    )
+                ) FILTER (WHERE tt.id IS NOT NULL),
+                '[]'::json
+            ) as tasks
+        FROM
+            project_templates pt
+        LEFT JOIN
+            template_tasks tt ON pt.id = tt.template_id
+        GROUP BY
+            pt.id
+        ORDER BY
+            pt.name;
+    `;
+    return queryMany<ProjectTemplate>(sql);
 }
+
+export async function getProjectTemplateById(id: string): Promise<ProjectTemplate | null> {
+    const sql = `
+        SELECT
+            pt.id,
+            pt.name,
+            pt.description,
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'title', tt.title,
+                        'description', tt.description,
+                        'priority', tt.priority,
+                        'dueDayOffset', tt.due_day_offset
+                    )
+                ) FILTER (WHERE tt.id IS NOT NULL),
+                '[]'::json
+            ) as tasks
+        FROM
+            project_templates pt
+        LEFT JOIN
+            template_tasks tt ON pt.id = tt.template_id
+        WHERE
+            pt.id = $1
+        GROUP BY
+            pt.id;
+    `;
+    return queryOne<ProjectTemplate>(sql, [id]);
+}
+
+export async function createProjectTemplate(template: Omit<ProjectTemplate, 'id'>): Promise<ProjectTemplate> {
+    const newId = `tmpl_${randomBytes(8).toString('hex')}`;
+    const { name, description, tasks } = template;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const templateResult = await client.query(
+            'INSERT INTO project_templates (id, name, description) VALUES ($1, $2, $3) RETURNING *',
+            [newId, name, description]
+        );
+        const newTemplate = templateResult.rows[0];
+
+        if (tasks && tasks.length > 0) {
+            for (const task of tasks) {
+                await client.query(
+                    'INSERT INTO template_tasks (template_id, title, description, priority, due_day_offset) VALUES ($1, $2, $3, $4, $5)',
+                    [newId, task.title, task.description, task.priority, task.dueDayOffset]
+                );
+            }
+        }
+
+        await client.query('COMMIT');
+
+        return { ...newTemplate, tasks: tasks || [] };
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error('Failed to create project template:', e);
+        throw e;
+    } finally {
+        client.release();
+    }
+}
+
+export async function updateProjectTemplate(id: string, template: Partial<Omit<ProjectTemplate, 'id'>>): Promise<ProjectTemplate | null> {
+    const { name, description, tasks } = template;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        if (name !== undefined || description !== undefined) {
+            await client.query(
+                'UPDATE project_templates SET name = COALESCE($1, name), description = COALESCE($2, description) WHERE id = $3',
+                [name, description, id]
+            );
+        }
+
+
+        if (tasks !== undefined) {
+            await client.query('DELETE FROM template_tasks WHERE template_id = $1', [id]);
+            if (tasks.length > 0) {
+                for (const task of tasks) {
+                    await client.query(
+                        'INSERT INTO template_tasks (template_id, title, description, priority, due_day_offset) VALUES ($1, $2, $3, $4, $5)',
+                        [id, task.title, task.description, task.priority, task.dueDayOffset]
+                    );
+                }
+            }
+        }
+
+        await client.query('COMMIT');
+    } catch (e) {
+        await client.query('ROLLBACK');
+        console.error('Failed to update project template:', e);
+        return null;
+    } finally {
+        client.release();
+    }
+
+    return getProjectTemplateById(id);
+}
+
+export async function deleteProjectTemplate(id: string): Promise<{ success: boolean }> {
+    // ON DELETE CASCADE will handle template_tasks
+    const result = await pool.query('DELETE FROM project_templates WHERE id = $1', [id]);
+    return { success: result.rowCount > 0 };
+}
+
 
 export async function getAllProjects(): Promise<Project[]> {
     const sql = `
