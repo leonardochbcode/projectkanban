@@ -1197,16 +1197,14 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
             statusToUpdate = 'Concluída';
         }
     } else if (status && status !== originalTask.status) {
-        if (status === 'Concluída') {
-            if (originalTask.conclusionDate === null) {
-                updates.push('conclusion_date = NOW()');
-            }
-        } else {
-            addUpdate('conclusion_date', null);
+        if (status === 'Concluída' && originalTask.conclusionDate === null) {
+            updates.push('conclusion_date = NOW()');
         }
     }
 
-    addUpdate('status', statusToUpdate);
+    if (statusToUpdate !== undefined) {
+        addUpdate('status', statusToUpdate);
+    }
 
     if (updates.length === 0) {
         return originalTask;
