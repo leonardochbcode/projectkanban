@@ -1170,42 +1170,55 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
     const originalTask = await getTaskById(id);
     if (!originalTask) return null;
 
-    const params: (string | null | undefined)[] = [title, description, status, priority, startDate, dueDate, assigneeId, projectId, id];
+    const updates: string[] = [];
+    const params: (string | null | undefined)[] = [];
+    let paramIndex = 1;
+
+    const addUpdate = (field: string, value: any) => {
+        if (value !== undefined) {
+            updates.push(`${field} = $${paramIndex++}`);
+            params.push(value);
+        }
+    };
+
+    addUpdate('title', title);
+    addUpdate('description', description);
+    addUpdate('priority', priority);
+    addUpdate('start_date', startDate);
+    addUpdate('due_date', dueDate);
+    addUpdate('assignee_id', assigneeId);
+    addUpdate('project_id', projectId);
+
     let statusToUpdate = status;
-    let conclusionDateClause = '';
 
     if (conclusionDate !== undefined) {
-        conclusionDateClause = `, conclusion_date = $10`;
-        params.push(conclusionDate);
+        addUpdate('conclusion_date', conclusionDate);
         if (conclusionDate) {
             statusToUpdate = 'Concluída';
-            params[2] = 'Concluída';
         }
     } else if (status && status !== originalTask.status) {
         if (status === 'Concluída') {
             if (originalTask.conclusionDate === null) {
-                conclusionDateClause = ', conclusion_date = NOW()';
+                updates.push('conclusion_date = NOW()');
             }
         } else {
-            conclusionDateClause = ', conclusion_date = NULL';
+            addUpdate('conclusion_date', null);
         }
     }
 
+    addUpdate('status', statusToUpdate);
+
+    if (updates.length === 0) {
+        return originalTask;
+    }
 
     const query = `
         UPDATE tasks
-        SET
-            title = COALESCE($1, title),
-            description = COALESCE($2, description),
-            status = COALESCE($3, status),
-            priority = COALESCE($4, priority),
-            start_date = COALESCE($5, start_date),
-            due_date = COALESCE($6, due_date),
-            assignee_id = COALESCE($7, assignee_id),
-            project_id = COALESCE($8, project_id)
-            ${conclusionDateClause}
-        WHERE id = $9
+        SET ${updates.join(', ')}
+        WHERE id = $${paramIndex++}
         RETURNING *`;
+    params.push(id);
+
 
     const result = await queryOne<any>(query, params);
 
