@@ -441,7 +441,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
               {isEditingConclusionDate ? (
                 <Input
                   type="date"
-                  value={conclusionDate ? new Date(conclusionDate).toISOString().split('T')[0] : ''}
+                  value={conclusionDate && !isNaN(new Date(conclusionDate).getTime()) ? new Date(conclusionDate).toISOString().split('T')[0] : ''}
                   onChange={(e) => setConclusionDate(e.target.value)}
                   onBlur={async () => {
                     const dateToSend = conclusionDate || null;
