@@ -1165,13 +1165,26 @@ export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist
 }
 
 export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments'>>): Promise<Task | null> {
-    const { title, description, status, priority, startDate, dueDate, assigneeId, projectId } = task;
+    const { title, description, status, priority, startDate, dueDate, assigneeId, projectId, conclusionDate } = task;
 
     const originalTask = await getTaskById(id);
 
-    let conclusionDateUpdate = '';
-    if (status) {
-        conclusionDateUpdate = status === 'Concluída'
+    let conclusionDateClause = '';
+    const params = [title, description, status, priority, startDate, dueDate, assigneeId, projectId, id];
+    let statusToUpdate = status;
+
+
+    if (conclusionDate !== undefined) {
+
+        conclusionDateClause = `, conclusion_date = $10`;
+        params.push(conclusionDate);
+        if (conclusionDate !== null) {
+            statusToUpdate = 'Concluída';
+            params[2] = 'Concluída';
+        }
+    } else if (status) {
+
+        conclusionDateClause = status === 'Concluída'
             ? ', conclusion_date = NOW()'
             : ', conclusion_date = NULL';
     }
@@ -1187,15 +1200,15 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
             due_date = COALESCE($6, due_date),
             assignee_id = COALESCE($7, assignee_id),
             project_id = COALESCE($8, project_id)
-            ${conclusionDateUpdate}
+            ${conclusionDateClause}
         WHERE id = $9
         RETURNING *`;
 
-    const result = await queryOne<any>(query, [title, description, status, priority, startDate, dueDate, assigneeId, projectId, id]);
+    const result = await queryOne<any>(query, params);
 
     if (!result) return null;
 
-    if (status === 'Concluída' && originalTask?.status !== 'Concluída' && originalTask?.creatorId) {
+    if (statusToUpdate === 'Concluída' && originalTask?.status !== 'Concluída' && originalTask?.creatorId) {
         const creator = await getParticipantById(originalTask.creatorId);
         const project = await getProjectById(originalTask.projectId);
 

@@ -55,11 +55,13 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
   const [description, setDescription] = useState(initialTask.description);
   const [startDate, setStartDate] = useState(initialTask.startDate);
   const [dueDate, setDueDate] = useState(initialTask.dueDate);
+  const [conclusionDate, setConclusionDate] = useState(initialTask.conclusionDate);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingStartDate, setIsEditingStartDate] = useState(false);
   const [isEditingDueDate, setIsEditingDueDate] = useState(false);
+  const [isEditingConclusionDate, setIsEditingConclusionDate] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
@@ -90,6 +92,7 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
       setDescription(freshTask.description);
       setStartDate(freshTask.startDate);
       setDueDate(freshTask.dueDate);
+      setConclusionDate(freshTask.conclusionDate);
     } catch (error) {
       console.error("Error fetching task details:", error);
       // Optionally, show a toast to the user
@@ -430,15 +433,31 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
               </div>
               <p>{new Date(task.creationDate).toLocaleDateString()}</p>
             </div>
-            {task.conclusionDate && (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-muted-foreground w-32">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>Data de Conclusão</span>
-                </div>
-                <p>{new Date(task.conclusionDate).toLocaleDateString()}</p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-muted-foreground w-32">
+                <CalendarIcon className="h-4 w-4" />
+                <span>Data de Conclusão</span>
               </div>
-            )}
+              {isEditingConclusionDate ? (
+                <Input
+                  type="date"
+                  value={conclusionDate ? new Date(conclusionDate).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setConclusionDate(e.target.value)}
+                  onBlur={() => {
+                    if (conclusionDate !== task.conclusionDate) {
+                      updateTask({ conclusionDate });
+                    }
+                    setIsEditingConclusionDate(false);
+                  }}
+                  autoFocus
+                  className="w-48"
+                />
+              ) : (
+                <div onClick={() => setIsEditingConclusionDate(true)} className="w-48 cursor-pointer">
+                  <p>{task.conclusionDate ? new Date(task.conclusionDate).toLocaleDateString() : 'Não definida'}</p>
+                </div>
+              )}
+            </div>
             <div className="flex items-start gap-4">
               <div className="flex items-center gap-2 text-muted-foreground w-32 pt-2">
                 <User className="h-4 w-4" />
