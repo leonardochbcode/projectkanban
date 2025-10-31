@@ -1168,26 +1168,29 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
     const { title, description, status, priority, startDate, dueDate, assigneeId, projectId, conclusionDate } = task;
 
     const originalTask = await getTaskById(id);
+    if (!originalTask) return null;
 
-    let conclusionDateClause = '';
-    const params = [title, description, status, priority, startDate, dueDate, assigneeId, projectId, id];
+    const params: (string | null | undefined)[] = [title, description, status, priority, startDate, dueDate, assigneeId, projectId, id];
     let statusToUpdate = status;
-
+    let conclusionDateClause = '';
 
     if (conclusionDate !== undefined) {
-
         conclusionDateClause = `, conclusion_date = $10`;
         params.push(conclusionDate);
-        if (conclusionDate !== null) {
+        if (conclusionDate) {
             statusToUpdate = 'Concluída';
             params[2] = 'Concluída';
         }
-    } else if (status) {
-
-        conclusionDateClause = status === 'Concluída'
-            ? ', conclusion_date = NOW()'
-            : ', conclusion_date = NULL';
+    } else if (status && status !== originalTask.status) {
+        if (status === 'Concluída') {
+            if (originalTask.conclusionDate === null) {
+                conclusionDateClause = ', conclusion_date = NOW()';
+            }
+        } else {
+            conclusionDateClause = ', conclusion_date = NULL';
+        }
     }
+
 
     const query = `
         UPDATE tasks
@@ -1221,9 +1224,6 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
             sendEmail(creator.email, subject, html);
         }
     }
-
-    // After updating, we need to fetch the full task details
-    // because the simple RETURNING * won't include comments, checklist, etc.
     return getTaskById(id);
 }
 
