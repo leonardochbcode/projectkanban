@@ -17,8 +17,7 @@ export async function PUT(
   context: z.infer<typeof routeContextSchema>
 ) {
   try {
-    const { params } = routeContextSchema.parse(context);
-    const { id } = params;
+    const { id } = context.params;
     const body = await req.json();
     const { conclusionDate } = bodySchema.parse(body);
 
