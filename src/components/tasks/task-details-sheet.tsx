@@ -444,15 +444,16 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                   value={conclusionDate ? new Date(conclusionDate).toISOString().split('T')[0] : ''}
                   onChange={(e) => setConclusionDate(e.target.value)}
                   onBlur={async () => {
-                    if (conclusionDate !== task.conclusionDate) {
+                    const dateToSend = conclusionDate || null;
+                    if (dateToSend !== task.conclusionDate) {
                       const originalTask = task;
-                      setTask(prev => ({ ...prev!, conclusionDate: conclusionDate }));
+                      setTask(prev => ({ ...prev!, conclusionDate: dateToSend }));
 
                       try {
                         const response = await fetch(`/api/tasks/${task.id}/conclusion-date`, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ conclusionDate }),
+                          body: JSON.stringify({ conclusionDate: dateToSend }),
                         });
 
                         if (!response.ok) {
