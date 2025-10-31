@@ -1,15 +1,44 @@
 import pool from './db';
 import type {
-    Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, Workspace, Workbook, ProjectTemplate, TaskComment, ChecklistItem
+    Project, Task, Participant, Role, Client, Opportunity, CompanyInfo, Workspace, Workbook, ProjectTemplate, TaskComment, ChecklistItem, EmailSettings
 } from './types';
 
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
+import { sendEmail } from './email';
 
 // A simple utility to handle single-row results
 async function queryOne<T>(sql: string, params: any[] = []): Promise<T | null> {
     const { rows } = await pool.query(sql, params);
     return rows[0] || null;
+}
+
+// Email Settings
+export async function getEmailSettings(): Promise<EmailSettings | null> {
+    return queryOne<EmailSettings>('SELECT id, host, port, secure, "user", password FROM settings_email LIMIT 1');
+}
+
+export async function createEmailSettings(settings: Omit<EmailSettings, 'id'>): Promise<EmailSettings> {
+    const { host, port, secure, user, password } = settings;
+    const result = await queryOne<any>(
+        'INSERT INTO settings_email (host, port, secure, "user", password) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [host, port, secure, user, password]
+    );
+    return result;
+}
+
+export async function updateEmailSettings(id: number, settings: Partial<Omit<EmailSettings, 'id'>>): Promise<EmailSettings | null> {
+    const { host, port, secure, user, password } = settings;
+    const result = await queryOne<any>(
+        'UPDATE settings_email SET host = COALESCE($1, host), port = COALESCE($2, port), secure = COALESCE($3, secure), "user" = COALESCE($4, "user"), password = COALESCE($5, password) WHERE id = $6 RETURNING *',
+        [host, port, secure, user, password, id]
+    );
+    return result;
+}
+
+export async function deleteEmailSettings(id: number): Promise<{ success: boolean }> {
+    const result = await pool.query('DELETE FROM settings_email WHERE id = $1', [id]);
+    return { success: result.rowCount > 0 };
 }
 
 // A simple utility to handle multi-row results
@@ -391,6 +420,9 @@ export async function updateWorkspaceParticipants(workspaceId: string, participa
     try {
         await client.query('BEGIN');
 
+        const oldParticipantsResult = await client.query('SELECT participant_id FROM workspace_participants WHERE workspace_id = $1', [workspaceId]);
+        const oldParticipantIds = oldParticipantsResult.rows.map(row => row.participant_id);
+
         // Clear existing participants for the workspace
         await client.query('DELETE FROM workspace_participants WHERE workspace_id = $1', [workspaceId]);
 
@@ -405,6 +437,27 @@ export async function updateWorkspaceParticipants(workspaceId: string, participa
         }
 
         await client.query('COMMIT');
+
+        const newParticipantIds = participantIds.filter(id => !oldParticipantIds.includes(id));
+        if (newParticipantIds.length > 0) {
+            const workspace = await getWorkspaceById(workspaceId);
+            if (workspace) {
+                const subject = `Você foi adicionado ao Espaço de Trabalho: ${workspace.name}`;
+                const workspaceUrl = `${process.env.NEXTAUTH_URL}/workspaces/${workspaceId}`;
+                const html = `
+                    <h1>Novo Espaço de Trabalho Compartilhado</h1>
+                    <p>Você foi adicionado ao espaço de trabalho "${workspace.name}".</p>
+                    <p><a href="${workspaceUrl}">Clique aqui para ver o espaço de trabalho</a></p>
+                `;
+                for (const participantId of newParticipantIds) {
+                    const participant = await getParticipantById(participantId);
+                    if (participant?.email) {
+                        sendEmail(participant.email, subject, html);
+                    }
+                }
+            }
+        }
+
         return { success: true };
     } catch (error) {
         await client.query('ROLLBACK');
@@ -879,6 +932,26 @@ export async function createProject(project: Omit<Project, 'id' | 'participantId
 
         await client.query('COMMIT');
 
+        const allParticipantIds = [...(participantIds || [])];
+        if (pmoId && !allParticipantIds.includes(pmoId)) {
+            allParticipantIds.push(pmoId);
+        }
+
+        const subject = `Novo Projeto Criado: ${name}`;
+        const projectUrl = `${process.env.NEXTAUTH_URL}/projects/${newId}`;
+        const html = `
+            <h1>Você foi adicionado a um novo projeto</h1>
+            <p>O projeto "${name}" foi criado e você foi adicionado como participante.</p>
+            <p><a href="${projectUrl}">Clique aqui para ver o projeto</a></p>
+        `;
+
+        for (const participantId of allParticipantIds) {
+            const participant = await getParticipantById(participantId);
+            if (participant?.email) {
+                sendEmail(participant.email, subject, html);
+            }
+        }
+
         return {
             ...newProject,
             startDate: newProject.start_date,
@@ -1051,6 +1124,31 @@ export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist
         'INSERT INTO tasks (id, title, description, status, priority, start_date, due_date, assignee_id, project_id, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
         [newId, title, description, status, priority, startDate, dueDate, assigneeId, projectId, creatorId]
     );
+
+    if (assigneeId) {
+        const assignee = await getParticipantById(assigneeId);
+        if (assignee?.email) {
+            const subject = `Nova Tarefa Atribuída: ${title}`;
+            // const taskUrl = `${process.env.NEXTAUTH_URL}/tasks/${projectId}?taskId=${newId}`;
+            const taskUrl = `${process.env.NEXTAUTH_URL}/my-tasks`;
+            const html = `
+                <h1>Nova Tarefa Atribuída a Você</h1>
+                <p>Uma nova tarefa foi criada e atribuída a você.</p>
+                <h2>Detalhes da Tarefa:</h2>
+                <ul>
+                    <li><strong>Título:</strong> ${title}</li>
+                    <li><strong>Descrição:</strong> ${description}</li>
+                    <li><strong>Data de Início:</strong> ${startDate}</li>
+                    <li><strong>Data de Prazo:</strong> ${dueDate}</li>
+                    <li><strong>Status:</strong> ${status}</li>
+                    <li><strong>Prioridade:</strong> ${priority}</li>
+                </ul>
+                <p><a href="${taskUrl}">Clique aqui para ver a tarefa</a></p>
+            `;
+            sendEmail(assignee.email, subject, html);
+        }
+    }
+
     return {
         ...result,
         startDate: result.start_date,
@@ -1068,6 +1166,8 @@ export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist
 
 export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments'>>): Promise<Task | null> {
     const { title, description, status, priority, startDate, dueDate, assigneeId, projectId } = task;
+
+    const originalTask = await getTaskById(id);
 
     let conclusionDateUpdate = '';
     if (status) {
@@ -1094,6 +1194,20 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
     const result = await queryOne<any>(query, [title, description, status, priority, startDate, dueDate, assigneeId, projectId, id]);
 
     if (!result) return null;
+
+    if (status === 'Concluída' && originalTask?.status !== 'Concluída' && originalTask?.creatorId) {
+        const creator = await getParticipantById(originalTask.creatorId);
+        const project = await getProjectById(originalTask.projectId);
+
+        if (creator?.email && originalTask.assigneeId !== originalTask.creatorId) {
+            const subject = `Tarefa Concluída: ${originalTask.title}`;
+            const html = `
+                <h1>Tarefa Concluída</h1>
+                <p>A tarefa "${originalTask.title}" do projeto "${project?.name}" foi concluída.</p>
+            `;
+            sendEmail(creator.email, subject, html);
+        }
+    }
 
     // After updating, we need to fetch the full task details
     // because the simple RETURNING * won't include comments, checklist, etc.

@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: 'http://kanvus.chb.com.br'
+            value: 'http://apps.chb.com.br'
           },
           {
             key: 'Access-Control-Allow-Methods',

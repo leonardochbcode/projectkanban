@@ -1,5 +1,5 @@
 -- Drop tables if they exist to ensure a clean slate
-DROP TABLE IF EXISTS workspace_participants, project_workbooks, workbooks, template_tasks, project_templates, checklist_items, task_attachments, task_comments, tasks, project_participants, projects, opportunity_attachments, opportunity_comments, opportunities, workspaces, clients, participants, roles, company_info CASCADE;
+DROP TABLE IF EXISTS workspace_participants, project_workbooks, workbooks, template_tasks, project_templates, checklist_items, task_attachments, task_comments, tasks, project_participants, projects, opportunity_attachments, opportunity_comments, opportunities, workspaces, clients, participants, roles, company_info, settings_email CASCADE;
 
 -- Company Information
 CREATE TABLE company_info (
@@ -195,4 +195,14 @@ CREATE TABLE template_tasks (
     description TEXT,
     priority VARCHAR(50),
     due_day_offset INTEGER
+);
+
+-- Email Settings
+CREATE TABLE settings_email (
+    id SERIAL PRIMARY KEY,
+    host VARCHAR(255) NOT NULL,
+    port INTEGER NOT NULL,
+    secure BOOLEAN NOT NULL,
+    "user" VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL
 );

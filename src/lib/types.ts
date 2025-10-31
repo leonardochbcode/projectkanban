@@ -13,6 +13,15 @@ export const availablePermissions = {
 
 export type Permission = keyof typeof availablePermissions;
 
+export interface EmailSettings {
+  id: number;
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  password?: string;
+}
+
 export interface CompanyInfo {
   name: string;
   cnpj: string;
