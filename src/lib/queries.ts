@@ -1165,7 +1165,7 @@ export async function createTask(task: Omit<Task, 'id' | 'comments' | 'checklist
 }
 
 export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'comments' | 'checklist' | 'attachments'>>): Promise<Task | null> {
-    const { title, description, status, priority, startDate, dueDate, assigneeId, projectId, conclusionDate } = task;
+    const { title, description, status, priority, startDate, dueDate, assigneeId, projectId } = task;
 
     const originalTask = await getTaskById(id);
     if (!originalTask) return null;
@@ -1191,16 +1191,14 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
 
     let statusToUpdate = status;
 
-    if (conclusionDate !== undefined) {
-        addUpdate('conclusion_date', conclusionDate);
-        if (conclusionDate) {
-            statusToUpdate = 'Concluída';
-        }
-    } else if (status && status !== originalTask.status) {
+    if (status && status !== originalTask.status) {
         if (status === 'Concluída' && originalTask.conclusionDate === null) {
             updates.push('conclusion_date = NOW()');
+        } else if (status !== 'Concluída' && originalTask.conclusionDate !== null) {
+            updates.push('conclusion_date = NULL');
         }
     }
+
 
     if (statusToUpdate !== undefined) {
         addUpdate('status', statusToUpdate);
@@ -1235,6 +1233,18 @@ export async function updateTask(id: string, task: Partial<Omit<Task, 'id' | 'co
             sendEmail(creator.email, subject, html);
         }
     }
+    return getTaskById(id);
+}
+
+export async function updateTaskConclusionDate(id: string, conclusionDate: string | null): Promise<Task | null> {
+    const query = `
+        UPDATE tasks
+        SET conclusion_date = $1
+        WHERE id = $2
+        RETURNING *`;
+
+    await queryOne<any>(query, [conclusionDate, id]);
+
     return getTaskById(id);
 }
 

@@ -443,9 +443,39 @@ export function TaskDetailsSheet({ task: initialTask, children, open: openProp, 
                   type="date"
                   value={conclusionDate ? new Date(conclusionDate).toISOString().split('T')[0] : ''}
                   onChange={(e) => setConclusionDate(e.target.value)}
-                  onBlur={() => {
+                  onBlur={async () => {
                     if (conclusionDate !== task.conclusionDate) {
-                      updateTask({ conclusionDate });
+                      const originalTask = task;
+                      setTask(prev => ({ ...prev!, conclusionDate: conclusionDate }));
+
+                      try {
+                        const response = await fetch(`/api/tasks/${task.id}/conclusion-date`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ conclusionDate }),
+                        });
+
+                        if (!response.ok) {
+                          throw new Error('Failed to update conclusion date');
+                        }
+
+                        const updatedTaskFromServer = await response.json();
+
+                        updateTaskInStore(updatedTaskFromServer);
+                        setTask(updatedTaskFromServer);
+
+                        toast({
+                          title: 'Data de conclusão atualizada',
+                        });
+
+                      } catch (error) {
+                        setTask(originalTask);
+                        toast({
+                          title: 'Erro',
+                          description: 'Não foi possível atualizar a data de conclusão.',
+                          variant: 'destructive',
+                        });
+                      }
                     }
                     setIsEditingConclusionDate(false);
                   }}
